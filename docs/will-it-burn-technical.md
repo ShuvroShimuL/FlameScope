@@ -13,8 +13,8 @@ node src/api/server.mjs
 The server prints two addresses:
 
 ```text
-FlameScope:    http://127.0.0.1:3000/
-Will It Burn?: http://127.0.0.1:3000/burn/
+Will It Burn?: http://127.0.0.1:3000/
+FlameScope:    http://127.0.0.1:3000/research/
 ```
 
 Run the tests with `node --test`.
@@ -27,7 +27,7 @@ flowchart LR
   EV --> SC["src/compute/scenario.mjs<br/>read question, check, build answer"]
   SC --> API["src/api/server.mjs<br/>GET /api/ask"]
   EV --> DATA["src/api/server.mjs<br/>GET /api/data"]
-  API --> UI["web/burn/app.js<br/>render the dashboard"]
+  API --> UI["web/app.js<br/>render the dashboard"]
   DATA --> UI
   Q["User types or taps"] --> UI
 ```
@@ -41,7 +41,7 @@ The server decides every scientific statement. The browser only draws what the s
 | `src/compute/evidence.mjs` | Loads the CSV into clean records. It is shared with FlameScope. |
 | `src/compute/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
 | `src/api/server.mjs` | The local HTTP server: static files plus the JSON routes |
-| `web/burn/index.html`, `style.css`, `app.js` | The Will It Burn? page |
+| `web/index.html`, `style.css`, `app.js` | The Will It Burn? page |
 | `test/scenario.test.mjs` | Tests for the question reader, the answer rules and the routes |
 
 ## 1. Where the data comes from
@@ -257,7 +257,7 @@ Errors come back as HTTP 400 with `{ "error": "Unknown mission. Use iss, moon, t
 
 This returns all 20 records and the provenance. The page loads it once, to draw every point on the chart and to fill the proof table.
 
-## 9. From JSON to the dashboard: `web/burn/app.js`
+## 9. From JSON to the dashboard: `web/app.js`
 
 **Boot**
 
@@ -328,7 +328,7 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 - The evidence numbers match the table rows exactly.
 - Every gap card has a source, and the nearest-evidence parameters really reach evidence.
 - Bad input is refused.
-- The routes serve the page, redirect `/burn`, and answer `/api/ask`.
+- The routes serve the page, redirect the old `/burn` address to `/`, and answer `/api/ask`.
 
 ## 12. Extending it
 

@@ -10,7 +10,7 @@ FlameScope / Will It Burn?, built for NASA Space Apps 2026: **Flame in Freefall*
 
 | Task | Command |
 |---|---|
-| Run | `node src/api/server.mjs` → http://127.0.0.1:3000 (`/` and `/burn/`) |
+| Run | `node src/api/server.mjs` → http://127.0.0.1:3000 (`/` Will It Burn?, `/research/` FlameScope) |
 | Run offline | `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`) |
 | Test | `node --test` (must stay green) |
 | Eval | `node scripts/evaluate.mjs` (must stay 20/20) |
@@ -50,6 +50,7 @@ docs/planning/   vision, requirements, architecture, data model, ADRs, roadmap
 
 - ES modules (`.mjs`), and match the surrounding density: the compute files are compact, and `acquire/` and `agents/` are commented.
 - Add or change a behaviour → add or change a test in `test/`.
+- **Will It Burn? (`/`, the home page) is the primary product** (ADR-009). Added, changed or removed a feature there → update its row and the change log in `docs/planning/features.md` in the same commit.
 - Changed a boundary or a dependency → add an ADR. Changed a requirement → update `docs/planning/requirements.md`.
 - Commit messages: imperative, and reference the requirement ID when there is one (`FR-12: add cache badge`).
 - Log any AI assistance you gave in `docs/AI_USE.md` (tool, what it did, what a human verified).

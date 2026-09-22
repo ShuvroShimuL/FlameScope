@@ -21,7 +21,7 @@ flowchart LR
     MCP["mcp-server.mjs<br/>compute exposed as MCP tools"]
   end
   API["src/api/server.mjs<br/>HTTP · static · JSON"]
-  WEB["web/<br/>/ FlameScope · /burn/ Will It Burn?"]
+  WEB["web/<br/>/ Will It Burn? · /research/ FlameScope"]
 
   NTRS --> SAFE
   SAFE -.-> CACHE[(cache/)]
@@ -53,7 +53,7 @@ flowchart LR
 
 ## Request flow: "Will it burn on a Moon base at 34% oxygen?"
 
-1. `web/burn/app.js` → `GET /api/ask?q=…`
+1. `web/app.js` → `GET /api/ask?q=…`
 2. `server.mjs` → `ask()` in `scenario.mjs`
 3. `parseQuestion` gives `{mission: moon, o2: 34}`. `resolveScenario` then merges taps, the question and defaults.
 4. `checksFor` compares the cabin with `ENVELOPE` (derived from the 20 rows). Gravity and O₂ fail.

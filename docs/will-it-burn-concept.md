@@ -2,7 +2,7 @@
 
 A question-first view on NASA's microgravity fire data, built for the Flame in Freefall challenge. You ask whether something would burn in a spacecraft cabin. The page tells you what NASA's tests actually saw, or says plainly that no test has been run there yet.
 
-Run it with `node src/api/server.mjs`, then open <http://127.0.0.1:3000/burn/>. The technical walkthrough is in [will-it-burn-technical.md](will-it-burn-technical.md).
+Run it with `node src/api/server.mjs`, then open <http://127.0.0.1:3000/>. The technical walkthrough is in [will-it-burn-technical.md](will-it-burn-technical.md).
 
 ## Who it is for
 
@@ -115,4 +115,4 @@ The challenge asks for a dashboard that **summarizes, ranks and interprets** NAS
 
 ## How it relates to FlameScope
 
-Both views read the same NASA table through `src/compute/evidence.mjs`, so no data work is duplicated. FlameScope at `/` stays the research view for comparing tests and exporting briefs. Will It Burn? at `/burn/` is the front door that answers one question fast.
+Both views read the same NASA table through `src/compute/evidence.mjs`, so no data work is duplicated. FlameScope at `/research/` stays the research view for comparing tests and exporting briefs. Will It Burn? at `/` (the home page) is the front door that answers one question fast.

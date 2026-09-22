@@ -16,7 +16,7 @@ Follow `docs/planning/offline-demo.md`. In short:
    ```bash
    mv cache cache.bak && OFFLINE=1 node src/acquire/ntrs.mjs; mv cache.bak cache   # expect source: 'fixture'
    ```
-4. **Run the app offline:** `OFFLINE=1 node src/api/server.mjs`. Load `/` and `/burn/`, and click all six suggested questions. Check that the network tab shows only `127.0.0.1`.
+4. **Run the app offline:** `OFFLINE=1 node src/api/server.mjs`. Load `/` (Will It Burn?) and `/research/`, and click all six suggested questions. Check that the network tab shows only `127.0.0.1`.
 5. **Tests:** `node --test` (includes the fixture-exists check).
 6. **Report** each fixture with its source label, and anything that failed. Never say "ready" without running steps 3–5.
 

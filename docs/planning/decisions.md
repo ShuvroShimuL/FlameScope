@@ -72,6 +72,16 @@ Lightweight architecture decision records. Add new ones at the bottom, and never
 
 **Consequences.** + The demo can't fail on venue wifi. − Fixtures must be refreshed when an acquire module changes.
 
+## ADR-009 · Will It Burn? is the primary product
+
+**Status:** Accepted · 2026-09-23
+
+**Context.** The team prefers the question-first Will It Burn? dashboard over the FlameScope research view.
+
+**Decision.** New features, the demo and the project page centre on Will It Burn?, now served at `/` (old `/burn/` links redirect). FlameScope moved to `/research/` and stays available as a secondary research view and shares the same compute core, but it gets no new features unless Will It Burn? needs them. [features.md](features.md) is the single list of what Will It Burn? does.
+
+**Consequences.** + A clearer story for judges and one place to polish. − The research-view backlog (search, compare, export) is frozen. Done 2026-09-23: `/` serves Will It Burn?.
+
 ---
 
 ## Open questions

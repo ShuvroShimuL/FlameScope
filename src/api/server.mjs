@@ -39,11 +39,13 @@ export function createServer() { return http.createServer(async(req,res)=>{
       return send(res,200,brief);
     }
     if(req.method!=='GET')return send(res,405,{error:'Method not allowed.'});
-    if(url.pathname==='/burn'){res.writeHead(301,{Location:'/burn/'});return res.end();}
+    // Will It Burn? is the home page; /burn/ was its old address.
+    if(url.pathname==='/burn' || url.pathname==='/burn/'){res.writeHead(301,{Location:'/'});return res.end();}
+    if(url.pathname==='/research'){res.writeHead(301,{Location:'/research/'});return res.end();}
     const path=resolve(root,'.'+decodeURIComponent(url.pathname.endsWith('/')?url.pathname+'index.html':url.pathname));
     if(!path.startsWith(root))return send(res,403,{error:'Forbidden.'});
     const contents=await readFile(path);
     res.writeHead(200,{'Content-Type':({'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript'})[extname(path)] || 'application/octet-stream', 'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'"});res.end(contents);
   }catch(error){send(res,error.code==='ENOENT'?404:500,{error:error.code==='ENOENT'?'Not found.':'Unable to process request.'});}
 });}
-if(process.argv[1]===fileURLToPath(import.meta.url))createServer().listen(Number(process.env.PORT || 3000),'127.0.0.1',()=>{const base=`http://127.0.0.1:${process.env.PORT || 3000}`;console.log(`FlameScope:    ${base}/\nWill It Burn?: ${base}/burn/`);});
+if(process.argv[1]===fileURLToPath(import.meta.url))createServer().listen(Number(process.env.PORT || 3000),'127.0.0.1',()=>{const base=`http://127.0.0.1:${process.env.PORT || 3000}`;console.log(`Will It Burn?: ${base}/\nFlameScope:    ${base}/research/`);});

@@ -5,6 +5,7 @@ The living design record for FlameScope / Will It Burn?, built for **NASA Space 
 | Doc | What it answers |
 |---|---|
 | [vision-and-scope.md](vision-and-scope.md) | Why this exists, who it's for, what's in and out, the Bangladesh framing, success measures |
+| [features.md](features.md) | **Will It Burn? feature list**: what the product does today, and the ideas backlog. Update it with every feature change. |
 | [requirements.md](requirements.md) | FR and NFR IDs with status and how each one is verified |
 | [architecture.md](architecture.md) | Layers, boundaries, request flow, offline design |
 | [data-model.md](data-model.md) | Sources and agencies, CSV schema, record type, envelope, fixtures |
