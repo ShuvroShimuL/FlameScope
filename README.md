@@ -10,7 +10,14 @@ Requires Node.js 22+; no packages or install step needed.
 node server.mjs
 ```
 
-Open http://127.0.0.1:3000. `node --test` runs 13 data-contract, API and frontend-state checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for FlameScope and http://127.0.0.1:3000/burn/ for the Will It Burn? view. `node --test` runs 21 data-contract, API, question-reader and frontend-state checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+
+## Will It Burn? (question-first view)
+
+A second front end on the same 20 BASS-II rows, at `/burn/`. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
+
+- [docs/will-it-burn-concept.md](docs/will-it-burn-concept.md): the idea, what users can type, the three taps, and why it is designed this way.
+- [docs/will-it-burn-technical.md](docs/will-it-burn-technical.md): where the data comes from, how the search reads a question, the `/api/ask` contract, and how the JSON becomes the dashboard.
 
 ## The three-step journey
 
@@ -61,6 +68,10 @@ The server binds loopback only. It is a local prototype, not an authenticated pu
 | `data/provenance.json` | Source, method, verification status and stated limitations |
 | `data/evaluation.json` | 20 offline retrieval/abstention cases |
 | `public/` | Single-page UI: `index.html`, `app.js`, `style.css` |
+| `lib/scenario.mjs` | Will It Burn? question reader, evidence-match checks and answer builder behind `/api/ask` |
+| `public/burn/` | Will It Burn? page: `index.html`, `app.js`, `style.css` |
+| `test/scenario.test.mjs` | Question-reader, answer-rule and route tests for Will It Burn? |
+| `docs/will-it-burn-*.md` | Concept and technical walkthroughs for Will It Burn? |
 | `scripts/evaluate.mjs` | Offline evaluation runner |
 | `test/` | `evidence.test.mjs` (data/API), `frontend.test.mjs` (UI state machine) |
 | `docs/reviewer-protocol.md` | The human validation that is still outstanding |
