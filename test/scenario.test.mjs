@@ -93,10 +93,12 @@ test('API serves /api/ask and the Will It Burn page', async () => {
     const ok = await (await fetch(base + '/api/ask?q=' + encodeURIComponent('Will acrylic burn on the ISS?'))).json();
     assert.equal(ok.verdict.state, 'burned');
     assert.equal((await fetch(base + '/api/ask?mission=pluto')).status, 400);
-    const page = await fetch(base + '/burn/');
+    const page = await fetch(base + '/');
     assert.equal(page.status, 200); assert.match(await page.text(), /Will it burn/);
-    assert.equal((await fetch(base + '/burn', { redirect: 'manual' })).status, 301);
-    assert.equal((await fetch(base + '/burn/app.js')).status, 200);
-    assert.equal((await fetch(base + '/')).status, 200);
+    assert.equal((await fetch(base + '/app.js')).status, 200);
+    for (const old of ['/burn', '/burn/']) {
+      const moved = await fetch(base + old, { redirect: 'manual' });
+      assert.equal(moved.status, 301); assert.equal(moved.headers.get('location'), '/');
+    }
   } finally { await new Promise(r => server.close(r)); }
 });

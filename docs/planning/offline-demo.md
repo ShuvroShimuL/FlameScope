@@ -23,7 +23,7 @@ OFFLINE=1 node src/api/server.mjs
 ## Pre-flight checklist (day of demo)
 
 - [ ] `node --test` is green
-- [ ] Wifi **off**, then start with `OFFLINE=1`. Load `/` and `/burn/`, and run all six suggested questions.
+- [ ] Wifi **off**, then start with `OFFLINE=1`. Load `/` (Will It Burn?) and `/research/`, and run all six suggested questions.
 - [ ] Every fetched value shows a `cache` or `fixture` badge (after R1)
 - [ ] The AI checkbox shows "Offline mode…", not an error
 - [ ] Browser zoom at 125%, notifications off, other tabs closed

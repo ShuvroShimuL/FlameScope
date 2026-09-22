@@ -2,10 +2,10 @@
 
 **Challenge (2026):** NASA Space Apps Challenge 2026: *Flame in Freefall: AI-Powered Fire Safety Insights from Microgravity Combustion Data* ([challenge page](https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall-ai-powered-fire-safety-insights-from-microgravity-combustion-data/)). The full statement is due 28 October 2026. Re-check this document against it on that day.
 
-**Product:** FlameScope, with two views over one evidence core:
+**Product focus:** **Will It Burn?** is the primary product (ADR-009). Its full feature list is in [features.md](features.md). The project has two views over one evidence core:
 
-- **Will It Burn?** (`/burn/`) is the front door. Ask about a cabin and get **Burned** (NASA saw it burn under matching conditions) or **No data** (with what is missing and where that data may exist).
-- **FlameScope** (`/`) is the research view. Find tests, compare them, and export a source-linked brief.
+- **Will It Burn?** (`/`, the home page) is the front door. Ask about a cabin and get **Burned** (NASA saw it burn under matching conditions) or **No data** (with what is missing and where that data may exist).
+- **FlameScope** (`/research/`) is the research view. Find tests, compare them, and export a source-linked brief.
 
 ## Vision
 

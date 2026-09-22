@@ -43,6 +43,8 @@ test('API validates requests and serves local data',async()=>{
     const bad=await fetch(base+'/api/brief',{method:'POST',body:JSON.stringify({question:'PMMA',ids:['fake']})});assert.equal(bad.status,400);
     const cross=await fetch(base+'/api/brief',{method:'POST',headers:{Origin:'https://example.com'},body:'{}'});assert.equal(cross.status,403);
     const good=await fetch(base+'/api/brief',{method:'POST',body:JSON.stringify({question:'M2 flame spread',ids:['M2']})});const d=await good.json();assert.equal(d.claims[0].id,'M2');assert.equal(d.mode,'Offline evidence brief');
-    assert.equal((await fetch(base+'/')).status,200);
+    const research=await fetch(base+'/research/');assert.equal(research.status,200);assert.match(await research.text(),/FlameScope/);
+    assert.equal((await fetch(base+'/research/app.js')).status,200);
+    assert.equal((await fetch(base+'/research',{redirect:'manual'})).headers.get('location'),'/research/');
   }finally{await new Promise(r=>server.close(r));}
 });

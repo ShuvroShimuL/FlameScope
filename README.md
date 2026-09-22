@@ -16,15 +16,17 @@ Requires Node.js 22+; no packages or install step needed.
 node src/api/server.mjs
 ```
 
-Open http://127.0.0.1:3000 for FlameScope and http://127.0.0.1:3000/burn/ for the Will It Burn? view. `node --test` runs 25 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 25 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
 
 **Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every network fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`), and `OFFLINE=1` also disables the AI step. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
 
 **MCP server:** `node src/agents/mcp-server.mjs` exposes the deterministic tools `will_it_burn`, `search_evidence`, `compare_tests`, `evidence_brief` and `get_provenance` to any MCP client. It is registered in `.mcp.json`. See [docs/planning/mcp-server.md](docs/planning/mcp-server.md).
 
-## Will It Burn? (question-first view)
+## Will It Burn? (question-first view, our main product)
 
-A second front end on the same 20 BASS-II rows, at `/burn/`. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
+**Feature list:** [docs/planning/features.md](docs/planning/features.md) lists everything the dashboard does today, plus the ideas backlog.
+
+The home page (`/`), built on the same 20 BASS-II rows as FlameScope. Old `/burn/` links redirect here. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
 
 - [docs/will-it-burn-concept.md](docs/will-it-burn-concept.md): the idea, what users can type, the three taps, and why it is designed this way.
 - [docs/will-it-burn-technical.md](docs/will-it-burn-technical.md): where the data comes from, how the search reads a question, the `/api/ask` contract, and how the JSON becomes the dashboard.
@@ -91,7 +93,7 @@ FlameScope/
 │  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs
 │  ├─ agents/              evidence-selector.mjs (constrained LLM), mcp-server.mjs
 │  └─ api/                 server.mjs: HTTP routes and static serving
-├─ web/                    static frontend: / FlameScope, /burn/ Will It Burn?
+├─ web/                    static frontend: / Will It Burn? (home), /research/ FlameScope
 ├─ scripts/evaluate.mjs    offline evaluation runner
 └─ test/                   evidence, scenario, frontend, boundary (compute + MCP) tests
 ```
