@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 
 // Execute the actual frontend handlers with a minimal DOM and controllable network.
 // No duplicate implementation of request ordering or invalidation rules.
-const source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+const source=readFileSync(new URL('../web/app.js',import.meta.url),'utf8');
 const handlers=source.slice(0,source.lastIndexOf('\ntry{'));
 function setup(){
   const nodes=new Map(),pending=[];

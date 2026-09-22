@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-export const provenance = JSON.parse(readFileSync(new URL('../data/provenance.json', import.meta.url)));
-const csv = readFileSync(new URL('../data/bass-table.csv', import.meta.url), 'utf8').trim();
+export const provenance = JSON.parse(readFileSync(new URL('../../data/provenance.json', import.meta.url)));
+const csv = readFileSync(new URL('../../data/bass-table.csv', import.meta.url), 'utf8').trim();
 export const records = csv.split(/\r?\n/).slice(1).map(line => {
   const [id,t,w,s,v,r,b,initial,final] = line.split(',');
   return { id, studyId: 'BASS-II', material: 'PMMA', geometry: 'sheet', flowDirection: 'opposed',

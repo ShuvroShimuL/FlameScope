@@ -1,5 +1,5 @@
 import {readFileSync} from 'node:fs';
-import {search,makeBrief} from '../lib/evidence.mjs';
+import {search,makeBrief} from '../src/compute/evidence.mjs';
 const cases=JSON.parse(readFileSync(new URL('../data/evaluation.json',import.meta.url)));
 let passed=0;
 for(const c of cases){const result=search({question:c.question});const brief=makeBrief(c.question,result.records);const ok=c.abstain?brief.abstained:!brief.abstained&&c.ids.every(id=>brief.claims.some(x=>x.id===id));passed+=Number(ok);console.log(`${ok?'PASS':'FAIL'} ${c.question}`);}

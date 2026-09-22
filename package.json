@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.mjs", "test": "node --test", "evaluate": "node scripts/evaluate.mjs" },
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "node src/api/server.mjs",
+    "start:env": "node --env-file-if-exists=.env src/api/server.mjs",
+    "test": "node --test",
+    "evaluate": "node scripts/evaluate.mjs",
+    "prefetch": "node src/acquire/ntrs.mjs",
+    "mcp": "node src/agents/mcp-server.mjs"
+  },
   "engines": { "node": ">=22" }
 }

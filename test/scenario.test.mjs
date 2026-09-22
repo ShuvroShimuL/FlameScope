@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ask, parseQuestion, ENVELOPE, InputError } from '../lib/scenario.mjs';
-import { records } from '../lib/evidence.mjs';
-import { createServer } from '../server.mjs';
+import { ask, parseQuestion, ENVELOPE, InputError } from '../src/compute/scenario.mjs';
+import { records } from '../src/compute/evidence.mjs';
+import { createServer } from '../src/api/server.mjs';
 
 const failed = r => r.checks.filter(c => !c.ok).map(c => c.key);
 

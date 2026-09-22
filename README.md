@@ -1,16 +1,26 @@
 # FlameScope
 
+> **NASA Space Apps Challenge 2026: [Flame in Freefall: AI-Powered Fire Safety Insights from Microgravity Combustion Data](https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall-ai-powered-fire-safety-insights-from-microgravity-combustion-data/)**
+
 Local, report-backed BASS-II evidence explorer for researchers and engineers. Search 20 PMMA sheet tests, compare their conditions, and export a source-linked brief. Every number on screen traces to one printed page of one NASA report.
+
+**Datasets used:** NASA BASS-II ([NASA/TM-20210011385](https://ntrs.nasa.gov/citations/20210011385), Table 5.1, related dataset [PSI-25](https://psi.nasa.gov/physci/repo/data/investigations/PSI-25)), the NASA NTRS citation API, NASA/TP-2010-216134 (exploration atmosphere) and NASA Glenn Saffire/SoFIE references. Third-party sources: *Scientific Reports* (2018) and *Fire Safety Journal* (2024). Full table: [docs/planning/data-model.md](docs/planning/data-model.md).
+
+**Planning docs:** [docs/planning/](docs/planning/README.md) covers vision and scope, requirements, architecture, data model, agentic design, the MCP server, decisions, the roadmap, the offline demo, the demo script and the scorecard. AI disclosure: [docs/AI_USE.md](docs/AI_USE.md). Agent rules: [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
 
 ## Run
 
 Requires Node.js 22+; no packages or install step needed.
 
 ```powershell
-node server.mjs
+node src/api/server.mjs
 ```
 
-Open http://127.0.0.1:3000 for FlameScope and http://127.0.0.1:3000/burn/ for the Will It Burn? view. `node --test` runs 21 data-contract, API, question-reader and frontend-state checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for FlameScope and http://127.0.0.1:3000/burn/ for the Will It Burn? view. `node --test` runs 25 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+
+**Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every network fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`), and `OFFLINE=1` also disables the AI step. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
+
+**MCP server:** `node src/agents/mcp-server.mjs` exposes the deterministic tools `will_it_burn`, `search_evidence`, `compare_tests`, `evidence_brief` and `get_provenance` to any MCP client. It is registered in `.mcp.json`. See [docs/planning/mcp-server.md](docs/planning/mcp-server.md).
 
 ## Will It Burn? (question-first view)
 
@@ -36,7 +46,7 @@ The page is one flow — **1 Find evidence → 2 Compare tests → 3 Evidence br
 
 ## Optional AI mode
 
-Copy `.env.example` to `.env`, set `OPENAI_API_KEY`, then run `node --env-file=.env server.mjs`. Alternatively set the variables in your shell. Keys stay on the server; never add `.env` to source control. `OPENAI_MODEL` defaults to `gpt-4.1-mini` and can be changed to a model supporting Responses structured output.
+Copy `.env.example` to `.env`, set `OPENAI_API_KEY`, then run `node --env-file=.env src/api/server.mjs`. Alternatively set the variables in your shell. Keys stay on the server; never add `.env` to source control. `OPENAI_MODEL` defaults to `gpt-4.1-mini` and can be changed to a model supporting Responses structured output.
 
 The UI AI checkbox sends the research question and selected public evidence to OpenAI. The model can only select existing evidence IDs or abstain. It cannot write scientific claims or numbers. Output is rendered from the curated records; interpretation remains a deterministic template. Provider errors/timeouts fall back to a visibly labeled offline brief. This constrained AI selection is intentionally narrower than free-form LLM synthesis. No live model calls are made unless the user checks the AI option and a key is configured.
 
@@ -60,25 +70,37 @@ The server binds loopback only. It is a local prototype, not an authenticated pu
 
 ## Repository map
 
-| Path | Purpose |
-|---|---|
-| `server.mjs` | Loopback HTTP server, static files and the four API routes |
-| `lib/evidence.mjs` | Ranking, filtering, comparison limitations, brief and abstention logic |
-| `data/bass-table.csv` | The 20 transcribed Table 5.1 rows |
-| `data/provenance.json` | Source, method, verification status and stated limitations |
-| `data/evaluation.json` | 20 offline retrieval/abstention cases |
-| `public/` | Single-page UI: `index.html`, `app.js`, `style.css` |
-| `lib/scenario.mjs` | Will It Burn? question reader, evidence-match checks and answer builder behind `/api/ask` |
-| `public/burn/` | Will It Burn? page: `index.html`, `app.js`, `style.css` |
-| `test/scenario.test.mjs` | Question-reader, answer-rule and route tests for Will It Burn? |
-| `docs/will-it-burn-*.md` | Concept and technical walkthroughs for Will It Burn? |
-| `scripts/evaluate.mjs` | Offline evaluation runner |
-| `test/` | `evidence.test.mjs` (data/API), `frontend.test.mjs` (UI state machine) |
-| `docs/reviewer-protocol.md` | The human validation that is still outstanding |
+```text
+FlameScope/
+├─ LICENSE                 Apache-2.0
+├─ README.md
+├─ CLAUDE.md               Claude Code rules (imports AGENTS.md)
+├─ AGENTS.md               portable agent instructions
+├─ .claude/skills/         add-nasa-dataset · compute-boundary · offline-demo · provenance-audit · ai-use-log · demo-pitch
+├─ .mcp.json               registers the flamescope MCP server
+├─ .env.example            PORT, OFFLINE, EDL_USER, FIRMS_MAP_KEY, NASA_API_KEY, ADS_API_TOKEN, OPENAI_*
+├─ cache/                  gitignored: downloaded NASA data
+├─ demo_fixtures/          committed: the exact bytes the offline demo needs
+├─ data/                   hand-transcribed BASS-II rows, provenance, eval cases
+├─ docs/
+│  ├─ AI_USE.md            every AI tool, the prompts, and our own work
+│  ├─ planning/            vision, requirements, architecture, data model, ADRs, roadmap…
+│  └─ will-it-burn-*.md, reviewer-protocol.md
+├─ src/
+│  ├─ acquire/             safe.mjs (live → cache → fixture), ntrs.mjs
+│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs
+│  ├─ agents/              evidence-selector.mjs (constrained LLM), mcp-server.mjs
+│  └─ api/                 server.mjs: HTTP routes and static serving
+├─ web/                    static frontend: / FlameScope, /burn/ Will It Burn?
+├─ scripts/evaluate.mjs    offline evaluation runner
+└─ test/                   evidence, scenario, frontend, boundary (compute + MCP) tests
+```
+
+The layout follows the Space Apps template. We kept Node.js instead of FastAPI; see [ADR-001](docs/planning/decisions.md).
 
 ## Validation status
 
-13 automated tests cover transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data, mismatched geometry/units, unsupported requests, source selection, HTTP validation, and the frontend rules on stale searches and out-of-order responses. Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
+25 automated tests cover the compute boundary (no LLM, network or env in `src/compute`), the offline fixture, the MCP tools, AI selection validation, transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data, mismatched geometry/units, unsupported requests, source selection, HTTP validation, and the frontend rules on stale searches and out-of-order responses. Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
 
 The 20-question evaluation measures offline retrieval and abstention only (currently 20/20). It does not establish the proposed 18/20 live-AI accuracy target. Independent scientific review, three-person usability testing, and competitor time/correctness measurements remain human validation work. Use `docs/reviewer-protocol.md` rather than reporting these as passed.
 

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { records, search, comparison, makeBrief } from '../lib/evidence.mjs';
-import { createServer } from '../server.mjs';
+import { records, search, comparison, makeBrief } from '../src/compute/evidence.mjs';
+import { createServer } from '../src/api/server.mjs';
 
 test('20 unique source-located records; paired units and missingness preserved',()=>{
   assert.equal(records.length,20);assert.equal(new Set(records.map(r=>r.id)).size,20);
