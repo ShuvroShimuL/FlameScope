@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "flamescope": {
+      "command": "node",
+      "args": ["src/agents/mcp-server.mjs"],
+      "env": { "OFFLINE": "1" }
+    }
+  }
+}

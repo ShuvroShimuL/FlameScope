@@ -44,7 +44,7 @@ async function ask(params, { fromControl = false, animate = true } = {}) {
     render(animate);
   } catch (error) {
     if (v !== version) return;
-    showError(error instanceof TypeError ? 'Couldn’t reach the local server. Start it with: node server.mjs' : error.message);
+    showError(error instanceof TypeError ? 'Couldn’t reach the local server. Start it with: node src/api/server.mjs' : error.message);
   } finally {
     if (v === version) $('#result').removeAttribute('aria-busy');
   }
@@ -348,7 +348,7 @@ function render(animate) { renderRead(); renderTiles(); renderVerdict(animate); 
 // ---------- Boot: load the table once, then answer the first suggestion ----------
 (async () => {
   try { records = (await api('/api/data')).records; }
-  catch { showError('Couldn’t reach the local server. Start it with: node server.mjs'); return; }
+  catch { showError('Couldn’t reach the local server. Start it with: node src/api/server.mjs'); return; }
   input.value = QUESTIONS[0];
   await ask({ q: QUESTIONS[0] }, { animate: false });
 })();

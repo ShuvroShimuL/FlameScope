@@ -7,7 +7,7 @@ This file explains how a question becomes an answer. It covers where the data co
 Node.js 22 or newer. No install step and no packages.
 
 ```powershell
-node server.mjs
+node src/api/server.mjs
 ```
 
 The server prints two addresses:
@@ -23,11 +23,11 @@ Run the tests with `node --test`.
 
 ```mermaid
 flowchart LR
-  CSV["data/bass-table.csv<br/>20 NASA test rows"] --> EV["lib/evidence.mjs<br/>parse and normalise"]
-  EV --> SC["lib/scenario.mjs<br/>read question, check, build answer"]
-  SC --> API["server.mjs<br/>GET /api/ask"]
-  EV --> DATA["server.mjs<br/>GET /api/data"]
-  API --> UI["public/burn/app.js<br/>render the dashboard"]
+  CSV["data/bass-table.csv<br/>20 NASA test rows"] --> EV["src/compute/evidence.mjs<br/>parse and normalise"]
+  EV --> SC["src/compute/scenario.mjs<br/>read question, check, build answer"]
+  SC --> API["src/api/server.mjs<br/>GET /api/ask"]
+  EV --> DATA["src/api/server.mjs<br/>GET /api/data"]
+  API --> UI["web/burn/app.js<br/>render the dashboard"]
   DATA --> UI
   Q["User types or taps"] --> UI
 ```
@@ -38,10 +38,10 @@ The server decides every scientific statement. The browser only draws what the s
 |---|---|
 | `data/bass-table.csv` | The 20 BASS-II rows, transcribed from NASA/TM-20210011385, Table 5.1, printed p. 57 |
 | `data/provenance.json` | Where the rows came from, how they were transcribed, and their known limits |
-| `lib/evidence.mjs` | Loads the CSV into clean records. It is shared with FlameScope. |
-| `lib/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
-| `server.mjs` | The local HTTP server: static files plus the JSON routes |
-| `public/burn/index.html`, `style.css`, `app.js` | The Will It Burn? page |
+| `src/compute/evidence.mjs` | Loads the CSV into clean records. It is shared with FlameScope. |
+| `src/compute/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
+| `src/api/server.mjs` | The local HTTP server: static files plus the JSON routes |
+| `web/burn/index.html`, `style.css`, `app.js` | The Will It Burn? page |
 | `test/scenario.test.mjs` | Tests for the question reader, the answer rules and the routes |
 
 ## 1. Where the data comes from
@@ -69,7 +69,7 @@ MX,2,2.2,2,10;6,0.050;0.041,20.0,21.0,19.5
 
 That reads as a 2 mm sheet, 22 mm wide, burning on two sides. It spread at 0.050 mm/s at 10 cm/s airflow and 0.041 mm/s at 6 cm/s. It burned for 20 minutes while oxygen fell from 21.0% to 19.5%.
 
-## 2. Loading and cleaning: `lib/evidence.mjs`
+## 2. Loading and cleaning: `src/compute/evidence.mjs`
 
 When the server starts, `evidence.mjs` reads the CSV once and turns each line into a record:
 
@@ -82,7 +82,7 @@ Both FlameScope and Will It Burn? use these same records.
 
 ## 3. The evidence envelope
 
-`lib/scenario.mjs` computes what the 20 rows cover. It derives this from the records, never from typed-in numbers, so it updates by itself if rows are added.
+`src/compute/scenario.mjs` computes what the 20 rows cover. It derives this from the records, never from typed-in numbers, so it updates by itself if rows are added.
 
 | Condition | Covered by the tests | How it's worked out |
 |---|---|---|
@@ -257,7 +257,7 @@ Errors come back as HTTP 400 with `{ "error": "Unknown mission. Use iss, moon, t
 
 This returns all 20 records and the provenance. The page loads it once, to draw every point on the chart and to fill the proof table.
 
-## 9. From JSON to the dashboard: `public/burn/app.js`
+## 9. From JSON to the dashboard: `web/burn/app.js`
 
 **Boot**
 
@@ -332,7 +332,7 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 
 ## 12. Extending it
 
-- **Add a mission.** Add an entry to `MISSIONS` in `lib/scenario.mjs` with its gravity, default air and wording, plus a word pattern in `PATTERNS.mission`.
+- **Add a mission.** Add an entry to `MISSIONS` in `src/compute/scenario.mjs` with its gravity, default air and wording, plus a word pattern in `PATTERNS.mission`.
 - **Add a material with real data.** Add its rows to the data layer with their own source, mark it `supported`, and make the checks use each material's own envelope instead of the single acrylic one.
 - **Add the exploration-atmosphere data.** Transcribing Saffire V and VI or SoFIE results would give the 34% oxygen cabin real evidence. The envelope and checks would then pass for those conditions automatically.
 - **Add an AI reader.** Let a model fill only the parser's fields, validate them, and fall back to the rules. See the section on why the reader isn't AI.
