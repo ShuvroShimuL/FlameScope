@@ -42,7 +42,11 @@ The server decides every scientific statement. The browser only draws what the s
 | `src/compute/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
 | `src/compute/findings.mjs` | Ranks what the 20 rows show by how consistently matched comparisons agree |
 | `data/fire-response.json`, `src/compute/response.mjs` | NASA's ISS fire-response steps, quoted in NASA's order, with the evidence for each step |
-| `src/acquire/psi.mjs` | Fetches NASA's PSI-25 experimental table through `safe.mjs`, to cross-check our O₂ values |
+| `src/acquire/psi.mjs` | Fetches NASA's PSI experimental tables through `safe.mjs`: PSI-25 to cross-check our O₂ values, and PSI-69 (FLEX) |
+| `data/bass-fabric.csv`, `bass-nomex.csv`, `bass-extinction.csv`, `src/compute/sets.mjs` | SIBAL fabric (Table 7.1), Nomex (Table A.2) and extinction speeds (Table 2.1), from the same report. `ask()` answers fabric and Nomex from their outcomes: **Mixed** or **No flame held** (ADR-011). |
+| `data/psi-99-saffire-2.csv`, `src/compute/saffire.mjs` | NASA's Saffire-II table. One "also seen in another experiment" line per answer (`related`), never part of the verdict. |
+| `data/psi-69-flex.csv`, `src/compute/flex.mjs` | NASA's FLEX droplet table, for the suppressant line on the fire-response card |
+| `src/compute/csv.mjs` | The CSV reader shared by the loaders and the PSI fetcher |
 | `src/api/server.mjs` | The local HTTP server: static files plus the JSON routes |
 | `web/index.html`, `style.css`, `app.js` | The Will It Burn? page |
 | `test/scenario.test.mjs` | Tests for the question reader, the answer rules and the routes |
@@ -280,23 +284,28 @@ Errors come back as HTTP 400 with `{ "error": "Unknown mission. Use iss, moon, t
 
 ### `GET /api/data`
 
-This returns all 20 records, the provenance and `fireResponse`. The page loads it once, to draw every point on the chart, fill the proof table and draw the fire-response section.
+This returns all 20 records, the provenance, `fireResponse` and `findings`. The page loads it once. It uses them to draw every point on the chart, fill the proof table, and draw the fire-response and ranked-findings sections. `findings` is the same ranking that `ask()` returns for covered cabins. It is served here too, so the Ranked findings section works whatever the current answer is.
 
-`fireResponse` holds NASA's eight ISS fire-response steps from OCHMO-TB-008 Rev A (29 Nov 2023). Each step is quoted in NASA's order and comes with its evidence lines, their sources and an evidence status. One line under step 2 is computed from the rows (the airflow finding and the lowest tested airflow), so it can't drift from the ranked findings. The section looks the same for every answer: the page never links a verdict to a step (ADR-010).
+`fireResponse` holds NASA's eight ISS fire-response steps from OCHMO-TB-008 Rev A (29 Nov 2023). Each step is quoted in NASA's order and comes with its evidence lines, their sources and an evidence status. Two lines are computed, so they can't drift from the data. Under step 2 is the airflow finding and the lowest tested airflow, from the BASS-II rows. Under step 5 is FLEX's count of CO₂ and helium tests, from NASA's own table (`data/psi-69-flex.csv`). The section looks the same for every answer: the page never links a verdict to a step (ADR-010).
 
 ## 9. From JSON to the dashboard: `web/app.js`
 
 **Boot**
 
-1. Load `/api/data` once and keep the 20 records.
-2. Put the first suggested question in the box and call `/api/ask`.
+1. Show the section named in the URL hash, or the Overview.
+2. Load `/api/data` once. Keep the 20 records, and draw the fire-response and ranked-findings sections.
+3. Put the first suggested question in the box and call `/api/ask`.
+
+**Sections**
+
+The page is laid out like a Mac app window: a toolbar with the Ask field, a sidebar with four sections (Overview, Ranked findings, Fire response and Sources), and the content. On phones the sidebar becomes a bottom tab bar. The sections are links to `#overview`, `#findings`, `#response` and `#sources`. `showTab()` shows the one in the hash, marks its link with `aria-current` and moves focus to its heading, so links and the Back button work. Asking a question from another section switches back to the Overview.
 
 **Input**
 
 - **Submitting the form** sends only `q`.
 - **Tapping a suggested question** fills the box and sends `q`.
-- **Tapping a keyword** adds it to the box without sending anything.
-- **Tapping a tile, the air switch, a thickness chip or "nearest evidence"** calls `change(patch)`:
+- **Tapping a keyword** adds it to the box without sending anything. The keywords open under the Ask field while it has focus.
+- **Tapping a tile, the air switch, a material, a thickness chip or "nearest evidence"** calls `change(patch)`. A material tap also resets the thickness to all:
   - It copies every current field from the last answer, overrides the one that was tapped, and sends them all as explicit parameters.
   - A new mission drops the air fields, so that mission's default air applies.
   - The reply's canonical question replaces the text in the box.
@@ -309,17 +318,22 @@ Every request gets a version number. If an older reply arrives after a newer one
 
 | Response field | Where it appears |
 |---|---|
-| `understood`, `notices` | The Read-as chips and the notices under the box |
-| `missions` | The four tiles and their match badges |
-| `verdict`, `why` | The stamp, headline, subline and "why it matters" line |
+| `understood`, `notices` | The Read-as chips and the notices above the verdict |
+| `missions` | The four mission tiles and their match badges |
+| `verdict`, `why` | The verdict word and test count, the headline, the subline and the "why it matters" line |
 | `scenario.air` | The cabin-air switch, the chamber readouts and the partial pressure |
-| `checks` | The evidence-match table |
+| `scenario.material` | The checkmark in the Cabin card's material picker |
+| `checks` | The Evidence match card |
 | `scenario.mission.g` | The chamber flame: a blue sphere in orbit, a dashed outline at partial gravity |
-| `evidence` | Step 2: thickness chips, chart, readouts, finding and caveat |
-| `findings` | Step 2: the ranked list below the finding. Each row has its tier badge, its count and a button that opens its rows. |
-| `fireResponse` (from `/api/data`) | The "How NASA describes the ISS fire response" section below step 3 |
-| `gaps`, `nearest` | Step 2 when there is a gap: the cards and the nearest-evidence button |
-| `evidence.ids`, `sources` | Step 3: the proof table or the source list |
+| `evidence` | The key-number cards (`renderKpis`: four numbers for acrylic, or the test count and an outcome bar for fabric and Nomex), and the evidence card with the thickness chips, chart, finding and caveat, or the report's rows |
+| `findings` (from `/api/data`) | The Ranked findings section and its Overview card. Each row has its tier, "Agrees in N of M comparisons", one dot per comparison, and a button that opens its rows. |
+| `fireResponse` (from `/api/data`) | The Fire response section, and the Overview card with one line per step and its status |
+| `gaps`, `nearest` | The evidence card when there is a gap: the cards and the nearest-evidence button |
+| `evidence.ids`, `sources` | The proof sheet: the source rows or the source list |
+
+**The look**
+
+The page follows Apple's design language. It uses Apple's system colours for light and dark mode, and grouped cards on a grey background. Its controls are segmented controls, inset lists, capsule chips and a translucent toolbar. The type is the system font: San Francisco on Apple devices, Segoe UI on Windows. Nothing is downloaded, so the page still works offline. The verdict colours are orange for Burned and Mixed, grey for No flame held and amber for No data. None is ever green, so a verdict can't read as "safe".
 
 **The chart**
 
@@ -367,7 +381,7 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 - The caveats are computed from the rows.
 - Untracked spreads never count.
 - The wording stays descriptive.
-- `ask()` returns the ranking only for covered cabins.
+- `ask()` returns the ranking only for covered cabins, and `/api/data` serves it for every answer.
 
 `test/response.test.mjs` checks the fire-response section:
 
@@ -376,6 +390,28 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 - The BASS-II line is computed from the rows.
 - The app's own wording has no orders or safety words.
 - `/api/data` serves the section.
+
+`test/sets.test.mjs` checks the fabric, Nomex and extinction tables:
+
+- Table 7.1 has the report's counts: 6 quenched, 3 didn't ignite, 1 blow-off, 8 reused.
+- Published rows reproduce exactly.
+- The Nomex O₂ values match NASA's PSI-25 table.
+- SIBAL gets Mixed (20 of 23), and Nomex gets No flame held, which never reads as a safety rating.
+- Cotton points to SIBAL, and still air shows Table 2.1.
+
+`test/saffire.test.mjs` checks the Saffire-II table:
+
+- It has 9 samples, and blank materials fill from the row above.
+- Published cells and notes reproduce exactly.
+- Silicone didn't spread in orbit in 4 of 4, while 3 of 4 burned on the ground.
+- The line appears beside answers, never as the verdict.
+
+`test/flex.test.mjs` checks NASA's FLEX table:
+
+- It has 274 tests: 123 with CO₂ and 50 with helium.
+- Two published rows reproduce exactly.
+- Each row's gas fractions add up to about 1.
+- The en dash for "no value" stays missing.
 
 `test/psi.test.mjs` checks the cross-check against NASA's PSI-25 table:
 

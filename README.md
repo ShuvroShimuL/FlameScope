@@ -4,7 +4,7 @@
 
 Local, report-backed BASS-II evidence explorer for researchers and engineers. Search 20 PMMA sheet tests, compare their conditions, and export a source-linked brief. Every number on screen traces to one printed page of one NASA report.
 
-**Datasets used:** NASA BASS-II ([NASA/TM-20210011385](https://ntrs.nasa.gov/citations/20210011385), Table 5.1, related dataset [PSI-25](https://psi.nasa.gov/physci/repo/data/investigations/PSI-25)), PSI-25's experimental table (CC0, fetched through the PSI API to cross-check our O₂ values), the NASA NTRS citation API, NASA's OCHMO-TB-008 fire-protection brief (the quoted fire-response steps), NASA's 2015 exploration-atmosphere evidence report (NTRS 20150021491), the Saffire VI results (ICES-2024-365, NASA with ESA and partner universities), and the SoFIE and LUCI references. Third-party sources: *Scientific Reports* (2018) and *Fire Safety Journal* (2024). Full table: [docs/planning/data-model.md](docs/planning/data-model.md).
+**Datasets used:** NASA BASS-II ([NASA/TM-20210011385](https://ntrs.nasa.gov/citations/20210011385): Table 5.1 acrylic sheets, Table 7.1 SIBAL fabric, Table A.2 Nomex, Table 2.1 extinction speeds; related dataset [PSI-25](https://psi.nasa.gov/physci/repo/data/investigations/PSI-25)), PSI-25's experimental table (CC0, fetched through the PSI API to cross-check our O₂ values), the FLEX experimental table (PSI-69, CC0; its CO₂ and helium suppressant tests), the Saffire-II experimental table (PSI-99, CC0; shown beside answers), the SAME smoke records (PSI-102 and PSI-101), the NASA NTRS citation API, NASA's OCHMO-TB-008 fire-protection brief (the quoted fire-response steps), NASA's 2015 exploration-atmosphere evidence report (NTRS 20150021491), the Saffire VI results (ICES-2024-365, NASA with ESA and partner universities), and the SoFIE and LUCI references. Third-party sources: *Scientific Reports* (2018) and *Fire Safety Journal* (2024). Full table: [docs/planning/data-model.md](docs/planning/data-model.md).
 
 **Planning docs:** [docs/planning/](docs/planning/README.md) covers vision and scope, requirements, architecture, data model, agentic design, the MCP server, decisions, the roadmap, the offline demo, the demo script and the scorecard. AI disclosure: [docs/AI_USE.md](docs/AI_USE.md). Agent rules: [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
 
@@ -16,7 +16,7 @@ Requires Node.js 22+; no packages or install step needed.
 node src/api/server.mjs
 ```
 
-Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 25 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 58 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
 
 **Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every network fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`), and `OFFLINE=1` also disables the AI step. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
 
@@ -26,7 +26,7 @@ Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.
 
 **Feature list:** [docs/planning/features.md](docs/planning/features.md) lists everything the dashboard does today, plus the ideas backlog.
 
-The home page (`/`), built on the same 20 BASS-II rows as FlameScope. Old `/burn/` links redirect here. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
+The home page (`/`), built on the same 20 BASS-II rows as FlameScope, plus the report's fabric and Nomex tables. Old `/burn/` links redirect here. It is laid out like an Apple app: a toolbar with the Ask field, a sidebar with four sections (Overview, Ranked findings, Fire response, Sources) that becomes a tab bar on phones, and cards in Apple's light and dark system colours. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
 
 - [docs/will-it-burn-concept.md](docs/will-it-burn-concept.md): the idea, what users can type, the three taps, and why it is designed this way.
 - [docs/will-it-burn-technical.md](docs/will-it-burn-technical.md): where the data comes from, how the search reads a question, the `/api/ask` contract, and how the JSON becomes the dashboard.
@@ -63,7 +63,7 @@ The UI AI checkbox sends the research question and selected public evidence to O
 
 ## API
 
-- `GET /api/data`: records, provenance, AI availability; never credentials.
+- `GET /api/data`: records, provenance, NASA's quoted fire-response steps, the ranked findings, AI availability; never credentials.
 - `GET /api/search?question=...&material=PMMA&geometry=sheet&direction=opposed&thickness=1&oxygenMin=18&oxygenMax=22`: filtered records and rank reasons.
 - `GET /api/compare?ids=M7,M8`: conditions and descriptive-comparison limitations.
 - `POST /api/brief`: `{ "question": "Compare M7 and M8 airflow", "ids": ["M7", "M8"], "ai": false }`; grounded brief or abstention.
@@ -83,26 +83,26 @@ FlameScope/
 ├─ .env.example            PORT, OFFLINE, EDL_USER, FIRMS_MAP_KEY, NASA_API_KEY, ADS_API_TOKEN, OPENAI_*
 ├─ cache/                  gitignored: downloaded NASA data
 ├─ demo_fixtures/          committed: the exact bytes the offline demo needs
-├─ data/                   hand-transcribed BASS-II rows, provenance, eval cases, NASA's quoted fire-response steps
+├─ data/                   hand-transcribed BASS-II rows, NASA's FLEX table, provenance, eval cases, NASA's quoted fire-response steps
 ├─ docs/
 │  ├─ AI_USE.md            every AI tool, the prompts, and our own work
 │  ├─ planning/            vision, requirements, architecture, data model, ADRs, roadmap…
 │  └─ will-it-burn-*.md, reviewer-protocol.md
 ├─ src/
 │  ├─ acquire/             safe.mjs (live → cache → fixture), ntrs.mjs, psi.mjs
-│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs, findings.mjs, response.mjs
+│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs, sets.mjs, saffire.mjs, findings.mjs, response.mjs, flex.mjs, csv.mjs
 │  ├─ agents/              evidence-selector.mjs (constrained LLM), mcp-server.mjs
 │  └─ api/                 server.mjs: HTTP routes and static serving
 ├─ web/                    static frontend: / Will It Burn? (home), /research/ FlameScope
 ├─ scripts/evaluate.mjs    offline evaluation runner
-└─ test/                   evidence, scenario, findings, response, psi, frontend, boundary (compute + MCP) tests
+└─ test/                   evidence, scenario, sets, saffire, findings, response, flex, psi, frontend, boundary (compute + MCP) tests
 ```
 
 The layout follows the Space Apps template. We kept Node.js instead of FastAPI; see [ADR-001](docs/planning/decisions.md).
 
 ## Validation status
 
-25 automated tests cover the compute boundary (no LLM, network or env in `src/compute`), the offline fixture, the MCP tools, AI selection validation, transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data, mismatched geometry/units, unsupported requests, source selection, HTTP validation, and the frontend rules on stale searches and out-of-order responses. Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
+58 automated tests cover the compute boundary (no LLM, network or env in `src/compute`), the offline fixture, the MCP tools, AI selection validation, transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data, mismatched geometry/units, unsupported requests, source selection, HTTP validation, and the frontend rules on stale searches and out-of-order responses. Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
 
 The 20-question evaluation measures offline retrieval and abstention only (currently 20/20). It does not establish the proposed 18/20 live-AI accuracy target. Independent scientific review, three-person usability testing, and competitor time/correctness measurements remain human validation work. Use `docs/reviewer-protocol.md` rather than reporting these as passed.
 

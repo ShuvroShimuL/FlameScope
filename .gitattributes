@@ -1,0 +1,3 @@
+# NASA's own PSI files are kept byte for byte (CRLF included),
+# so their SHA-256 still matches the one recorded in their provenance.
+data/psi-*.csv -text

@@ -12,7 +12,7 @@ description: Add a new NASA (or third-party) data source or new evidence rows to
 
 ## Steps
 
-1. **Provenance first.** Record the title, agency, URL, DOI, table and printed page, the access date (YYYY-MM-DD), the method, the verification status ("pending second-person check" until done) and the limitations. Copy the shape of `data/provenance.json`.
+1. **Provenance first.** Record the title, agency, URL, DOI, table and printed page, the access date (YYYY-MM-DD), the method, the verification status ("pending second-person check" until done) and the limitations. Copy the shape of `data/provenance.json`. If you save NASA's own file unchanged, record its SHA-256 and name it `data/psi-<n>-<name>.csv`. `.gitattributes` keeps those bytes exact, line endings included, so the hash still matches after a clone.
 2. **Schema.** Keep the source units in the CSV and normalise only in the loader. Blank means `null`, never 0. Use `;`-lists for paired arrays and document the pairing. Add the columns to `docs/planning/data-model.md`.
 3. **Acquire module** (API sources only):
    ```js

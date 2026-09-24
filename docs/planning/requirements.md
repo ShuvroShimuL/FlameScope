@@ -9,7 +9,7 @@ IDs are stable. Reference them in commits and tests, for example `FR-04: nearest
 | FR-01 | A user can ask a plain-English cabin question and get a verdict in one step | ✅ | `test/scenario.test.mjs` |
 | FR-02 | The reader extracts mission, cabin air, O₂ %, pressure (psi/kPa/atm), airflow, thickness and material, and shows each as a Read-as chip marked *question*, *picked* or *default* | ✅ | scenario tests |
 | FR-03 | The cabin is checked against the evidence envelope (material, gravity, O₂, pressure, and airflow and thickness when given). The envelope is derived from the data, never typed in. | ✅ | `ENVELOPE` test |
-| FR-04 | A failed check returns **No data**, gap cards (each with a source URL) and a nearest-evidence parameter set that always reaches **Burned** | ✅ | scenario tests |
+| FR-04 | A failed check returns **No data**, gap cards (each with a source URL) and a nearest-evidence parameter set that always reaches evidence: **Burned**, **Mixed** or **No flame held** | ✅ | scenario tests |
 | FR-05 | Every number on screen opens the table row or cited source it came from | ✅ | manual check plus the evidence-number test |
 | FR-06 | Search the 20 tests by text, test ID, thickness and O₂ range, with explained ranking | ✅ | `test/evidence.test.mjs` |
 | FR-07 | Compare 2–3 tests, flag each differing condition, and never make a causal claim | ✅ | evidence tests |
@@ -20,8 +20,10 @@ IDs are stable. Reference them in commits and tests, for example `FR-04: nearest
 | FR-12 | Every fetched value shows a `live` / `cache` / `fixture` badge in the UI | 🟡 | `src/acquire/safe.mjs` returns it, but no UI badge yet |
 | FR-13 | A provenance drawer shows the source, method, verification status and limitations | 🟡 | `/api/data` serves it; the drawer UI needs polish |
 | FR-14 | The Bangladesh impact panel shows verified local fire numbers with sources | ⬜ | [roadmap](roadmap.md) R3 |
-| FR-15 | The challenge name is stated on the landing page and the project page | 🟡 | in the README; add it to the UI |
+| FR-15 | The challenge name is stated on the landing page and the project page | 🟡 | in the README, and in the page footer on every section; the project page is still to do |
 | FR-16 | Rank what the tests show by how consistently matched comparisons agree. Each finding shows the rule, its counts and a caveat computed from the rows, and opens its rows on tap. Never presented as a causal claim or a safety ranking. | ✅ | `test/findings.test.mjs` |
+| FR-19 | Show results from a separate experiment (Saffire-II) beside the answer, labelled as another experiment, computed from NASA's table, and never pooled into the verdict | ✅ | `test/saffire.test.mjs` |
+| FR-18 | Answer SIBAL fabric and Nomex from their own test outcomes: **Mixed** with its reasons, or **No flame held** opening with "That isn’t a safety rating". Leave out reused samples as the report does, and never use an instrument reading as an airflow speed. | ✅ | `test/sets.test.mjs` |
 | FR-17 | Quote NASA's documented ISS fire response word for word, in NASA's order, with its source and date, and show the microgravity evidence and its source for each step. Never reorder, merge, rank or reword the steps, and never turn a verdict into a danger level. | ✅ | `test/response.test.mjs` |
 
 ## Non-functional
@@ -34,7 +36,7 @@ IDs are stable. Reference them in commits and tests, for example `FR-04: nearest
 | NFR-04 | **Security.** Loopback bind only, strict CSP, no inline script or style, output escaped, keys stay server-side, cross-origin POST refused | ✅ |
 | NFR-05 | **Honesty.** Missing stays `null`, never 0. Illustrations are labelled. Findings are labelled "descriptive, not a safety rating." | ✅ |
 | NFR-06 | **Usability.** An untrained user gets an answer in 1 tap, a refined answer in 2 and the proof in 3 | ✅ design; ⬜ tested with users |
-| NFR-07 | **Accessibility.** Keyboard reachable, colour-blind-safe ramp in both themes, respects reduced motion | ✅ |
+| NFR-07 | **Accessibility.** Keyboard reachable, colour-blind-safe ramp in both themes, respects reduced motion. Section links carry `aria-current`, and each section's heading takes focus when you switch. | ✅ |
 | NFR-08 | **Performance.** `/api/ask` responds in under 50 ms locally (in memory, 20 rows) | ✅ |
 | NFR-09 | **Reproducibility.** The data CSV and provenance JSON are committed, and the transcription method is documented. The 40 O₂ values are checked against NASA's own PSI-25 table (`test/psi.test.mjs`). | ✅ |
 

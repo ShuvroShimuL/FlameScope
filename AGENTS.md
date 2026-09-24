@@ -22,7 +22,7 @@ Node 22+. **Zero npm dependencies.** Don't add any without an ADR in `docs/plann
 ## Layout and boundaries
 
 ```text
-data/            committed, hand-transcribed source rows + provenance.json
+data/            committed source rows (hand-transcribed, or NASA's own files) + their provenance JSON
 src/acquire/     network access, ONLY through safe.mjs fetchJson/fetchText (live → cache → fixture)
 src/compute/     deterministic science. No fetch, no LLM, no process.env, no Math.random,
                  no imports from agents/ or acquire/. Enforced by test/boundary.test.mjs

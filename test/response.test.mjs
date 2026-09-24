@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { FIRE_RESPONSE, STATUS } from '../src/compute/response.mjs';
 import { FINDINGS } from '../src/compute/findings.mjs';
 import { ENVELOPE } from '../src/compute/scenario.mjs';
+import { FLEX_SUMMARY } from '../src/compute/flex.mjs';
 import { createServer } from '../src/api/server.mjs';
 
 test('NASA’s eight steps are quoted word for word, in NASA’s order, with the source and its date', () => {
@@ -23,7 +24,7 @@ test('NASA’s eight steps are quoted word for word, in NASA’s order, with the
 });
 
 test('every evidence line cites its source, and each step’s evidence status is from the fixed list', () => {
-  assert.deepEqual(FIRE_RESPONSE.steps.map(s => s.status), ['one', 'mixed', 'reason', 'none', 'related', 'none', 'reason', 'reason']);
+  assert.deepEqual(FIRE_RESPONSE.steps.map(s => s.status), ['some', 'mixed', 'reason', 'none', 'related', 'none', 'reason', 'reason']);
   for (const s of FIRE_RESPONSE.steps) {
     assert.equal(s.statusLabel, STATUS[s.status], `step ${s.n}`);
     if (s.status === 'none') assert.equal(s.evidence.length, 0, `step ${s.n}`);
@@ -38,6 +39,15 @@ test('the BASS-II evidence line is computed from the rows, not typed in', () => 
   assert.equal(line.text, `This app’s 20 BASS-II tests: the faster airflow had the faster spread in ${airflow.agree} of ${airflow.comparisons} comparisons, but the table can’t separate airflow from falling oxygen. No test ran below ${ENVELOPE.flowMin} cm/s, so they say nothing about still air.`);
   assert.match(line.text, /29 of 30 comparisons/); assert.match(line.text, /below 2 cm\/s/);
   assert.match(line.source.url, /20210011385/);
+});
+
+test('the FLEX line is computed from NASA’s own table, and detection cites SAME', () => {
+  const flex = FIRE_RESPONSE.steps[4].evidence.find(e => /^FLEX/.test(e.text));
+  assert.equal(flex.text, `FLEX burned fuel droplets, not solids. ${FLEX_SUMMARY.co2} of its ${FLEX_SUMMARY.tests} tests added CO₂ to the air and ${FLEX_SUMMARY.he} added helium, to “determine how the presence of a suppressant influences the LOI”, the lowest oxygen that still burns.`);
+  assert.match(flex.text, /123 of its 274 tests added CO₂ to the air and 50 added helium/);
+  assert.match(flex.source.url, /investigations\/PSI-69$/);
+  assert.ok(FIRE_RESPONSE.steps[1].evidence.some(e => /below 10 ± 5 mm\/s at 21% O₂, and 30 ± 5 mm\/s at 16%/.test(e.text) && /Table 2\.1/.test(e.source.name)));
+  assert.ok(FIRE_RESPONSE.steps[0].evidence.some(e => /investigations\/PSI-102$/.test(e.source?.url ?? '')));
 });
 
 test('outside NASA’s own quotes, the wording never gives orders or a safety rating', () => {

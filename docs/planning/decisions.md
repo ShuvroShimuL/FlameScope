@@ -96,6 +96,20 @@ Lightweight architecture decision records. Add new ones at the bottom, and never
 - − One dated brief can go stale, so re-check it against newer NASA text before submission.
 - − The evidence statuses are our judgment, so they need the second-person check.
 
+## ADR-011 · One evidence set per tested material, and outcome verdicts
+
+**Status:** Accepted · 2026-09-24
+
+**Context.** The same BASS-II report holds more than the acrylic spread rates: SIBAL fabric outcomes (Table 7.1), three Nomex tests (Table A.2) and extinction speeds (Table 2.1). Some fabric samples didn't ignite, and no flame held on Nomex. A Burned or No data answer can't say that, and answering "No data" for Nomex on the ISS would be false.
+
+**Decision.** Each tested material gets its own evidence set, with an envelope derived from its own rows. Fabric and Nomex answers come from outcomes. **Mixed** gives the count and the reasons. **No flame held** always opens with "That isn’t a safety rating". Reused samples stay out, as the report says. Nomex airflow is an instrument reading, so it never matches a cm/s question. Cotton and plain fabric stay **No data**, and they point to SIBAL as the nearest evidence, not as a stand-in.
+
+**Consequences.**
+- \+ Real answers for two more materials, from the report we already cite.
+- \+ The first "did not ignite" results, shown honestly.
+- − "No flame held" could be misread as "safe". The copy, the tests and the neutral stamp guard against that.
+- − The outcome labels are our reading of the report's comments, so they need the second-person check.
+
 ---
 
 ## Open questions
