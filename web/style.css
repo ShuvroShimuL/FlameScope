@@ -186,6 +186,43 @@ a{color:var(--accent);text-underline-offset:2px}
 .ro .go{font-size:11.5px;color:var(--accent);font-weight:600;margin-top:4px}
 .finding{margin:0;font-size:15px;max-width:70ch}
 .caveat{margin:-8px 0 0;font-size:12.5px;color:var(--ink-3)}
+/* Ranked findings */
+.rank{display:grid;gap:10px;border-top:1px solid var(--rule);padding-top:16px}
+.rank h3{margin:0;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.rank ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rank li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--rule);border-radius:11px;padding:11px 12px;background:var(--surface-2)}
+.rank .rn,.fr-steps .rn{font-family:var(--mono);font-size:12px;font-weight:600;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink-2);display:inline-grid;place-items:center}
+.rank .rb p{margin:0;font-size:14px}
+.rank .rb .rc{font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.rank li.too-few .rb p:first-child,.rank li.mixed .rb p:first-child{color:var(--ink-2)}
+.rank .rs{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.tier{font-size:12px;font-weight:650;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tier.consistent{color:var(--ok);background:var(--ok-wash)}
+.tier.suggestive{color:var(--ink);background:var(--accent-wash);box-shadow:inset 0 0 0 1px var(--accent)}
+.tier.mixed{color:var(--miss);background:var(--miss-wash)}
+.tier.too-few{color:var(--ink-2);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+.rank-go{all:unset;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--accent)}
+.rank-go:hover{text-decoration:underline}
+.rank-go:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rank .note{margin:0}
+.rank-how{font-size:12.5px;color:var(--ink-3)}
+.rank-how summary{cursor:pointer;color:var(--ink-2);font-weight:600}
+.rank-how p{margin:6px 0 0;max-width:80ch}
+/* NASA's fire response */
+.fr-intro{margin:0;font-size:14px;max-width:80ch}
+.fr .note{margin:0;max-width:80ch}
+.fr-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fr-steps>li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;border:1px solid var(--rule);border-radius:11px;padding:11px 12px;background:var(--surface-2)}
+.fr-q{margin:0;font-size:14.5px;font-weight:600}
+.fr-d{margin:3px 0 0;font-size:13px;color:var(--ink-2)}
+.fr-ev{margin:8px 0 0;padding-left:18px;display:grid;gap:5px;font-size:13px;color:var(--ink-2)}
+.fr-none{margin:8px 0 0;font-size:13px;color:var(--ink-3);font-style:italic}
+.fr-diff{margin:8px 0 0;font-size:12.5px;color:var(--ink-2);border-left:3px solid var(--miss);padding-left:10px}
+.fr .src{font-size:12px;font-weight:600;white-space:nowrap}
+.fr-status{font-size:12px;font-weight:650;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.fr-status.mixed{color:var(--miss);background:var(--miss-wash)}
+.fr-status.one,.fr-status.reason,.fr-status.related{color:var(--ink);background:var(--accent-wash);box-shadow:inset 0 0 0 1px var(--accent)}
+.fr-status.none{color:var(--ink-2);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-strong)}
 .gaps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
 .gap-card{border:1px solid var(--rule);border-radius:11px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
 .gap-card .t{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--miss);font-weight:600}
@@ -230,6 +267,10 @@ td.n{font-family:var(--mono);font-size:12px}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
   .suggest{flex-direction:column;gap:6px}
   .read-legend{margin-left:0}
+  .rank li{grid-template-columns:24px minmax(0,1fr)}
+  .rank .rs{grid-column:2;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .fr-steps>li{grid-template-columns:24px minmax(0,1fr)}
+  .fr-status{grid-column:2;justify-self:start}
 }
 @media (max-width:440px){
   .wrap{padding-inline:16px}

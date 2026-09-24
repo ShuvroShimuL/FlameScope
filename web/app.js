@@ -165,13 +165,29 @@ function renderPanel2() {
       </div>
     </div>
     <p class="finding"><b>${esc(ev.finding.lead)}</b> ${esc(ev.finding.text)}</p>
-    <p class="caveat">${esc(ev.caveat)}</p>`;
+    <p class="caveat">${esc(ev.caveat)}</p>
+    ${result.findings ? rankingHtml(result.findings) : ''}`;
   panel.querySelector('.chips').addEventListener('click', e => {
     const b = e.target.closest('button[data-t]'); if (!b) return;
     change({ thickness: b.dataset.t });
   });
-  panel.querySelectorAll('.ro').forEach(b => b.addEventListener('click', () => openProof(b.dataset.ids.split(','))));
+  panel.querySelectorAll('.ro, .rank-go').forEach(b => b.addEventListener('click', () => openProof(b.dataset.ids.split(','))));
   renderChart(ev);
+}
+
+// Ranked findings are computed on the server over all 20 tests. The page only lays them out.
+function rankingHtml(f) {
+  return `<section class="rank" aria-labelledby="rank-h">
+    <h3 id="rank-h">What all ${esc(f.tests)} tests show, ranked by how consistently they agree</h3>
+    <ol role="list">${f.ranked.map(x => `<li class="${esc(x.tier)}">
+      <span class="rn" aria-hidden="true">${esc(x.rank)}</span>
+      <div class="rb"><p><b>${esc(x.lead)}</b> ${esc(x.text)}</p><p class="rc">${esc(x.caveat)}</p></div>
+      <div class="rs"><span class="tier ${esc(x.tier)}">${esc(x.tierLabel)} · ${esc(x.agree)} of ${esc(x.comparisons)}</span>
+        ${x.ids.length ? `<button type="button" class="rank-go" data-ids="${esc(x.ids.join(','))}" aria-label="Open the ${esc(x.ids.length)} source rows behind finding ${esc(x.rank)}">${esc(x.ids.length)} source rows</button>` : ''}</div>
+    </li>`).join('')}</ol>
+    <p class="note">${esc(f.caveat)}</p>
+    <details class="rank-how"><summary>How this ranking works</summary><p>${esc(f.method)} ${esc(f.rule)}</p></details>
+  </section>`;
 }
 
 function renderChart(ev) {
@@ -241,7 +257,7 @@ function openProof(ids) {
           <td class="n">${r.spread ? r.velocity.map((v, i) => `${v} cm/s → ${r.spread[i]} mm/s`).join('<br>') : `<span class="nt">Not tracked</span> at ${r.velocity.join(', ')} cm/s`}</td>
           <td class="n">${r.burnMin} min</td><td class="n">${r.oxygenInitial}% → ${r.oxygenFinal}%</td></tr>`).join('')}</tbody>
       </table></div>
-      <p class="note">Blank spread cells in the report mean the spread was not tracked, not zero. Oxygen values are the start and end of each test, not a constant level. Transcribed by our team; independent check pending.</p>
+      <p class="note">Blank spread cells in the report mean the spread was not tracked, not zero. Oxygen values are the start and end of each test, not a constant level. Transcribed by our team. The oxygen values match NASA’s own PSI-25 table; an independent check of the other columns is pending.</p>
       ${rows.length < records.length ? '<div><button class="btn alt" type="button" id="all-rows">Show all 20 rows</button></div>' : ''}`;
     $('#all-rows')?.addEventListener('click', () => openProof(null));
   }
@@ -255,6 +271,26 @@ function renderProofText() {
   const ev = result.evidence;
   $('#proof-text').textContent = ev ? 'Every number, dot and card above opens its row in NASA’s report. Nothing here is generated.' : 'Every gap above links to its NASA or journal source, next to what the BASS-II tests do cover.';
   $('#open-proof').textContent = ev ? `Open the ${ev.ids.length} source rows` : 'Open the sources';
+}
+
+// ---------- NASA's fire response: quoted steps, and the evidence behind each ----------
+// Shown the same way for every answer, so a verdict never turns into a danger level.
+function renderFireResponse(fr) {
+  const cite = s => s ? ` <a class="src" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.name)}">${esc(s.label)}</a>` : '';
+  const date = new Date(fr.source.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  $('#fire-response').innerHTML = `
+    <p class="fr-intro">From <a href="${esc(fr.source.url)}" target="_blank" rel="noopener">${esc(fr.source.name)}</a>, ${esc(date)}, ${esc(fr.source.location)}: “${esc(fr.source.intro)}”</p>
+    <p class="note">${esc(fr.source.caveat)} This app quotes the steps in NASA’s order. It doesn’t choose, reorder or rank them, and a Burned answer is not a danger level. Next to each step is what microgravity tests say about it.</p>
+    <ol class="fr-steps" role="list">${fr.steps.map(s => `<li>
+      <span class="rn" aria-hidden="true">${esc(s.n)}</span>
+      <div class="fr-body">
+        <p class="fr-q">“${esc(s.step)}”</p>${s.detail ? `<p class="fr-d">“${esc(s.detail)}”</p>` : ''}
+        ${s.evidence.length ? `<ul class="fr-ev">${s.evidence.map(e => `<li>${esc(e.text)}${cite(e.source)}</li>`).join('')}</ul>` : '<p class="fr-none">No test in the sets we mapped measured this step.</p>'}
+        ${s.differs ? `<p class="fr-diff"><b>Sources differ.</b> ${esc(s.differs.text)}${cite(s.differs.source)}</p>` : ''}
+      </div>
+      <span class="fr-status ${esc(s.status)}">${esc(s.statusLabel)}</span>
+    </li>`).join('')}</ol>
+    <p class="note">${fr.limitations.map(t => esc(t)).join(' ')}</p>`;
 }
 
 // ---------- Chamber flame (an illustration, labelled as one) ----------
@@ -347,7 +383,7 @@ function render(animate) { renderRead(); renderTiles(); renderVerdict(animate); 
 
 // ---------- Boot: load the table once, then answer the first suggestion ----------
 (async () => {
-  try { records = (await api('/api/data')).records; }
+  try { const data = await api('/api/data'); records = data.records; renderFireResponse(data.fireResponse); }
   catch { showError('Couldn’t reach the local server. Start it with: node src/api/server.mjs'); return; }
   input.value = QUESTIONS[0];
   await ask({ q: QUESTIONS[0] }, { animate: false });

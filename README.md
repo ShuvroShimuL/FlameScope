@@ -4,7 +4,7 @@
 
 Local, report-backed BASS-II evidence explorer for researchers and engineers. Search 20 PMMA sheet tests, compare their conditions, and export a source-linked brief. Every number on screen traces to one printed page of one NASA report.
 
-**Datasets used:** NASA BASS-II ([NASA/TM-20210011385](https://ntrs.nasa.gov/citations/20210011385), Table 5.1, related dataset [PSI-25](https://psi.nasa.gov/physci/repo/data/investigations/PSI-25)), the NASA NTRS citation API, NASA/TP-2010-216134 (exploration atmosphere) and NASA Glenn Saffire/SoFIE references. Third-party sources: *Scientific Reports* (2018) and *Fire Safety Journal* (2024). Full table: [docs/planning/data-model.md](docs/planning/data-model.md).
+**Datasets used:** NASA BASS-II ([NASA/TM-20210011385](https://ntrs.nasa.gov/citations/20210011385), Table 5.1, related dataset [PSI-25](https://psi.nasa.gov/physci/repo/data/investigations/PSI-25)), PSI-25's experimental table (CC0, fetched through the PSI API to cross-check our O₂ values), the NASA NTRS citation API, NASA's OCHMO-TB-008 fire-protection brief (the quoted fire-response steps), NASA's 2015 exploration-atmosphere evidence report (NTRS 20150021491), the Saffire VI results (ICES-2024-365, NASA with ESA and partner universities), and the SoFIE and LUCI references. Third-party sources: *Scientific Reports* (2018) and *Fire Safety Journal* (2024). Full table: [docs/planning/data-model.md](docs/planning/data-model.md).
 
 **Planning docs:** [docs/planning/](docs/planning/README.md) covers vision and scope, requirements, architecture, data model, agentic design, the MCP server, decisions, the roadmap, the offline demo, the demo script and the scorecard. AI disclosure: [docs/AI_USE.md](docs/AI_USE.md). Agent rules: [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md).
 
@@ -83,19 +83,19 @@ FlameScope/
 ├─ .env.example            PORT, OFFLINE, EDL_USER, FIRMS_MAP_KEY, NASA_API_KEY, ADS_API_TOKEN, OPENAI_*
 ├─ cache/                  gitignored: downloaded NASA data
 ├─ demo_fixtures/          committed: the exact bytes the offline demo needs
-├─ data/                   hand-transcribed BASS-II rows, provenance, eval cases
+├─ data/                   hand-transcribed BASS-II rows, provenance, eval cases, NASA's quoted fire-response steps
 ├─ docs/
 │  ├─ AI_USE.md            every AI tool, the prompts, and our own work
 │  ├─ planning/            vision, requirements, architecture, data model, ADRs, roadmap…
 │  └─ will-it-burn-*.md, reviewer-protocol.md
 ├─ src/
-│  ├─ acquire/             safe.mjs (live → cache → fixture), ntrs.mjs
-│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs
+│  ├─ acquire/             safe.mjs (live → cache → fixture), ntrs.mjs, psi.mjs
+│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs, findings.mjs, response.mjs
 │  ├─ agents/              evidence-selector.mjs (constrained LLM), mcp-server.mjs
 │  └─ api/                 server.mjs: HTTP routes and static serving
 ├─ web/                    static frontend: / Will It Burn? (home), /research/ FlameScope
 ├─ scripts/evaluate.mjs    offline evaluation runner
-└─ test/                   evidence, scenario, frontend, boundary (compute + MCP) tests
+└─ test/                   evidence, scenario, findings, response, psi, frontend, boundary (compute + MCP) tests
 ```
 
 The layout follows the Space Apps template. We kept Node.js instead of FastAPI; see [ADR-001](docs/planning/decisions.md).

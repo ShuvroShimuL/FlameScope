@@ -5,7 +5,7 @@ This follows the brief's five steps and records where each one lives in this rep
 | # | Step | Where | Status |
 |---|---|---|---|
 | 1 | Pre-fetch every demo input into `cache/`, then copy the minimum set into `demo_fixtures/` | `node src/acquire/ntrs.mjs`, then copy `cache/ntrs-20210011385.json` → `demo_fixtures/` | ✅ NTRS. Repeat for each new acquire module. |
-| 2 | Wrap every fetch: live, then cache, then fixture | `src/acquire/safe.mjs` → `fetchJson()` returns `{data, source}` | ✅ |
+| 2 | Wrap every fetch: live, then cache, then fixture | `src/acquire/safe.mjs` → `fetchJson()` and `fetchText()` return `{data, source}` | ✅ |
 | 3 | `OFFLINE=1` forces fixture mode | `safe.mjs` skips the network, and the server disables the AI step | ✅ |
 | 4 | Pre-render tiles to PMTiles and pre-compute charts to static JSON | No map tiles are used. The core data is committed, and charts are drawn from it locally. Static JSON export is [roadmap](roadmap.md) R4. | 🟡 |
 | 5 | Rehearse and record the 240 s demo with wifi off | [demo-script.md](demo-script.md) | ⬜ |

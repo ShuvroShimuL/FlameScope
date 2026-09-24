@@ -28,7 +28,7 @@ Dates are in 2026. The full challenge statement lands **28 Oct**, and the hackat
 | R3 | **Bangladesh panel**: `src/acquire/firms.mjs` (NASA FIRMS VIIRS active fires over Bangladesh, via `safe.mjs` with a fixture) plus the verified FSCD numbers. It uses the same "does the evidence cover your conditions?" framing. | Impact, NASA + another agency | M |
 | R4 | **Static export** (`scripts/export-static.mjs`): pre-compute `/api/ask` for the suggested questions and every mission × air combination to JSON, so the demo works from any static host | Offline net step 4, repo access | M |
 | R5 | **Orchestrator "research mode"** over MCP tools ([agentic-design](agentic-design.md) §3) | Creativity | M |
-| R6 | Transcribe Saffire V/VI or SoFIE results as a second evidence set. This turns some "No data" answers into real ones for 34% O₂ cabins. | Relevance, Impact | L |
+| R6 | Transcribe a second evidence set: more BASS-II tables first, then Saffire IV–VI ([datasets.md](datasets.md) §5). Saffire VI reached about 8 psi and 29–31% O₂, so a 34% O₂ cabin stays a gap. | Relevance, Impact | L |
 | R7 | Live-AI eval run (≥ 18/20), logged in `docs/AI_USE.md` | Validity | S |
 | R8 | Put the challenge name and team roles in the UI footer | Category point, Teamwork | XS |
 

@@ -21,6 +21,8 @@ IDs are stable. Reference them in commits and tests, for example `FR-04: nearest
 | FR-13 | A provenance drawer shows the source, method, verification status and limitations | 🟡 | `/api/data` serves it; the drawer UI needs polish |
 | FR-14 | The Bangladesh impact panel shows verified local fire numbers with sources | ⬜ | [roadmap](roadmap.md) R3 |
 | FR-15 | The challenge name is stated on the landing page and the project page | 🟡 | in the README; add it to the UI |
+| FR-16 | Rank what the tests show by how consistently matched comparisons agree. Each finding shows the rule, its counts and a caveat computed from the rows, and opens its rows on tap. Never presented as a causal claim or a safety ranking. | ✅ | `test/findings.test.mjs` |
+| FR-17 | Quote NASA's documented ISS fire response word for word, in NASA's order, with its source and date, and show the microgravity evidence and its source for each step. Never reorder, merge, rank or reword the steps, and never turn a verdict into a danger level. | ✅ | `test/response.test.mjs` |
 
 ## Non-functional
 
@@ -34,7 +36,7 @@ IDs are stable. Reference them in commits and tests, for example `FR-04: nearest
 | NFR-06 | **Usability.** An untrained user gets an answer in 1 tap, a refined answer in 2 and the proof in 3 | ✅ design; ⬜ tested with users |
 | NFR-07 | **Accessibility.** Keyboard reachable, colour-blind-safe ramp in both themes, respects reduced motion | ✅ |
 | NFR-08 | **Performance.** `/api/ask` responds in under 50 ms locally (in memory, 20 rows) | ✅ |
-| NFR-09 | **Reproducibility.** The data CSV and provenance JSON are committed, and the transcription method is documented | ✅ |
+| NFR-09 | **Reproducibility.** The data CSV and provenance JSON are committed, and the transcription method is documented. The 40 O₂ values are checked against NASA's own PSI-25 table (`test/psi.test.mjs`). | ✅ |
 
 ## Acceptance for submission
 

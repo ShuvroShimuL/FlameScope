@@ -2,6 +2,7 @@
 // checks it against the envelope of the BASS-II records, and builds the answer.
 // Every number returned here comes from data/bass-table.csv or from a cited source.
 import { records, provenance } from './evidence.mjs';
+import { FINDINGS } from './findings.mjs';
 
 export class InputError extends Error {}
 
@@ -12,8 +13,9 @@ const kpa = psi => round1(psi * KPA_PER_PSI);
 export const SOURCES = {
   report: { name: 'NASA/TM-20210011385, Table 5.1, printed p. 57 (BASS-II)', url: provenance.source },
   gravityRods: { name: 'Scientific Reports (2018): The Effect of Gravity on Flame Spread over PMMA Cylinders', url: 'https://www.nature.com/articles/s41598-017-18398-4' },
-  atmosphere: { name: 'NASA/TP-2010-216134: exploration atmosphere recommendation', url: 'https://www.nasa.gov/wp-content/uploads/2023/03/henninger-8.2-34-atm-tp216134-2010.pdf' },
-  saffire: { name: 'NASA Glenn: Flame burns out on NASA’s long-running spacecraft fire experiment (Saffire)', url: 'https://www.nasa.gov/centers-and-facilities/glenn/flame-burns-out-on-nasas-long-running-spacecraft-fire-experiment/' },
+  atmosphere: { name: 'NASA evidence report (2015): the 8.2 psia, 34% O₂ exploration atmosphere', url: 'https://ntrs.nasa.gov/citations/20150021491' },
+  saffire: { name: 'NASA ICES-2024-365: Preliminary results from the Saffire VI experiment (Table 1)', url: 'https://ntrs.nasa.gov/citations/20240002981' },
+  luci: { name: 'NASA (2025): Lunar Combustion Investigation (LUCI) on a spinning suborbital rocket', url: 'https://ntrs.nasa.gov/citations/20250010653' },
   sofie: { name: 'NASA Glenn: Solid Fuel Ignition and Extinction (SoFIE)', url: 'https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/solid-fuel-ignition-and-extinction-sofie/' },
   partialGravity: { name: 'Fire Safety Journal (2024): Partial gravity flammability of cast PMMA rods', url: 'https://www.sciencedirect.com/science/article/abs/pii/S0379711224001802' },
   candle: { name: 'NASA: Candle flame in 1g vs microgravity', url: 'https://www.nasa.gov/image-article/candle-flame-1g-vs-microgravity/' }
@@ -224,8 +226,8 @@ function gapsFor(s, failed) {
   const E = ENVELOPE, gaps = [], has = k => failed.includes(k);
   if (has('material')) gaps.push({ topic: 'Material', text: `This prototype only holds NASA’s acrylic (PMMA) sheet tests. ${s.material.name} needs more NASA reports added to the corpus.`, source: SOURCES.report });
   if (has('gravity')) {
-    gaps.push({ topic: 'Gravity', text: 'Partial gravity is barely tested. NASA Glenn’s centrifuge drop tests give only about five seconds of Moon-like gravity at a time.', source: SOURCES.partialGravity });
-    gaps.push({ topic: 'Gravity', text: 'Early centrifuge results suggest lunar-level gravity may be a worst case: enough rising gas to feed a flame, not enough to blow it out.', source: SOURCES.partialGravity });
+    gaps.push({ topic: 'Gravity', text: 'Partial gravity is barely tested. The first burns lasting more than 25 seconds in simulated lunar gravity were only reported in 2025, from a spinning suborbital rocket.', source: SOURCES.luci });
+    gaps.push({ topic: 'Gravity', text: 'For acrylic rods, early drop-tower centrifuge results put lunar gravity near the worst case: it’s where the rods kept burning at the lowest oxygen.', source: SOURCES.partialGravity });
   }
   if (has('oxygen') || has('pressure')) {
     const inside = s.air.po2 >= E.po2Min && s.air.po2 <= E.po2Max;
@@ -235,7 +237,7 @@ function gapsFor(s, failed) {
     gaps.push(inside
       ? { topic: 'Oxygen & pressure', text: `Your cabin’s oxygen partial pressure, ${s.air.po2} kPa, sits inside the tested ${E.po2Min}–${E.po2Max} kPa.${nitrogen}`, source: SOURCES.atmosphere }
       : { topic: 'Oxygen & pressure', text: `Your cabin’s oxygen partial pressure, ${s.air.po2} kPa, is outside the tested ${E.po2Min}–${E.po2Max} kPa as well.`, source: SOURCES.report });
-    if (s.air.o2 > E.o2Max || s.air.psi < E.psi - E.psiTolerance) gaps.push({ topic: 'Where the data is', text: 'Saffire V and VI burned samples at about 8.2 psi and 34% O₂ inside uncrewed Cygnus ships. They are next in line for our corpus.', source: SOURCES.saffire });
+    if (s.air.o2 > E.o2Max || s.air.psi < E.psi - E.psiTolerance) gaps.push({ topic: 'Where the data is', text: 'Saffire V and VI burned samples at reduced pressure and raised oxygen inside uncrewed Cygnus ships: about 10 psi and 26% O₂ on V, and about 8 psi and 29–31% O₂ on VI. They are on our list to add.', source: SOURCES.saffire });
     if (!has('gravity')) gaps.push({ topic: 'Where the data is', text: 'SoFIE, in the station’s Combustion Integrated Rack, can test exploration atmospheres at reduced pressure.', source: SOURCES.sofie });
   }
   if (has('airflow')) gaps.push(s.airflow < E.flowMin
@@ -328,8 +330,10 @@ export function ask(params = {}) {
       return { id: m.id, name: m.name, sub: m.sub, gText: m.gText, home: m.home, matches, selected: m.id === s.mission.id };
     }),
     checks, verdict,
-    why: covered ? { lead: 'Passing on Earth isn’t proof for orbit.', text: 'Related BASS-II tests kept acrylic rods burning at 17% O₂ in orbit, below the 18% they needed on the ground.', source: SOURCES.gravityRods } : null,
+    why: covered ? { lead: 'Passing on Earth isn’t proof for orbit.', text: 'Related BASS-II tests kept acrylic rods burning at 17% O₂ in orbit. On the ground, rods of the same sizes couldn’t keep a flame at 18% or below.', source: SOURCES.gravityRods } : null,
     evidence: covered ? evidenceFor(s) : null,
+    // Ranked over all 20 tests, and shown only when those tests cover the cabin.
+    findings: covered ? FINDINGS : null,
     gaps, nearest: covered ? null : nearestFor(s, failed),
     envelope: ENVELOPE, sources
   };

@@ -8,7 +8,7 @@ description: Add a new NASA (or third-party) data source or new evidence rows to
 ## Decide the path
 
 - **Tabular values from a report or PDF** → transcribe into `data/<name>.csv` with `data/<name>.provenance.json`. Don't fetch at runtime.
-- **An API or file download** → write `src/acquire/<source>.mjs` that calls `fetchJson` from `./safe.mjs`, and commit a fixture.
+- **An API or file download** → write `src/acquire/<source>.mjs` that calls `fetchJson` (or `fetchText` for CSV and other text files) from `./safe.mjs`, and commit a fixture. `src/acquire/psi.mjs` is a worked example.
 
 ## Steps
 

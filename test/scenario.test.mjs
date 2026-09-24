@@ -79,6 +79,18 @@ test('gaps cite a source, and the nearest-evidence button really lands on eviden
   }
 });
 
+test('cited claims match their sources, as checked on 2026-09-24 (docs/planning/datasets.md §4)', () => {
+  const moon = ask({ mission: 'moon' }), text = moon.gaps.map(g => g.text).join(' ');
+  assert.match(text, /about 10 psi and 26% O₂ on V, and about 8 psi and 29–31% O₂ on VI/);
+  assert.doesNotMatch(text, /8\.2 psi and 34% O₂ inside/);
+  assert.match(text, /more than 25 seconds in simulated lunar gravity/); assert.doesNotMatch(text, /five seconds/);
+  assert.match(text, /For acrylic rods, early drop-tower centrifuge results put lunar gravity near the worst case/);
+  const cites = moon.gaps.map(g => g.source.url);
+  for (const id of ['20250010653', '20240002981', '20150021491']) assert.ok(cites.some(u => u.includes(id)), id);
+  assert.ok(!cites.some(u => /216134/.test(u)));
+  assert.equal(ask({}).why.text, 'Related BASS-II tests kept acrylic rods burning at 17% O₂ in orbit. On the ground, rods of the same sizes couldn’t keep a flame at 18% or below.');
+});
+
 test('invalid input is refused, not guessed', () => {
   assert.throws(() => ask({ mission: 'pluto' }), InputError);
   assert.throws(() => ask({ air: 'vacuum' }), InputError);

@@ -42,7 +42,7 @@ flowchart LR
 
 | Layer | May | May not | Enforced by |
 |---|---|---|---|
-| `src/acquire/` | Make network calls, but only through `fetchJson` in `safe.mjs`, and write `cache/` | Compute science, or call an LLM | Code review, [CLAUDE.md](../../CLAUDE.md) |
+| `src/acquire/` | Make network calls, but only through `fetchJson` or `fetchText` in `safe.mjs`, and write `cache/` | Compute science, or call an LLM | Code review, [CLAUDE.md](../../CLAUDE.md) |
 | `data/` | Hold hand-transcribed, source-cited rows | Hold derived or generated numbers | `provenance.json`, [data-model.md](data-model.md) |
 | `src/compute/` | Pure functions of `data/` plus the request | Use `fetch`, `process.env`, `Math.random`, or import from `agents/` or `acquire/` | `test/boundary.test.mjs` |
 | `src/agents/` | Call an LLM, and expose tools to agents | Write claims or numbers. It can only choose among compute outputs. | Enum-bound schema plus `validateSelection` |

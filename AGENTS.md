@@ -23,7 +23,7 @@ Node 22+. **Zero npm dependencies.** Don't add any without an ADR in `docs/plann
 
 ```text
 data/            committed, hand-transcribed source rows + provenance.json
-src/acquire/     network access, ONLY through safe.mjs fetchJson (live → cache → fixture)
+src/acquire/     network access, ONLY through safe.mjs fetchJson/fetchText (live → cache → fixture)
 src/compute/     deterministic science. No fetch, no LLM, no process.env, no Math.random,
                  no imports from agents/ or acquire/. Enforced by test/boundary.test.mjs
 src/agents/      the only LLM/agent code: evidence-selector.mjs, mcp-server.mjs

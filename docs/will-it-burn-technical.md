@@ -40,6 +40,9 @@ The server decides every scientific statement. The browser only draws what the s
 | `data/provenance.json` | Where the rows came from, how they were transcribed, and their known limits |
 | `src/compute/evidence.mjs` | Loads the CSV into clean records. It is shared with FlameScope. |
 | `src/compute/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
+| `src/compute/findings.mjs` | Ranks what the 20 rows show by how consistently matched comparisons agree |
+| `data/fire-response.json`, `src/compute/response.mjs` | NASA's ISS fire-response steps, quoted in NASA's order, with the evidence for each step |
+| `src/acquire/psi.mjs` | Fetches NASA's PSI-25 experimental table through `safe.mjs`, to cross-check our O₂ values |
 | `src/api/server.mjs` | The local HTTP server: static files plus the JSON routes |
 | `web/index.html`, `style.css`, `app.js` | The Will It Burn? page |
 | `test/scenario.test.mjs` | Tests for the question reader, the answer rules and the routes |
@@ -181,13 +184,26 @@ If **every** check passes, the evidence covers your cabin. If any check fails, t
   - The fastest and slowest spread, each with its test ID, thickness and airflow.
 - **Finding:** with all thicknesses, it compares the fastest 1 mm sheet with the fastest 5 mm sheet. With one thickness, it gives that thickness's spread range and airflow range.
 - **Why it matters:** a sourced line from the related BASS-II rod study.
+- **Ranked findings:** five descriptive findings over all 20 tests, from `findings.mjs`. See below.
+
+### Ranked findings: `findings.mjs`
+
+The challenge asks the dashboard to rank findings. `rankFindings()` does this with fixed, checkable rules. It computes the result once, when the server starts:
+
+1. **Comparisons.** For each factor (airflow, thickness, width, oxygen, burning sides), pair every two measured spreads that match on all the other listed conditions. Airflow pairs come from inside one test, where the sample stays the same. The others pair different tests at the same airflow. Untracked spreads (M6, M12) never enter a pair.
+2. **Agreement.** A pair agrees when the side the lead expects to be faster really spread faster. For example, the thinner sheet in a thickness pair.
+3. **Tier.** Consistent: 10 or more comparisons, with at least 85% agreeing. Suggestive: 4 or more, with at least 75%. Mixed: 4 or more, under 75%. Too few tests: under 4. Only Consistent and Suggestive findings get a claim as their lead. The others show just the topic.
+4. **Order.** Sort by tier, then by the share that agrees, then by the number of comparisons.
+5. **Caveats from the rows.** Oxygen fell during every test, and the table gives only start and end oxygen, so airflow can't be separated from it. The one airflow exception, M3, is also the only test listed from low to high flow. All 3 thickness exceptions had more starting oxygen on the thicker sheet.
+
+Today's result: airflow 29 of 30 (Consistent), thickness 23 of 26 (Consistent), width 3 of 4 (Suggestive), oxygen 2 of 2 (Too few tests), burning sides 0 of 1 (Too few tests). Every pair is returned in `pairs`, so each count can be checked row by row.
 
 **When a check fails:**
 
 - **Headline:** built from the first failing check, in this order: material, gravity, oxygen, pressure, airflow, thickness.
 - **Gap cards:** each failing check adds one or two cards, and every card carries its source link.
-  - **Gravity:** two cards on partial gravity, from the Fire Safety Journal study.
-  - **Oxygen and pressure:** one card compares oxygen partial pressure with the tested range. When that pressure is inside the range, it adds that the cabin has less than half the nitrogen. Saffire V and VI and SoFIE are named as where the data lives.
+  - **Gravity:** two cards. One cites LUCI, the first lunar-gravity burns longer than 25 seconds (NTRS 20250010653). The other cites the Fire Safety Journal rod study, which puts lunar gravity near the worst case for acrylic rods.
+  - **Oxygen and pressure:** one card compares oxygen partial pressure with the tested range. When that pressure is inside the range, it adds that the cabin has less than half the nitrogen. Saffire V and VI are named as where the data lives: about 10 psi and 26% O₂, and about 8 psi and 29–31% O₂ (ICES-2024-365, Table 1). SoFIE is named too.
   - **Airflow:** still air, or flows above the tested range.
   - **Thickness:** the tested sheet sizes.
 - **Nearest evidence:** a set of parameters that fixes every failing check. It switches to acrylic, the ISS, Earth-normal air, any tested airflow, or the nearest tested thickness. The tests confirm this always lands on a "Burned" answer.
@@ -234,19 +250,28 @@ A trimmed real response for `q=Will a 1 mm acrylic sheet burn on the ISS?`:
                "slowest": { "id": "M7", "velocity": 3, "spread": 0.07 } },
     "finding": { "lead": "1 mm sheets", "text": "spread at 0.07–0.144 mm/s across 2–10 cm/s of airflow." }
   },
+  "findings": {
+    "tests": 20,
+    "ranked": [{ "rank": 1, "key": "airflow", "tier": "consistent", "tierLabel": "Consistent", "agree": 29, "comparisons": 30,
+                 "lead": "More airflow, faster spread.",
+                 "text": "Within a test, the faster airflow had the faster spread in 29 of 30 comparisons, across 13 tests.",
+                 "exceptions": ["M3"], "ids": ["M2", "M3", "…"], "pairs": ["…"] }]
+  },
   "gaps": [],
   "nearest": null
 }
 ```
 
-For a gap, such as `q=Mars transit in exploration air`, `evidence` is `null`, and `gaps` and `nearest` are filled in:
+`findings` is the same for every covered answer, because it ranks all 20 tests. It is `null` whenever the answer is **No data**, so the page never shows ISS findings next to a cabin the tests don't cover.
+
+For a gap, such as `q=Mars transit in exploration air`, `evidence` and `findings` are `null`, and `gaps` and `nearest` are filled in:
 
 ```json
 {
   "verdict": { "state": "no-data", "headline": "Unknown. These tests stopped at 22.2% oxygen." },
   "gaps": [{ "topic": "Oxygen & pressure",
              "text": "Your cabin’s oxygen partial pressure, 19.2 kPa, sits inside the tested 17–22.5 kPa. But it has less than half the nitrogen…",
-             "source": { "name": "NASA/TP-2010-216134", "url": "https://www.nasa.gov/…" } }],
+             "source": { "name": "NASA evidence report (2015): the 8.2 psia, 34% O₂ exploration atmosphere", "url": "https://ntrs.nasa.gov/citations/20150021491" } }],
   "nearest": { "label": "Show the nearest evidence we have", "changes": "Switches to Earth-normal air.", "params": { "air": "earth" } }
 }
 ```
@@ -255,7 +280,9 @@ Errors come back as HTTP 400 with `{ "error": "Unknown mission. Use iss, moon, t
 
 ### `GET /api/data`
 
-This returns all 20 records and the provenance. The page loads it once, to draw every point on the chart and to fill the proof table.
+This returns all 20 records, the provenance and `fireResponse`. The page loads it once, to draw every point on the chart, fill the proof table and draw the fire-response section.
+
+`fireResponse` holds NASA's eight ISS fire-response steps from OCHMO-TB-008 Rev A (29 Nov 2023). Each step is quoted in NASA's order and comes with its evidence lines, their sources and an evidence status. One line under step 2 is computed from the rows (the airflow finding and the lowest tested airflow), so it can't drift from the ranked findings. The section looks the same for every answer: the page never links a verdict to a step (ADR-010).
 
 ## 9. From JSON to the dashboard: `web/app.js`
 
@@ -289,6 +316,8 @@ Every request gets a version number. If an older reply arrives after a newer one
 | `checks` | The evidence-match table |
 | `scenario.mission.g` | The chamber flame: a blue sphere in orbit, a dashed outline at partial gravity |
 | `evidence` | Step 2: thickness chips, chart, readouts, finding and caveat |
+| `findings` | Step 2: the ranked list below the finding. Each row has its tier badge, its count and a button that opens its rows. |
+| `fireResponse` (from `/api/data`) | The "How NASA describes the ISS fire response" section below step 3 |
 | `gaps`, `nearest` | Step 2 when there is a gap: the cards and the nearest-evidence button |
 | `evidence.ids`, `sources` | Step 3: the proof table or the source list |
 
@@ -329,12 +358,36 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 - Every gap card has a source, and the nearest-evidence parameters really reach evidence.
 - Bad input is refused.
 - The routes serve the page, redirect the old `/burn` address to `/`, and answer `/api/ask`.
+- The cited claims on the gap cards and the "why it matters" line match the sources checked on 2026-09-24.
+
+`test/findings.test.mjs` checks the ranked findings:
+
+- The order, tiers and counts follow the documented rule.
+- Every compared pair is two real table readings.
+- The caveats are computed from the rows.
+- Untracked spreads never count.
+- The wording stays descriptive.
+- `ask()` returns the ranking only for covered cabins.
+
+`test/response.test.mjs` checks the fire-response section:
+
+- NASA's eight steps are quoted word for word, in order, with the source and date.
+- Every evidence line has a source.
+- The BASS-II line is computed from the rows.
+- The app's own wording has no orders or safety words.
+- `/api/data` serves the section.
+
+`test/psi.test.mjs` checks the cross-check against NASA's PSI-25 table:
+
+- All 40 transcribed O₂ values match NASA's file.
+- Blank cells stay `null`.
+- The table loads offline from the committed fixture.
 
 ## 12. Extending it
 
 - **Add a mission.** Add an entry to `MISSIONS` in `src/compute/scenario.mjs` with its gravity, default air and wording, plus a word pattern in `PATTERNS.mission`.
 - **Add a material with real data.** Add its rows to the data layer with their own source, mark it `supported`, and make the checks use each material's own envelope instead of the single acrylic one.
-- **Add the exploration-atmosphere data.** Transcribing Saffire V and VI or SoFIE results would give the 34% oxygen cabin real evidence. The envelope and checks would then pass for those conditions automatically.
+- **Add reduced-pressure, raised-oxygen data.** Transcribing the Saffire IV–VI results would give real evidence for cabins near 8–10 psi and 26–31% oxygen. Keep it a separate set, because its flow ran with the flame, not against it. A 34% oxygen cabin would still need SoFIE results or new tests. See [planning/datasets.md](planning/datasets.md).
 - **Add an AI reader.** Let a model fill only the parser's fields, validate them, and fall back to the rules. See the section on why the reader isn't AI.
 
 ## 13. Known limits
