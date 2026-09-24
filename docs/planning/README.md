@@ -9,6 +9,7 @@ The living design record for FlameScope / Will It Burn?, built for **NASA Space 
 | [requirements.md](requirements.md) | FR and NFR IDs with status and how each one is verified |
 | [architecture.md](architecture.md) | Layers, boundaries, request flow, offline design |
 | [data-model.md](data-model.md) | Sources and agencies, CSV schema, record type, envelope, fixtures |
+| [datasets.md](datasets.md) | Candidate NASA and partner datasets, scored on data access, scientific validity and novelty. Also a fact-check of the sources shown today. |
 | [agentic-design.md](agentic-design.md) | Where AI is allowed, the evidence selector, the orchestrator plan, threats |
 | [mcp-server.md](mcp-server.md) | The MCP tools, how to run and test them, the demo moment |
 | [decisions.md](decisions.md) | ADR log and open questions |

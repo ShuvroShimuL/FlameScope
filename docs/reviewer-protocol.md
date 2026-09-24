@@ -4,7 +4,7 @@ Status: **Not performed**. Do not count automated checks or agent self-review as
 
 ## Scientific review
 
-Review the original PDF's printed pages 56–57. Check every CSV cell, pair order, units, missing values, and sheet/opposed-flow context. Record reviewer, date, discrepancies and corrections. Independently reproduce at least two published findings using the original analysis or raw source data. Current arithmetic checks alone do not satisfy this gate.
+Review the original PDF's printed pages 56–57. Check every CSV cell, pair order, units, missing values, and sheet/opposed-flow context. Record reviewer, date, discrepancies and corrections. Independently reproduce at least two published findings using the original analysis or raw source data. Current arithmetic checks alone do not satisfy this gate. The 40 O₂ values are also checked automatically against NASA's PSI-25 experimental table (`test/psi.test.mjs`), but that doesn't replace checking the other cells against the PDF.
 
 ## Three-person usability session
 

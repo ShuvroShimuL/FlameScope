@@ -18,7 +18,7 @@ Claude Code picks it up from `.mcp.json` at the repo root (runs with `OFFLINE=1`
 
 | Tool | Input | Returns | Backed by |
 |---|---|---|---|
-| `will_it_burn` | `q`, `mission`, `air`, `o2`, `psi`, `thickness`, `airflow` (all optional) | Verdict, checks, evidence or gaps, nearest | `ask()` in `src/compute/scenario.mjs` |
+| `will_it_burn` | `q`, `mission`, `air`, `o2`, `psi`, `thickness`, `airflow` (all optional) | Verdict, checks, evidence or gaps, nearest, and the ranked findings when the tests cover the cabin | `ask()` in `src/compute/scenario.mjs` |
 | `search_evidence` | `question`, `thickness`, `oxygenMin`, `oxygenMax` | Ranked records with reasons, or an abstention | `search()` |
 | `compare_tests` | `ids` (2–3, enum M1–M20) | Records, differing conditions, `causal: false` | `comparison()` |
 | `evidence_brief` | `question`, `ids` | Claims, conditions, gaps, provenance, or an abstention | `makeBrief()` |

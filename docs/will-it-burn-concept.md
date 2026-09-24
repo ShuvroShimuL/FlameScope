@@ -64,9 +64,10 @@ The keyword chips add words to the box without submitting it. That lets you buil
 - **A plain headline.** For example, "Yes. NASA watched it burn." or "Unknown. None of these tests felt lunar gravity."
 - **Evidence match.** Your cabin next to what the tests covered, row by row: material, gravity, oxygen, pressure, and airflow or thickness when you gave them.
 - **Chamber view.** An animated illustration. In orbit the flame is a blue sphere. At Moon or Mars gravity it is a dashed outline, because that shape isn't in the data.
-- **Step 2 with evidence.** A chart of every test, your selection highlighted, four tappable readouts and one plain finding.
+- **Step 2 with evidence.** A chart of every test, your selection highlighted, four tappable readouts, one plain finding, and five findings from all 20 tests ranked by how consistently they agree.
 - **Step 2 with a gap.** Cards that explain what is missing, where that data may exist, and a button that jumps to the nearest evidence we do have.
 - **Step 3.** The exact table rows or the source list.
+- **NASA’s fire response.** Below the proof, NASA’s own ISS fire-response steps, quoted in NASA’s order, each with what microgravity tests say about it. The app never reorders or ranks them, and the section looks the same for every answer.
 
 ## Why it is designed this way
 
@@ -96,7 +97,7 @@ The challenge asks for a dashboard that **summarizes, ranks and interprets** NAS
 | Challenge verb | Where it happens | Honest status |
 |---|---|---|
 | Summarizes | The verdict, readouts and one-line finding | Done, for one NASA table |
-| Ranks | Mission tiles show which destinations the evidence covers, and the finding ranks sheet thickness by spread rate | Partial. Ranking materials needs more materials in the data. |
+| Ranks | Five findings from the 20 tests, ranked by how consistently matched comparisons agree, each with its count, a caveat and its rows. The mission tiles also show which destinations the evidence covers. | Done for one NASA table. Ranking materials needs more materials in the data. |
 | Interprets | The evidence match and gap cards turn test conditions into design meaning | Done, with every claim sourced |
 
 ## A 30-second demo
@@ -104,14 +105,14 @@ The challenge asks for a dashboard that **summarizes, ranks and interprets** NAS
 1. The page opens on the ISS. The stamp reads **Burned**: all 20 NASA tests match.
 2. Tap **Exploration** air. The stamp flips to **No data**, because the tests stopped at 22.2% oxygen.
 3. Tap **Moon base**. Gravity turns into a gap too, and the flame becomes a dashed question mark.
-4. Read one gap card aloud: lunar gravity may be the worst case for fire.
+4. Read one gap card aloud: for acrylic rods, lunar gravity looks like the worst case for fire.
 5. Tap **Show the nearest evidence**, then tap a chart dot. The exact NASA table row opens.
 
 ## What's real, what's illustration, what's next
 
 - **Real:** the 20 BASS-II acrylic sheet tests from NASA/TM-20210011385, the gravity levels, both cabin atmospheres and every cited finding.
 - **Illustration:** the chamber flame animation.
-- **Next:** add more materials and the Saffire V and VI and SoFIE results. Those cover the 34% oxygen cabin and would turn many "No data" answers into real ones.
+- **Next:** more tables from the same BASS-II report, then the Saffire IV–VI and SoFIE results ([planning/datasets.md](planning/datasets.md)). Saffire VI reached about 8 psi and 29–31% oxygen, so it would turn some reduced-pressure "No data" answers into real ones. A 34% oxygen cabin would still be a gap.
 
 ## How it relates to FlameScope
 

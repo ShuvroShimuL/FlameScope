@@ -9,7 +9,7 @@
   "dataset": "https://psi.nasa.gov/physci/repo/data/investigations/PSI-25",
   "doi": "10.60555/4qc4-de67",
   "method": "Manually transcribed from NASA NTRS indexed Table 5.1. Semicolon arrays preserve the published velocity/spread pairing and order. Blank spread cells mean Not tracked, not zero. Material and opposed-flow geometry derive from section 5.3. No raw-video-derived measurements.",
-  "verification": "Checked against NASA indexed table text; independent scientific review and PDF visual verification pending.",
+  "verification": "Checked against NASA indexed table text. The 40 initial and final O2 values also match NASA's own PSI-25 experimental table (demo_fixtures/psi-25-experimental-table.json, checked by test/psi.test.mjs). Independent scientific review and PDF visual verification of the other columns are pending.",
   "limitations": [
     "All 20 rows belong to one investigation and one report; they are not 20 independent studies.",
     "Initial and final oxygen values describe test endpoints, not constant or per-segment concentrations.",

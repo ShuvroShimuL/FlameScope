@@ -26,7 +26,7 @@
 |---|---|---|---|---|---|
 | C-01 | Mission tiles | ISS · Moon base · Mars transit · Mars base. Each sets the gravity and the default cabin air. | ✅ | `MISSIONS`, `renderTiles` | scenario tests |
 | C-02 | Match badge per tile | Each tile shows how many NASA tests match that mission | ✅ | `ask()` → `missions[]` | scenario tests |
-| C-03 | Cabin-air switch | Earth-normal (14.7 psi, 21% O₂) or Exploration (8.2 psi, 34% O₂, NASA/TP-2010-216134) | ✅ | `AIRS`, `#seg` | scenario tests |
+| C-03 | Cabin-air switch | Earth-normal (14.7 psi, 21% O₂) or Exploration (8.2 psi, 34% O₂, from NASA's 2015 evidence report, NTRS 20150021491) | ✅ | `AIRS`, `#seg` | scenario tests |
 | C-04 | Custom atmosphere | A typed O₂ % or pressure overrides the preset. It's labelled "Custom" unless it matches a preset. | ✅ | `resolveScenario` | scenario tests |
 | C-05 | Oxygen partial pressure | Always computed in kPa and shown next to the O₂ share, so share and pressure aren't confused | ✅ | `scenario.mjs` | scenario tests |
 | C-06 | Tap beats question beats default | Explicit taps override the question, and the question overrides defaults | ✅ | `resolveScenario` | scenario tests |
@@ -52,13 +52,14 @@
 | E-04 | Four readouts | Tests matched, burn-time range, fastest and slowest spread (with test ID). Each one opens its rows. | ✅ | `renderPanel2` | scenario tests (values) |
 | E-05 | One plain finding | For example "1 mm sheets spread about 3× faster than 5 mm", labelled descriptive, not a safety rating | ✅ | `ask()` `finding` | scenario tests |
 | E-06 | Missing stays missing | Tests without a tracked spread (M6, M12) are counted as "not tracked", never plotted as 0 | ✅ | `evidence.mjs` | evidence tests |
+| E-07 | Ranked findings | Five descriptive findings across all 20 tests, ranked by how consistently matched comparisons agree: Consistent, Suggestive, Mixed or Too few tests. Each shows its count (for example "29 of 30"), a caveat computed from the rows (for example "the one exception, M3, is also the only test listed from low to high flow") and a button that opens its rows. Labelled "descriptive, not causal, and not a safety ranking". Shown only when the tests cover the cabin. | ✅ | `src/compute/findings.mjs`, `app.js` `rankingHtml` | `test/findings.test.mjs` |
 
 ## 5. Gaps (step 2 when the answer is No data)
 
 | ID | Feature | What the user sees or does | Status | Lives in | Tested |
 |---|---|---|---|---|---|
 | G-01 | Gap cards | One or two cards per failing check (gravity, oxygen and pressure, airflow, thickness, material), each with a source link | ✅ | `ask()` `gaps[]` | scenario tests |
-| G-02 | "Where the data may exist" | Cards name Saffire V/VI, SoFIE and partial-gravity studies | ✅ | `SOURCES` | scenario tests |
+| G-02 | "Where the data may exist" | Cards name Saffire V/VI (about 10 psi and 26% O₂, and about 8 psi and 29–31% O₂), SoFIE, LUCI (the first lunar-gravity burns longer than 25 s) and the partial-gravity rod study | ✅ | `SOURCES` | scenario tests |
 | G-03 | Nearest-evidence jump | One button changes the fewest settings needed to reach a **Burned** answer, and says what it changed | ✅ | `ask()` `nearest` | scenario tests (always reaches Burned) |
 | G-04 | Nitrogen insight | When the O₂ partial pressure is inside the tested range but the cabin is Exploration air, it explains that the cabin has less than half the nitrogen | ✅ | `ask()` | scenario tests |
 
@@ -69,7 +70,7 @@
 | P-01 | Source rows dialog | Opens the exact NASA table rows behind the answer, with the report, page, PSI-25 DOI and an NTRS link | ✅ | `openProof` | manual |
 | P-02 | Source list for gaps | For a No-data answer, the proof shows the cited sources instead of rows | ✅ | `openProof('gap')` | manual |
 | P-03 | Every number opens its source | Readouts, chart dots and cards all open the rows they came from | ✅ | `app.js` | manual |
-| P-04 | Footer citations | All sources are listed, plus the "transcribed by our team; independent check pending" disclosure | ✅ | `index.html` | n/a |
+| P-04 | Footer citations | All sources are listed, plus a transcription note: the O₂ values match NASA's own PSI-25 table, and the other columns still await an independent check | ✅ | `index.html` | `test/psi.test.mjs` (the O₂ match) |
 | P-05 | Provenance drawer with method, verification status and limitations, reachable from any screen | | 🧪 | [roadmap](roadmap.md) R2 | none |
 | P-06 | `live`/`cache`/`fixture` badge on fetched values | | 🧪 | R1 | none |
 
@@ -93,6 +94,12 @@
 | D-01 | `GET /api/ask` JSON API (q, mission, air, o2, psi, material, thickness, airflow) | ✅ | [technical doc §8](../will-it-burn-technical.md) |
 | D-02 | MCP tool `will_it_burn`, so any agent can ask the same question | ✅ | [mcp-server.md](mcp-server.md) |
 
+## 9. NASA's fire response
+
+| ID | Feature | What the user sees or does | Status | Lives in | Tested |
+|---|---|---|---|---|---|
+| F-01 | NASA's fire response, quoted | NASA's eight ISS fire-response steps from OCHMO-TB-008 Rev A (29 Nov 2023), word for word and in NASA's order, with the source and date. Each step shows what microgravity tests say about it, each line with its source, and an evidence status: One test, Mixed evidence, Supports why, Related test only or No data found. A "Sources differ" note appears where a 2020 NASA paper describes a step differently. The section looks the same for every answer, so a verdict never becomes a danger level (ADR-010). | ✅ | `data/fire-response.json`, `src/compute/response.mjs`, `app.js` `renderFireResponse` | `test/response.test.mjs` |
+
 ---
 
 ## Ideas backlog (not built yet)
@@ -104,8 +111,8 @@ Move a row into a section above, with a new ID, once it ships.
 | Shareable URL state (`/?mission=moon&air=exploration`) | Link a judge straight to the "No data" moment | S |
 | Provenance drawer (P-05) and source badges (P-06) | Validity score | S |
 | Bangladesh impact panel (verified numbers, NASA FIRMS) | Impact score | M |
-| Second evidence set (Saffire V/VI or SoFIE) so 34% O₂ cabins get real answers | Relevance, and fewer "No data" answers | L |
-| Material comparison once a second material exists | The challenge asks to "rank" | M |
+| Second evidence set: more BASS-II tables first, then Saffire IV–VI ([datasets.md](datasets.md) §5). Saffire VI reached about 8 psi and 29–31% O₂, so a 34% cabin stays a gap. | Relevance, and fewer "No data" answers | L |
+| Rank materials once a second material exists | Extends the ranked findings (E-07) | M |
 | Bangla language toggle | Local audience | M |
 | Static export of pre-computed answers for hosting | Repo access, offline safety net step 4 | M |
 
@@ -115,3 +122,7 @@ Move a row into a section above, with a new ID, once it ships.
 |---|---|---|
 | 2026-09-23 | First inventory: 44 shipped features, 2 planned | Claude Code, for review by the team |
 | 2026-09-23 | Will It Burn? is now the home page (`/`). Old `/burn/` links redirect, and FlameScope moved to `/research/`. Backlog item removed. | Claude Code |
+| 2026-09-24 | Fixed five cited claims found in the dataset review ([datasets.md](datasets.md) §4): the Saffire V/VI conditions, the exploration-atmosphere source, the rod oxygen limit, the lunar "worst case" wording and the partial-gravity card, which now cites LUCI. Updated C-03, G-02 and the footer. | Claude Code |
+| 2026-09-24 | Added E-07, ranked findings | Claude Code |
+| 2026-09-24 | Added F-01: NASA's fire response, quoted, with the evidence for each step (ADR-010) | Claude Code |
+| 2026-09-24 | The proof note and footer now say the O₂ values match NASA's PSI-25 table, which `test/psi.test.mjs` checks. Updated P-04. | Claude Code |

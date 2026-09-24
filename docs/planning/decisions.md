@@ -82,6 +82,20 @@ Lightweight architecture decision records. Add new ones at the bottom, and never
 
 **Consequences.** + A clearer story for judges and one place to polish. − The research-view backlog (search, compare, export) is frozen. Done 2026-09-23: `/` serves Will It Burn?.
 
+## ADR-010 · Quote NASA's fire response; never write or rank the steps
+
+**Status:** Accepted · 2026-09-24
+
+**Context.** The team proposed ranking the steps to take when there is danger. An app that writes or ranks those steps would break rule 1 (science is computed, never generated) and rule 4 (no safety rating). The challenge asks us to rank *findings*, not actions. NASA does publish an ordered ISS fire response: OCHMO-TB-008 Rev A (29 Nov 2023) lists eight steps "taken sequentially by the crew". The microgravity evidence behind those steps is mixed or missing ([datasets.md](datasets.md) §3).
+
+**Decision.** Quote NASA's list word for word, in NASA's order, with its source and date. It sits in its own section, which looks the same for every answer. Next to each step, show the microgravity evidence we found, each line with its source, and a status from a fixed list. Never reorder, merge, rank or reword the steps. Never write in the imperative outside NASA's quotes, and never turn a verdict into a danger level. Where another NASA source describes a step differently, say so and cite it.
+
+**Consequences.**
+- \+ It gives a fire-safety insight with no generated advice.
+- \+ It adds a new "a gap is an answer" moment: two steps have no microgravity data, and ventilation shutdown has mixed evidence.
+- − One dated brief can go stale, so re-check it against newer NASA text before submission.
+- − The evidence statuses are our judgment, so they need the second-person check.
+
 ---
 
 ## Open questions
