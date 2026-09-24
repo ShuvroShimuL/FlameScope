@@ -59,14 +59,15 @@
       <div class="read-row">
         <span class="read-label" id="read-label">Read as</span>
         <div class="chips-row" id="read" aria-live="polite" aria-labelledby="read-label"></div>
-        <p class="read-legend">Blue came from your question, solid from a tap, and dashed is a default you can change.</p>
+        <p class="read-legend">Blue came from your question, solid from a tap, dashed is a default you can change, and red couldn’t be read.</p>
       </div>
       <div id="notices"></div>
 
       <div class="dash">
         <article class="verdict-card" id="result" aria-live="polite">
           <div class="verdict-body">
-            <div class="stamp burn" id="stamp">Burned</div>
+            <div class="stamp loading" id="stamp"><span class="stamp-word">Loading…</span></div>
+            <p class="answering" id="answering" hidden></p>
             <h2 id="headline">Loading NASA’s tests…</h2>
             <p class="sub" id="sub"></p>
             <p class="why" id="why" hidden></p>

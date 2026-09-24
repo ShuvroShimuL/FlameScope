@@ -36,8 +36,8 @@ test('every evidence line cites its source, and each step’s evidence status is
 
 test('the BASS-II evidence line is computed from the rows, not typed in', () => {
   const airflow = FINDINGS.ranked.find(f => f.key === 'airflow'), line = FIRE_RESPONSE.steps[1].evidence[0];
-  assert.equal(line.text, `This app’s 20 BASS-II tests: the faster airflow had the faster spread in ${airflow.agree} of ${airflow.comparisons} comparisons, but the table can’t separate airflow from falling oxygen. No test ran below ${ENVELOPE.flowMin} cm/s, so they say nothing about still air.`);
-  assert.match(line.text, /29 of 30 comparisons/); assert.match(line.text, /below 2 cm\/s/);
+  assert.equal(line.text, `This app’s 20 BASS-II tests: inside single tests, the faster airflow had the faster spread in ${airflow.agree} of ${airflow.comparisons} reading pairs, from ${airflow.tests} tests, but the table can’t separate airflow from falling oxygen. No test ran below ${ENVELOPE.flowMin} cm/s, so they say nothing about still air.`);
+  assert.match(line.text, /29 of 30 reading pairs, from 13 tests/); assert.match(line.text, /below 2 cm\/s/);
   assert.match(line.source.url, /20210011385/);
 });
 

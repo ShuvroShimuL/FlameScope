@@ -37,8 +37,19 @@ test('MCP server lists tools and answers from compute', async () => {
   assert.equal(iss.structuredContent.verdict.state, 'burned');
   const moon = await handle({ id: 4, method: 'tools/call', params: { name: 'will_it_burn', arguments: { mission: 'moon' } } });
   assert.equal(moon.structuredContent.verdict.state, 'no-data');
-  const bad = await handle({ id: 5, method: 'tools/call', params: { name: 'compare_tests', arguments: { ids: ['M7'] } } });
-  assert.equal(bad.isError, true);
+  // One test ID breaks the schema's minItems, so it is a protocol error (-32602), not a tool result.
+  await assert.rejects(handle({ id: 5, method: 'tools/call', params: { name: 'compare_tests', arguments: { ids: ['M7'] } } }), e => e.code === -32602);
   await assert.rejects(handle({ id: 6, method: 'tools/call', params: { name: 'nope' } }));
   assert.equal(await handle({ method: 'notifications/initialized' }), undefined);
+});
+
+test('model calls cross one documented boundary, and public-data fetches cross another', () => {
+  const agents = new URL('../src/agents/', import.meta.url), acquire = new URL('../src/acquire/', import.meta.url);
+  for (const file of readdirSync(agents).filter(f => f.endsWith('.mjs'))) {
+    const src = readFileSync(new URL(file, agents), 'utf8');
+    if (file === 'provider.mjs') { assert.doesNotMatch(src, /from '\.\.\/acquire\/safe\.mjs'|writeFileSync|mkdirSync|node:fs/, 'the provider boundary never caches'); continue; }
+    assert.doesNotMatch(src, /\bfetch\(/, `${file} must reach a model only through provider.mjs`);
+  }
+  for (const file of readdirSync(acquire).filter(f => f.endsWith('.mjs')))
+    assert.doesNotMatch(readFileSync(new URL(file, acquire), 'utf8'), /OPENAI|api\.openai\.com/, `${file} must never carry model credentials`);
 });

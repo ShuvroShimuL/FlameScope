@@ -150,6 +150,7 @@ h1,h2,h3{font-family:var(--font-display)}
 .rchip.question{border-color:var(--link);background:var(--tint-wash)}
 .rchip.picked{border-color:var(--label)}
 .rchip.default{border-style:dashed;background:transparent;color:var(--label-2)}
+.rchip.unresolved{border-color:var(--burn);background:var(--burn-wash)}
 .notice{margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--gap-wash);font-size:13.5px}
 
 /* Dashboard grid */
@@ -176,6 +177,9 @@ h1,h2,h3{font-family:var(--font-display)}
 .stamp.burn .stamp-word,.stamp.mixed .stamp-word{color:var(--burn)}
 .stamp.held .stamp-word{color:var(--held)}
 .stamp.gap .stamp-word{color:var(--gap)}
+.stamp.loading .stamp-word,.stamp.unavailable .stamp-word,.stamp.unclear .stamp-word{color:var(--label-2)}
+.stamp.loading .stamp-word{font-size:clamp(26px,3vw,32px)}
+.answering{margin:0;font-size:13px;color:var(--label-2)}
 .stamp.in{animation:verdict-in .5s cubic-bezier(.2,.9,.25,1)}
 @keyframes verdict-in{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
 #headline{margin:8px 0 0;font-size:22px;font-weight:600;line-height:1.25;letter-spacing:-.02em;text-wrap:balance}
@@ -291,6 +295,13 @@ h1,h2,h3{font-family:var(--font-display)}
 .pill{justify-self:end;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
 .pill.ok{color:var(--ok);background:var(--ok-wash)}
 .pill.miss{color:var(--gap);background:var(--gap-wash)}
+.pill.ctx,.pill.nr{color:var(--label-2);background:var(--fill)}
+.match-row .mnote{grid-column:1/-1;font-size:12px;color:var(--label-2)}
+.gap-card.unclear .t{color:var(--burn)}
+.closest{margin-top:16px}
+.closest h3{margin:0 0 8px;font-size:15px;font-weight:600}
+.closest td.hit{color:var(--label)}
+.closest td.miss{color:var(--gap);font-weight:500}
 
 /* Ranked findings and fire response, as previews and in full */
 .mini-rank,.mini-fr,.rank,.fr-steps{margin:0;padding:0;list-style:none}

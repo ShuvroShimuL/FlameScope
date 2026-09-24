@@ -4,20 +4,20 @@
 
 **Product focus:** **Will It Burn?** is the primary product (ADR-009). Its full feature list is in [features.md](features.md). The project has two views over one evidence core:
 
-- **Will It Burn?** (`/`, the home page) is the front door. Ask about a cabin and get **Burned** (NASA saw it burn under matching conditions) or **No data** (with what is missing and where that data may exist).
+- **Will It Burn?** (`/`, the home page) is the front door. Ask about a cabin and get **Burned** (NASA saw it burn in tests whose own rows record every condition you gave), **Mixed** or **No flame held** (from the fabric and Nomex outcomes, never a safety rating), **No data** (with what is missing, the closest tests, and where that data may exist) or **Unclear** (part of the question couldn't be read, so nothing is answered).
 - **FlameScope** (`/research/`) is the research view. Find tests, compare them, and export a source-linked brief.
 
 ## Vision
 
 > Before anyone applies a fire test result, check that the test actually covered their conditions.
 
-Most fire dashboards quietly apply ISS results to Moon and Mars cabins, or invent a "safety score." FlameScope does neither. Every number traces to one printed page of one NASA report. When the evidence runs out, it says so and names what is missing. The honest answer to a Moon-base fire question today is "no data," and that answer tells NASA which tests are still missing.
+It is easy for a fire dashboard to quietly apply ISS results to Moon and Mars cabins, or to invent a "safety score." FlameScope does neither. Every number traces to one printed page of one NASA report. When the evidence runs out, it says so and names what is missing. The honest answer to a Moon-base fire question today is "no data," and that answer tells NASA which tests are still missing.
 
 ## Problem
 
 | Who | Pain today | What FlameScope gives them |
 |---|---|---|
-| Spacecraft fire-safety engineers and mission designers | Microgravity combustion results are spread across NASA technical memos. Checking whether a test envelope covers a new cabin (gravity, O₂, pressure, airflow, thickness) is manual work. | A one-question envelope check with row-level provenance |
+| Spacecraft fire-safety engineers and mission designers | Microgravity combustion results are spread across NASA technical memos. Checking whether a test envelope covers a new cabin (gravity, O₂, pressure, airflow, thickness) is manual work. | A one-question check that a single test recorded all of their conditions, with row-level provenance |
 | Researchers and students | Tables are in PDFs, units are mixed, and missing values are easy to misread as zero | Clean, unit-normalised records, where missing stays missing |
 | Judges and the public | "Fire in space" is abstract | A plain-English verdict, an animated (clearly labelled) flame, and a one-tap source |
 
@@ -37,8 +37,9 @@ Rule: no number goes on the project page or on camera until its row says **verif
 ## In scope (MVP, already built)
 
 - 20 BASS-II PMMA sheet tests (NASA/TM-20210011385, Table 5.1, printed p. 57), transcribed with full provenance
-- A question reader (rules, not an LLM) that covers missions, cabin air, O₂, pressure, airflow, thickness and material
-- An evidence-envelope check, a Burned / No data verdict, gap cards with sources, and a nearest-evidence jump
+- SIBAL fabric and Nomex outcomes from the same report (Tables 7.1 and A.2), each as its own evidence set (ADR-011)
+- A question reader (rules, not an LLM) that covers missions and other places, cabin air, O₂, pressure, airflow, thickness, width and material, in common units. It says when it can't read a condition, and never swaps in a default for one you gave.
+- A joint applicability check against each test's own row (ADR-012); a Burned / Mixed / No flame held / No data / Unclear verdict; gap cards with sources; the closest tests; and a nearest-evidence jump
 - FlameScope search, a 2–3 test comparison and a Markdown evidence brief
 - An optional constrained AI step that can only *select* evidence IDs or abstain
 - An MCP server that exposes the same deterministic tools to any agent

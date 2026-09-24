@@ -16,7 +16,7 @@ export const STATUS = { one: 'One test', some: 'Some evidence', mixed: 'Mixed ev
 const COMPUTED = {
   bassIIAirflow: () => {
     const a = FINDINGS.ranked.find(f => f.key === 'airflow');
-    return { text: `This app’s ${FINDINGS.tests} BASS-II tests: the faster airflow had the faster spread in ${a.agree} of ${a.comparisons} comparisons, but the table can’t separate airflow from falling oxygen. No test ran below ${ENVELOPE.flowMin} cm/s, so they say nothing about still air.`,
+    return { text: `This app’s ${FINDINGS.tests} BASS-II tests: inside single tests, the faster airflow had the faster spread in ${a.agree} of ${a.comparisons} reading pairs, from ${a.tests} tests, but the table can’t separate airflow from falling oxygen. No test ran below ${ENVELOPE.flowMin} cm/s, so they say nothing about still air.`,
       source: { ...SOURCES.report, label: 'BASS-II Table 5.1' } };
   },
   bassIIExtinction: () => {

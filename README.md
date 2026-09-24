@@ -16,9 +16,9 @@ Requires Node.js 22+; no packages or install step needed.
 node src/api/server.mjs
 ```
 
-Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 58 data-contract, API, question-reader, frontend-state, compute-boundary and MCP checks. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 102 checks: data contracts, applicability, the question reader, ranked findings, both views' frontend state, API security, MCP protocol handling, offline fallbacks and the compute boundary. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
 
-**Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every network fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`), and `OFFLINE=1` also disables the AI step. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
+**Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every public-data fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`; a corrupt cache file falls through to the fixture). Model calls go only through `src/agents/provider.mjs`, which refuses to run with `OFFLINE=1` (ADR-013). The home page's evidence is committed data in `data/`, not a fetch. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
 
 **MCP server:** `node src/agents/mcp-server.mjs` exposes the deterministic tools `will_it_burn`, `search_evidence`, `compare_tests`, `evidence_brief` and `get_provenance` to any MCP client. It is registered in `.mcp.json`. See [docs/planning/mcp-server.md](docs/planning/mcp-server.md).
 
@@ -26,7 +26,7 @@ Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.
 
 **Feature list:** [docs/planning/features.md](docs/planning/features.md) lists everything the dashboard does today, plus the ideas backlog.
 
-The home page (`/`), built on the same 20 BASS-II rows as FlameScope, plus the report's fabric and Nomex tables. Old `/burn/` links redirect here. It is laid out like an Apple app: a toolbar with the Ask field, a sidebar with four sections (Overview, Ranked findings, Fire response, Sources) that becomes a tab bar on phones, and cards in Apple's light and dark system colours. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin's gravity, oxygen, pressure, airflow and thickness against what the NASA tests covered. It then answers **Burned** with the evidence, or **No data** with what's missing and where that data may exist. Every number opens its source row.
+The home page (`/`), built on the same 20 BASS-II rows as FlameScope, plus the report's fabric and Nomex tables. Old `/burn/` links redirect here. It is laid out like an Apple app: a toolbar with the Ask field, a sidebar with four sections (Overview, Ranked findings, Fire response, Sources) that becomes a tab bar on phones, and cards in Apple's light and dark system colours. Type a question such as "Will it burn on a Moon base at 34% oxygen?", tap a suggested question, or tap a mission. The page checks your cabin against each NASA test's own row: a test counts only if it recorded every condition you gave, together, with no interpolation (ADR-012). It then answers **Burned**, **Mixed** or **No flame held** with the matching rows; **No data** with what's missing, the closest tests and where that data may exist; or **Unclear** when a condition in the question can't be read. Every number opens its source row.
 
 - [docs/will-it-burn-concept.md](docs/will-it-burn-concept.md): the idea, what users can type, the three taps, and why it is designed this way.
 - [docs/will-it-burn-technical.md](docs/will-it-burn-technical.md): where the data comes from, how the search reads a question, the `/api/ask` contract, and how the JSON becomes the dashboard.
@@ -50,7 +50,7 @@ The page is one flow — **1 Find evidence → 2 Compare tests → 3 Evidence br
 
 Copy `.env.example` to `.env`, set `OPENAI_API_KEY`, then run `node --env-file=.env src/api/server.mjs`. Alternatively set the variables in your shell. Keys stay on the server; never add `.env` to source control. `OPENAI_MODEL` defaults to `gpt-4.1-mini` and can be changed to a model supporting Responses structured output.
 
-The UI AI checkbox sends the research question and selected public evidence to OpenAI. The model can only select existing evidence IDs or abstain. It cannot write scientific claims or numbers. Output is rendered from the curated records; interpretation remains a deterministic template. Provider errors/timeouts fall back to a visibly labeled offline brief. This constrained AI selection is intentionally narrower than free-form LLM synthesis. No live model calls are made unless the user checks the AI option and a key is configured.
+The UI AI checkbox sends the research question and selected public evidence to OpenAI, through `src/agents/provider.mjs` only: it refuses offline or without a key, never caches, and times out (ADR-013). The model can only select existing evidence IDs or abstain. It cannot write scientific claims or numbers. Output is rendered from the curated records; interpretation remains a deterministic template. Provider errors/timeouts fall back to a visibly labeled offline brief. This constrained AI selection is intentionally narrower than free-form LLM synthesis. No live model calls are made unless the user checks the AI option and a key is configured.
 
 ## Data provenance and limits
 
@@ -66,9 +66,10 @@ The UI AI checkbox sends the research question and selected public evidence to O
 - `GET /api/data`: records, provenance, NASA's quoted fire-response steps, the ranked findings, AI availability; never credentials.
 - `GET /api/search?question=...&material=PMMA&geometry=sheet&direction=opposed&thickness=1&oxygenMin=18&oxygenMax=22`: filtered records and rank reasons.
 - `GET /api/compare?ids=M7,M8`: conditions and descriptive-comparison limitations.
-- `POST /api/brief`: `{ "question": "Compare M7 and M8 airflow", "ids": ["M7", "M8"], "ai": false }`; grounded brief or abstention.
+- `POST /api/brief`: `{ "question": "Compare M7 and M8 airflow", "ids": ["M7", "M8"], "ai": false }`; grounded brief or abstention. The body must be a JSON object with only these fields, and `ai` must be a boolean.
+- `GET /api/ask?q=...` (or `mission`, `air`, `o2`, `psi`, `material`, `thickness`, `width`, `airflow`): the Will It Burn? answer, with each condition's check, the matching rows or the closest tests, and the applicability policy.
 
-The server binds loopback only. It is a local prototype, not an authenticated public service. Before public deployment, add user authentication and per-user model quotas. No database, migration, or external service is necessary for offline operation.
+The server binds loopback only, and it answers only requests whose Host header is one of its own loopback names (a DNS-rebinding guard); cross-origin posts are refused. It is a local prototype, not an authenticated public service. Before public deployment, add user authentication and per-user model quotas. No database, migration, or external service is necessary for offline operation.
 
 ## Repository map
 
@@ -90,19 +91,31 @@ FlameScope/
 │  └─ will-it-burn-*.md, reviewer-protocol.md
 ├─ src/
 │  ├─ acquire/             safe.mjs (live → cache → fixture), ntrs.mjs, psi.mjs
-│  ├─ compute/             deterministic science, no LLM: evidence.mjs, scenario.mjs, sets.mjs, saffire.mjs, findings.mjs, response.mjs, flex.mjs, csv.mjs
-│  ├─ agents/              evidence-selector.mjs (constrained LLM), mcp-server.mjs
+│  ├─ compute/             deterministic science, no LLM: question.mjs (reader), applicability.mjs (matching), scenario.mjs (answers), catalog.mjs, evidence.mjs, sets.mjs, saffire.mjs, findings.mjs, response.mjs, flex.mjs, csv.mjs
+│  ├─ agents/              evidence-selector.mjs (constrained LLM), provider.mjs (the model-call boundary), mcp-server.mjs
 │  └─ api/                 server.mjs: HTTP routes and static serving
-├─ web/                    static frontend: / Will It Burn? (home), /research/ FlameScope
+├─ web/                    static frontend: / Will It Burn? (home; state.js holds its request logic), /research/ FlameScope
 ├─ scripts/evaluate.mjs    offline evaluation runner
-└─ test/                   evidence, scenario, sets, saffire, findings, response, flex, psi, frontend, boundary (compute + MCP) tests
+└─ test/                   applicability, question, scenario, evidence, sets, saffire, findings, response, flex, psi, frontend (both views), api-security, mcp, acquire and boundary tests
 ```
 
 The layout follows the Space Apps template. We kept Node.js instead of FastAPI; see [ADR-001](docs/planning/decisions.md).
 
 ## Validation status
 
-58 automated tests cover the compute boundary (no LLM, network or env in `src/compute`), the offline fixture, the MCP tools, AI selection validation, transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data, mismatched geometry/units, unsupported requests, source selection, HTTP validation, and the frontend rules on stale searches and out-of-order responses. Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
+102 automated tests cover:
+- the compute boundary (no LLM, network or env in `src/compute`) and the model-call boundary
+- joint applicability, including the two audit cases that used to answer Burned
+- the question reader's failure classes: units, silent defaults, numbers it can't place, unsupported places and materials, unclear and unrecorded conditions, and safety wording
+- the ranked-findings method and its distinct-test counts
+- the offline fixture and corrupt-cache fallback
+- MCP schema enforcement, protocol negotiation and process survival
+- AI selection with a mocked provider (errors, timeouts, bad replies)
+- HTTP Host, Origin and body validation
+- transcription structure, two arithmetic reproductions, endpoint filtering, missing spread data and mismatched geometry and units
+- both views' frontend rules on intent, stale replies and out-of-order responses
+
+Arithmetic reproduction checks M2's 0.019 mm/s and M8's 0.017 mm/s paired spread differences; these are not causal effect estimates or independent experimental validation.
 
 The 20-question evaluation measures offline retrieval and abstention only (currently 20/20). It does not establish the proposed 18/20 live-AI accuracy target. Independent scientific review, three-person usability testing, and competitor time/correctness measurements remain human validation work. Use `docs/reviewer-protocol.md` rather than reporting these as passed.
 
