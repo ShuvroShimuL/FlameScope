@@ -71,9 +71,9 @@ Files range from an experimental-table CSV of 0.2–31 KB up to raw video and im
 | PSI-25 | BASS-II (ISS glovebox, 2014) | PMMA films, sheets and rods; SIBAL fabric; Nomex III; a wax candle. O₂ 13.6–22.2 %, flow up to 40 cm/s. | Same | The CSV covers 129 tests (conditions, O₂, CO₂, CO) but has no outcomes. The outcomes are in the report's tables. | **Extend now** (see §5) |
 | PSI-26 | BASS (ISS glovebox, 2012–13) | SIBAL, Nomex, Ultem, PMMA, paraffin and Japan wax, and a nitrogen-jet suppression test. O₂ 15.9–22.7 %. | Same rig | 124 free-text notes in an "As-Run" spreadsheet | Candidate. A person must check every row we code. |
 | PSI-98 to PSI-100 | Saffire I–III (Cygnus) | Large SIBAL sheets (I, III). Nine small samples in II, including silicone, SIBAL, PMMA with Nomex, and 1 cm PMMA. | Different: large samples, concurrent flow | **Saffire II's CSV includes outcomes**, for example "Nomex was not ignited", and a silicone burn length of "~0" | Candidate for materials, as a separate set |
-| PSI-102 / PSI-101 | SAME / SAME-R | Teflon, Kapton, silicone rubber and others, **heated without a flame** | Smoke, not fire | About 150 analysed spreadsheet files | Evidence for **smoke detection** (fire-response step 1) only. Never for "will it burn". |
+| PSI-102 / PSI-101 | SAME / SAME-R | Smoke made from Teflon, Kapton, silicone rubber and other materials. NASA calls each run a "combustion event". | Smoke, not flame spread | SAME's table has 8 rows. SAME-R completed "66 test points". | **Used** on the fire-response card, for detection (step 1). Never for "will it burn". |
 | PSI-20 | ACME BRE | Gas burners that mimic burning solids in still air, including at **8.2 psia and 34 % O₂** | Gas burner | The report's tables are a test log; the results are in prose | Cite only. The atmosphere matches the exploration cabin, but it isn't a solid fuel. |
-| PSI-69, PSI-68, PSI-39 | FLEX, FLEX-2, CFI | Fuel droplets | Different: droplets and cool flames | FLEX has a CSV with outcomes for 274 tests | Don't mix. Maybe a "liquid fuel" set later. |
+| PSI-69, PSI-68, PSI-39 | FLEX, FLEX-2, CFI | Fuel droplets | Different: droplets and cool flames | FLEX's table has 274 tests with outcomes; 123 add CO₂ and 50 add helium. FLEX-2's table is only an 8-row summary of fuels and ranges. | FLEX is **used** for the suppressant line on the fire-response card (step 5), from `data/psi-69-flex.csv`. Keep all three out of the solid-fuel envelope. |
 | PSI-10, 21–23, 159, 106, 107 | ACME gas flames, SLICE, SPICE | Gas jets | Different: gas flames | — | Don't mix |
 | PSI-47, PSI-179 | DAFT, ASE | Dust and cabin aerosols | Not fire | — | Context for detection only |
 
@@ -88,6 +88,25 @@ All PSI DOIs start with `10.60555/`. The IDs and DOIs come from the PSI API.
 - PSI-10 has no licence field.
 - PSI-25's table gives B2's final O₂ as 1.6 %, which looks like a column slip. B2 isn't one of our 20 rows.
 - PSI's descriptions give nominal widths (1 cm, 2 cm) where our Table 5.1 transcription has 1.2 and 2.2 cm. Confirm this in the reviewer check (P2).
+- PSI-69's table is Windows-1252 text and writes an en dash for "no value". Its gas headers have lost their subscripts: "O", "N" and "CO" are O₂, N₂ and CO₂.
+- PSI lists Saffire-I and Saffire-III under the ISS platform, but Saffire ran inside uncrewed Cygnus ships (Saffire-II is listed correctly).
+
+### 2e. Coverage: PSI's 19 flight combustion investigations
+
+PSI lists 19 flight investigations under Combustion Science, plus 5 ground or modelling studies (PSI-60, 62, 115, 117 and 142). The team's infographic lists ACME CFI-G twice and leaves out DAFT.
+
+| PSI | Investigation | Used in the app | Next |
+|---|---|---|---|
+| 25 | BASS-II | ✅ Evidence: 20 acrylic tests (Table 5.1), 27 fabric tests (Table 7.1), 3 Nomex tests (Table A.2) and the extinction speeds (Table 2.1). O₂ cross-check against NASA's table. | Its rod tests are in figures only |
+| 26 | BASS | 🟡 Cited on the fire-response card (nitrogen jet, sensitivity to airflow) | Its 122 rows record outcomes only as free-text notes |
+| 99 | Saffire-II | ✅ "Also seen in another experiment" lines beside acrylic, SIBAL and Nomex answers, and the silicone gap card | Keep it beside answers. Its O₂ is derived from CO₂. |
+| 98, 100 | Saffire-I, Saffire-III | ❌ | Context only. The tables have 4 and 2 rows. |
+| 69 | FLEX | ✅ Suppressant line on the fire-response card | A separate liquid-fuel view is possible later |
+| 102, 101 | SAME, SAME-R | ✅ Detection line on the fire-response card | none |
+| 47 | DAFT | ❌ | none. It was an instrument check ahead of SAME, with no fire data. |
+| 20 | ACME BRE | ❌ | Context only: gas burners that imitate burning solids in still air |
+| 10, 21, 22, 23, 159 | ACME Flame Design, CLD, E-FIELD, s-Flame, CFI-G | ❌ | Not for Will It Burn? These are gas and cool-flame science. |
+| 39, 68, 106, 107 | CFI, FLEX-2, SLICE, SPICE | ❌ | Not for Will It Burn? These are droplet and gas-jet flames. |
 
 ## 3. Evidence behind NASA's fire response (for the proposed safety feature)
 
@@ -97,11 +116,11 @@ NASA does publish an ordered ISS fire response. **OCHMO-TB-008 Rev A, *Fire Prot
 
 | NASA's step, in its order | What microgravity data says | Evidence |
 |---|---|---|
-| 1. Fire detection and warning | Saffire VI: smoke "was readily detected … but a typical alarm threshold was only achieved at 981 seconds" ✔. SAME and SAME-R (PSI-102, PSI-101) measured smoke from heated spacecraft materials. | One test, plus smoke data |
+| 1. Fire detection and warning | Saffire VI: smoke "was readily detected … but a typical alarm threshold was only achieved at 981 seconds" ✔. SAME and SAME-R (PSI-102, PSI-101) made smoke from Teflon, Kapton, silicone rubber and other materials, to give "quantitative data on the sensitivity of these detectors to reduced gravity smokes" ✔. | Some evidence |
 | 2. Terminate ventilation "to slow the spread of fire" ✔ | **Mixed.** Friedman ([NASA/TM-1999-209285](https://ntrs.nasa.gov/citations/19990063738)): flames over solids "tend to self-extinguish when flow ceases", but whether that works on an established fire is "unknown". Saffire IV/V: the fan was off for 70 s ✔ and the flame grew back. "Extinction of the fire cannot be assumed to occur quickly under quiescent conditions" ✔, and low flow can build fuel vapour into "a readily-ignited mixture that can produce a strong deflagration" ✔. BASS-II report, Table 2.1: flames over thin PMMA went out below a critical opposed-flow velocity that depends on O₂ ✔ (check the values in the PDF). BASS-II Table 5.1: spread was slower at lower flow, but flow and test time are confounded, and still air was never tested. | Mixed |
 | 3. Don protective masks | Saffire VI: "the heat from the fire is not the principal hazard and rather the smoke and gaseous products are a much greater concern" ✔. PSI-25 gives the CO before and after each BASS-II test, measured inside the glovebox rather than a cabin ✔. | Supports the reason for the step |
 | 4. Manually remove electrical power | Nothing in these sets | No data |
-| 5. Use fire extinguishers (CO₂ in US modules, water-based in Russian modules, per this brief) | BASS: a 500 cc/min nitrogen jet "weakens but does not extinguish the flame" ([NTRS 20140011099](https://ntrs.nasa.gov/citations/20140011099)). The raw BASS notes are in PSI-26. No microgravity comparison of CO₂ and water mist was found, and SoFIE-MIST has no published results yet. | Gap |
+| 5. Use fire extinguishers (CO₂ in US modules, water-based in Russian modules, per this brief) | BASS: a 500 cc/min nitrogen jet "weakens but does not extinguish the flame" ([NTRS 20140011099](https://ntrs.nasa.gov/citations/20140011099)). The raw BASS notes are in PSI-26. FLEX (PSI-69) burned fuel droplets, not solids: 123 of its 274 tests added CO₂ and 50 added helium, to "determine how the presence of a suppressant influences the LOI" ✔. No microgravity comparison of CO₂ and water mist was found, and SoFIE-MIST has no published results yet. | Related tests only |
 | 6. Power down the module | Nothing in these sets | No data |
 | 7–8. Isolate the module until CO, HCN and HCl are scrubbed | Saffire VI measured the CO rise against NASA's limits: "the 1-hour SMAC is 425 ppm, and the 24-hour SMAC is 100 ppm" ✔ | Supports the reason for the step |
 
@@ -134,3 +153,39 @@ NASA does publish an ordered ISS fire response. **OCHMO-TB-008 Rev A, *Fire Prot
 5. **Upgrade two gap citations.** Use LUCI in the gravity card and SSCE in the still-air card. Size XS.
 6. **Watch SoFIE.** It covers 34 % O₂ at low pressure, but only plots are public so far.
 7. **Bangladesh:** take the numbers from FSCD, and drop FIRMS from the building-fire framing.
+8. **Add FLEX and SAME to the fire-response card.** Done on 2026-09-24.
+9. **Transcribe the rest of the BASS-II report.** Done on 2026-09-24:
+   - Table 7.1, SIBAL fabric (p. 96)
+   - Table A.2 with §3.1.1, Nomex (pp. 105 and 46)
+   - Table 2.1, extinction speeds (p. 28)
+
+   Each was checked against the PDF page image. Fabric now answers Mixed (20 of 23 tests burned) and Nomex answers No flame held (0 of 3), per ADR-011. Table A.2 prints an impossible 0.9 as F3's final O₂; PSI-25 leaves it empty, and so do we.
+10. **Add Saffire-II.** Done on 2026-09-24. NASA's PSI-99 table is saved unchanged, and its results sit beside answers, never inside them (FR-19):
+    - Nomex "was not ignited".
+    - SIBAL spread at 2.1 and 2.6 mm/s.
+    - Thick acrylic flames stayed "anchored at the base".
+    - Silicone didn't spread in orbit in any of 4 samples, while 3 of 4 burned on the ground. The FLEX line is computed from NASA's own table (`data/psi-69-flex.csv`).
+
+## 6. Review of the dataset recommendations file (2026-09-24)
+
+A teammate shared *FlameScope Dataset Recommendations.md*. We checked its claims against the PSI records and tables.
+
+**Agree:**
+- Don't claim Moon or Mars behaviour.
+- Keep droplet data out of the solid-fuel view.
+- Label descriptive comparisons as descriptive.
+- Track an access state for each source: metadata, structured record, or raw file verified.
+- Add study-level IDs.
+- Treat SoFIE as metadata until a PSI record exists.
+
+Its schema fields `investigation_id`, `measurement_type`, `access_state`, `source_location` and `independence_group` should be added before a second investigation joins the evidence.
+
+**Corrected:**
+1. **The PSI-25 table has no outcomes.** It lists 129 tests (not 130) with O₂, CO₂ and CO only. Flow is a fan-display reading, not cm/s, and there's no flow-direction column. The results are in the report's tables, so step 2 transcribes those.
+2. **FLEX (PSI-69) is a better droplet source than FLEX-2 (PSI-68).** FLEX-2's table is an 8-row summary of fuels and ranges with no outcomes. FLEX has 274 test rows with outcomes.
+3. **Saffire-II (PSI-99) details:**
+   - All 9 samples ran at 20 cm/s, and all but one had the flow running with the flame.
+   - O₂ is "derived from measured CO2 production", not measured directly.
+   - The cells are free text and need hand-coding.
+   - 6 of the 15 rows are notes or flow-visualisation rows, not samples.
+4. **Missing sources:** it leaves out Saffire IV–VI, which hold the only reduced-pressure data, and it leaves out FLEX's suppressant tests, SAME and LUCI.

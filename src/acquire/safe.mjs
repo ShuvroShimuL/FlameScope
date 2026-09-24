@@ -15,7 +15,9 @@ export const keyFor = (url, params = {}) =>
   createHash('md5').update(url + JSON.stringify(Object.entries(params).sort())).digest('hex');
 
 export const fetchJson = (url, options) => fetchSafe(url, options, r => r.json());
-export const fetchText = (url, options) => fetchSafe(url, options, r => r.text());
+// Pass `encoding` for files that aren't UTF-8 (some NASA CSVs are Windows-1252).
+export const fetchText = (url, { encoding = 'utf-8', ...options } = {}) =>
+  fetchSafe(url, options, async r => new TextDecoder(encoding).decode(await r.arrayBuffer()));
 
 async function fetchSafe(url, { params = {}, name = null, timeout = 25000, headers = {} } = {}, read) {
   const key = name || keyFor(url, params);

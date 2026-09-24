@@ -1,17 +1,23 @@
 // Will It Burn? — turns a question (or tapped controls) into a cabin scenario,
-// checks it against the envelope of the BASS-II records, and builds the answer.
-// Every number returned here comes from data/bass-table.csv or from a cited source.
+// checks it against the envelope of the matching evidence set, and builds the answer.
+// Every number returned here comes from data/ or from a cited source.
 import { records, provenance } from './evidence.mjs';
 import { FINDINGS } from './findings.mjs';
+import { fabricTests, nomexTests, EXTINCTION } from './sets.mjs';
+import { saffireRelated } from './saffire.mjs';
 
 export class InputError extends Error {}
 
 const KPA_PER_PSI = 6.894757;
 const round1 = x => Math.round(x * 10) / 10;
 const kpa = psi => round1(psi * KPA_PER_PSI);
+const range = (a, b, unit = '') => a === b ? `${a}${unit}` : `${a}–${b}${unit}`;
 
 export const SOURCES = {
   report: { name: 'NASA/TM-20210011385, Table 5.1, printed p. 57 (BASS-II)', url: provenance.source },
+  fabric: { name: 'NASA/TM-20210011385, Table 7.1, printed p. 96 (BASS-II SIBAL fabric)', url: provenance.source },
+  nomex: { name: 'NASA/TM-20210011385, Section 3.1.1 (p. 46) and Table A.2 (p. 105): the Nomex tests', url: provenance.source },
+  extinction: { name: 'NASA/TM-20210011385, Table 2.1, printed p. 28 (extinction velocity)', url: provenance.source },
   gravityRods: { name: 'Scientific Reports (2018): The Effect of Gravity on Flame Spread over PMMA Cylinders', url: 'https://www.nature.com/articles/s41598-017-18398-4' },
   atmosphere: { name: 'NASA evidence report (2015): the 8.2 psia, 34% O₂ exploration atmosphere', url: 'https://ntrs.nasa.gov/citations/20150021491' },
   saffire: { name: 'NASA ICES-2024-365: Preliminary results from the Saffire VI experiment (Table 1)', url: 'https://ntrs.nasa.gov/citations/20240002981' },
@@ -37,10 +43,12 @@ export const AIRS = {
   exploration: { key: 'exploration', name: 'Exploration', psi: 8.2, o2: 34, phrase: 'in exploration air' }
 };
 
-// Order matters: the first match in this list wins among unsupported materials.
+// Order matters: the first tested material mentioned wins, otherwise the first untested one.
+// SIBAL `covers` cotton and fabric, so "cotton-fiberglass fabric" doesn't trigger a notice about them.
 export const MATERIALS = [
   { id: 'pmma', name: 'Acrylic (PMMA) sheet', inline: 'acrylic', supported: true, re: /acrylic|pmma|plexi(?:glass)?|perspex|polymethyl/ },
-  { id: 'nomex', name: 'Nomex', inline: 'Nomex', re: /nomex/ },
+  { id: 'sibal', name: 'SIBAL cotton-fibreglass fabric', inline: 'SIBAL fabric', supported: true, covers: ['cotton', 'fabric'], re: /sibal|cotton[- /]?fib(?:er|re)[- ]?glass/ },
+  { id: 'nomex', name: 'Nomex III', inline: 'Nomex', supported: true, re: /nomex/ },
   { id: 'cotton', name: 'Cotton fabric', inline: 'cotton fabric', re: /cotton/ },
   { id: 'fabric', name: 'Fabric', inline: 'fabric', re: /fabric|cloth|textile/ },
   { id: 'wire', name: 'Wire insulation', inline: 'wire insulation', re: /\bwires?\b|cable|insulation/ },
@@ -57,19 +65,40 @@ export const MATERIALS = [
   { id: 'wax', name: 'Candle wax', inline: 'candle wax', re: /candle|\bwax\b/ }
 ];
 
-// What the 20 BASS-II rows actually cover. Derived from the data, not typed in.
-export const ENVELOPE = (() => {
-  const o2 = records.flatMap(r => [r.oxygenInitial, r.oxygenFinal]);
-  const flow = records.flatMap(r => r.velocity);
-  const thicknesses = [...new Set(records.map(r => r.thicknessMm))].sort((a, b) => a - b);
+// What a set of rows covers. Derived from the data, never typed in. BASS and BASS-II both ran in
+// the station's glovebox at about 1 atm, so every set shares the pressure note.
+function envelopeOf({ o2, flows = null, thicknesses = null, summary }) {
   const o2Min = Math.min(...o2), o2Max = Math.max(...o2);
   return {
     gravity: 0, psi: 14.7, psiTolerance: 0.5,
     pressureNote: 'Pressure is not listed in the table. BASS-II ran in the station’s glovebox at about 1 atm.',
     o2Min, o2Max, po2Min: round1(kpa(14.7) * o2Min / 100), po2Max: round1(kpa(14.7) * o2Max / 100),
-    flowMin: Math.min(...flow), flowMax: Math.max(...flow), thicknesses, material: 'pmma'
+    flowMin: flows ? Math.min(...flows) : null, flowMax: flows ? Math.max(...flows) : null, thicknesses, summary
   };
+}
+
+// What the 20 BASS-II acrylic rows actually cover.
+export const ENVELOPE = (() => {
+  const thicknesses = [...new Set(records.map(r => r.thicknessMm))].sort((a, b) => a - b);
+  const e = envelopeOf({ o2: records.flatMap(r => [r.oxygenInitial, r.oxygenFinal]), flows: records.flatMap(r => r.velocity), thicknesses });
+  e.summary = `Microgravity aboard the ISS, about 14.7 psi, ${e.o2Min}–${e.o2Max}% O₂, ${e.flowMin}–${e.flowMax} cm/s of airflow against the flame, ${thicknesses[0]}–${thicknesses.at(-1)} mm acrylic sheets.`;
+  return { ...e, material: 'pmma' };
 })();
+
+// One evidence set per tested material. Acrylic carries spread rates; fabric and Nomex carry outcomes.
+const usedFabric = fabricTests.filter(t => t.outcome !== 'reused');
+const fabricEnvelope = envelopeOf({ o2: usedFabric.map(t => t.oxygen), flows: usedFabric.flatMap(t => t.flow) });
+fabricEnvelope.summary = `Microgravity aboard the ISS, about 14.7 psi, ${fabricEnvelope.o2Min}–${fabricEnvelope.o2Max}% O₂, ${fabricEnvelope.flowMin}–${fabricEnvelope.flowMax} cm/s of airflow running with the flame, SIBAL fabric strips ${[...new Set(usedFabric.map(t => t.widthMm / 10))].sort((a, b) => a - b).join(' and ')} cm wide.`;
+const nomexEnvelope = envelopeOf({ o2: nomexTests.flatMap(t => [t.oxygenInitial, t.oxygenFinal]).filter(v => v !== null) });
+nomexEnvelope.summary = `Microgravity aboard the ISS, about 14.7 psi, ${nomexEnvelope.o2Min}–${nomexEnvelope.o2Max}% O₂, airflow running with the flame (its speed isn’t given), ${nomexTests.length} Nomex III samples.`;
+
+export const SETS = {
+  pmma: { id: 'pmma', kind: 'spread', tested: 'Acrylic (PMMA)', envelope: ENVELOPE, rows: records, source: SOURCES.report },
+  sibal: { id: 'sibal', kind: 'outcomes', tested: 'SIBAL fabric', envelope: fabricEnvelope, rows: usedFabric, excluded: fabricTests.length - usedFabric.length, source: SOURCES.fabric },
+  nomex: { id: 'nomex', kind: 'outcomes', tested: 'Nomex III', envelope: nomexEnvelope, rows: nomexTests, excluded: 0, source: SOURCES.nomex }
+};
+// Untested materials are checked against the acrylic envelope, so the other rows still mean something.
+const setFor = s => SETS[s.material.id] ?? SETS.pmma;
 
 const PATTERNS = {
   mission: {
@@ -133,9 +162,10 @@ export function parseQuestion(text = '') {
 
   const found = MATERIALS.filter(m => m.re.test(q));
   if (found.length) {
-    const others = found.filter(m => !m.supported);
-    fields.material = found.some(m => m.supported) ? 'pmma' : others[0].id;
-    if (fields.material === 'pmma' && others.length) notices.push(`Only acrylic is in this data, so ${others.map(m => m.inline).join(' and ')} isn’t shown.`);
+    const chosen = found.find(m => m.supported) ?? found[0];
+    const others = found.filter(m => m !== chosen && !(chosen.covers || []).includes(m.id));
+    fields.material = chosen.id;
+    if (chosen.supported && others.length) notices.push(`This shows ${chosen.inline}, so ${others.map(m => m.inline).join(' and ')} ${others.length > 1 ? 'aren’t' : 'isn’t'} shown.`);
   }
 
   if (PATTERNS.safety.test(q)) notices.push('This shows what NASA observed. It can’t certify a material as safe.');
@@ -197,34 +227,44 @@ function airFor(psi, o2) {
 }
 
 function checksFor(s) {
-  const E = ENVELOPE;
-  const range = (a, b, unit = '') => a === b ? `${a}${unit}` : `${a}–${b}${unit}`;
+  const set = setFor(s), E = set.envelope;
   const checks = [
-    { key: 'material', label: 'Material', yours: s.material.name.replace(' sheet', ''), tested: 'Acrylic (PMMA)', ok: s.material.supported },
+    { key: 'material', label: 'Material', yours: s.material.name.replace(' sheet', ''), tested: s.material.supported ? set.tested : Object.values(SETS).map(x => x.tested).join(', '), ok: s.material.supported },
     { key: 'gravity', label: 'Gravity', yours: s.mission.gText, tested: 'µg (ISS)', ok: s.mission.g === E.gravity },
     { key: 'oxygen', label: 'Oxygen', yours: `${s.air.o2}%`, tested: range(E.o2Min, E.o2Max, '%'), ok: s.air.o2 >= E.o2Min && s.air.o2 <= E.o2Max },
     { key: 'pressure', label: 'Pressure', yours: `${s.air.psi} psi`, tested: '≈14.7 psi', ok: Math.abs(s.air.psi - E.psi) <= E.psiTolerance, note: E.pressureNote }
   ];
-  if (s.airflow !== null) checks.push({ key: 'airflow', label: 'Airflow', yours: s.airflow === 0 ? 'Still air' : `${s.airflow} cm/s`, tested: range(E.flowMin, E.flowMax, ' cm/s'), ok: s.airflow >= E.flowMin && s.airflow <= E.flowMax });
-  if (s.thickness !== null) checks.push({ key: 'thickness', label: 'Thickness', yours: `${s.thickness} mm`, tested: range(E.thicknesses[0], E.thicknesses.at(-1), ' mm'), ok: E.thicknesses.includes(s.thickness) });
+  if (s.airflow !== null) checks.push({ key: 'airflow', label: 'Airflow', yours: s.airflow === 0 ? 'Still air' : `${s.airflow} cm/s`,
+    tested: E.flowMin === null ? 'Not given in cm/s' : range(E.flowMin, E.flowMax, ' cm/s'), ok: E.flowMin !== null && s.airflow >= E.flowMin && s.airflow <= E.flowMax });
+  if (s.thickness !== null) checks.push({ key: 'thickness', label: 'Thickness', yours: `${s.thickness} mm`,
+    tested: E.thicknesses ? range(E.thicknesses[0], E.thicknesses.at(-1), ' mm') : 'Not recorded', ok: !!E.thicknesses && E.thicknesses.includes(s.thickness) });
   return checks;
 }
 
-function subsetFor(s) { return records.filter(r => s.thickness === null || r.thicknessMm === s.thickness); }
+function subsetFor(s) {
+  const set = setFor(s);
+  if (set.kind === 'spread') return records.filter(r => s.thickness === null || r.thicknessMm === s.thickness);
+  return set.rows.filter(t => s.airflow === null || set.envelope.flowMin === null || (t.flowMin <= s.airflow && s.airflow <= t.flowMax));
+}
 
 function headlineFor(s, failed) {
-  const E = ENVELOPE, first = failed[0];
+  const E = setFor(s).envelope, first = failed[0];
   if (first === 'material') return `Unknown. There’s no ${s.material.inline} data in this set.`;
   if (first === 'gravity') return `Unknown. None of these tests felt ${s.mission.adj} gravity.`;
   if (first === 'oxygen') return s.air.o2 > E.o2Max ? `Unknown. These tests stopped at ${E.o2Max}% oxygen.` : `Unknown. These tests never went below ${E.o2Min}% oxygen.`;
   if (first === 'pressure') return 'Unknown. These tests only ran at station pressure.';
-  if (first === 'airflow') return s.airflow === 0 ? 'Unknown. These tests never ran in still air.' : s.airflow < E.flowMin ? `Unknown. These tests never ran below ${E.flowMin} cm/s.` : `Unknown. These tests never ran above ${E.flowMax} cm/s.`;
-  return `Unknown. These tests only used ${E.thicknesses[0]}–${E.thicknesses.at(-1)} mm sheets.`;
+  if (first === 'airflow') return E.flowMin === null ? 'Unknown. These tests don’t give their airflow in cm/s.'
+    : s.airflow === 0 ? 'Unknown. These tests never ran in still air.' : s.airflow < E.flowMin ? `Unknown. These tests never ran below ${E.flowMin} cm/s.` : `Unknown. These tests never ran above ${E.flowMax} cm/s.`;
+  return E.thicknesses ? `Unknown. These tests only used ${E.thicknesses[0]}–${E.thicknesses.at(-1)} mm sheets.` : 'Unknown. These tests don’t record sample thickness.';
 }
 
 function gapsFor(s, failed) {
-  const E = ENVELOPE, gaps = [], has = k => failed.includes(k);
-  if (has('material')) gaps.push({ topic: 'Material', text: `This prototype only holds NASA’s acrylic (PMMA) sheet tests. ${s.material.name} needs more NASA reports added to the corpus.`, source: SOURCES.report });
+  const set = setFor(s), E = set.envelope, gaps = [], has = k => failed.includes(k);
+  if (has('material')) gaps.push(['cotton', 'fabric'].includes(s.material.id)
+    ? { topic: 'Material', text: 'The closest NASA data here is SIBAL, a cotton-fibreglass fabric blend that BASS-II burned in orbit. It isn’t pure cotton, so it can’t stand in for your fabric.', source: SOURCES.fabric }
+    : s.material.id === 'silicone'
+    ? { topic: 'Material', text: `${saffireRelated('silicone').text} Its oxygen is estimated from CO₂ and its airflow ran with the flame, so this app shows it beside the answer, not as one.`, source: saffireRelated('silicone').source }
+    : { topic: 'Material', text: `This prototype holds NASA’s acrylic sheets, SIBAL fabric and Nomex tests. ${s.material.name} needs more NASA reports added to the corpus.`, source: SOURCES.report });
   if (has('gravity')) {
     gaps.push({ topic: 'Gravity', text: 'Partial gravity is barely tested. The first burns lasting more than 25 seconds in simulated lunar gravity were only reported in 2025, from a spinning suborbital rocket.', source: SOURCES.luci });
     gaps.push({ topic: 'Gravity', text: 'For acrylic rods, early drop-tower centrifuge results put lunar gravity near the worst case: it’s where the rods kept burning at the lowest oxygen.', source: SOURCES.partialGravity });
@@ -236,26 +276,42 @@ function gapsFor(s, failed) {
       : n2Ratio < 0.9 ? ' But it has less nitrogen to soak up a flame’s heat, so the ISS tests don’t stretch that far.' : '';
     gaps.push(inside
       ? { topic: 'Oxygen & pressure', text: `Your cabin’s oxygen partial pressure, ${s.air.po2} kPa, sits inside the tested ${E.po2Min}–${E.po2Max} kPa.${nitrogen}`, source: SOURCES.atmosphere }
-      : { topic: 'Oxygen & pressure', text: `Your cabin’s oxygen partial pressure, ${s.air.po2} kPa, is outside the tested ${E.po2Min}–${E.po2Max} kPa as well.`, source: SOURCES.report });
+      : { topic: 'Oxygen & pressure', text: `Your cabin’s oxygen partial pressure, ${s.air.po2} kPa, is outside the tested ${E.po2Min}–${E.po2Max} kPa as well.`, source: set.source });
     if (s.air.o2 > E.o2Max || s.air.psi < E.psi - E.psiTolerance) gaps.push({ topic: 'Where the data is', text: 'Saffire V and VI burned samples at reduced pressure and raised oxygen inside uncrewed Cygnus ships: about 10 psi and 26% O₂ on V, and about 8 psi and 29–31% O₂ on VI. They are on our list to add.', source: SOURCES.saffire });
     if (!has('gravity')) gaps.push({ topic: 'Where the data is', text: 'SoFIE, in the station’s Combustion Integrated Rack, can test exploration atmospheres at reduced pressure.', source: SOURCES.sofie });
   }
-  if (has('airflow')) gaps.push(s.airflow < E.flowMin
-    ? { topic: 'Airflow', text: `Still air is its own regime. With no flow, oxygen reaches a flame only by slow diffusion, and every one of these tests had at least ${E.flowMin} cm/s of airflow.`, source: SOURCES.candle }
-    : { topic: 'Airflow', text: `Flows above ${E.flowMax} cm/s weren’t tested in this set.`, source: SOURCES.report });
-  if (has('thickness')) gaps.push({ topic: 'Thickness', text: `BASS-II tested ${E.thicknesses.join(', ')} mm sheets. Thinner sheets spread faster in these tests, so the data doesn’t support stretching it to ${s.thickness} mm.`, source: SOURCES.report });
+  if (has('airflow')) {
+    if (E.flowMin === null) gaps.push({ topic: 'Airflow', text: 'The report gives these tests’ airflow only as an instrument reading, not in cm/s, so it can’t be matched to yours.', source: set.source });
+    else if (s.airflow < E.flowMin) {
+      gaps.push({ topic: 'Airflow', text: `Still air is its own regime. With no flow, oxygen reaches a flame only by slow diffusion, and every one of these tests had at least ${E.flowMin} cm/s of airflow.`, source: SOURCES.candle });
+      if (set.id === 'pmma') {
+        const [hi, lo] = [...EXTINCTION].sort((a, b) => b.o2 - a.o2);
+        gaps.push({ topic: 'Airflow', text: `In BASS-II’s thin-acrylic tests, flames went out once the opposing airflow fell below ${hi.experimentMmS / 10} ± ${hi.uncertaintyMmS / 10} cm/s at ${hi.o2}% O₂, and ${lo.experimentMmS / 10} ± ${lo.uncertaintyMmS / 10} cm/s at ${lo.o2}%. The report says that speed doesn’t depend on thickness.`, source: SOURCES.extinction });
+      } else {
+        const quenched = set.rows.filter(t => t.outcome === 'quenched').map(t => t.flowMin);
+        if (quenched.length) gaps.push({ topic: 'Airflow', text: `In ${quenched.length} of these fabric tests, the flame went out as the airflow was turned down, at ${range(Math.min(...quenched), Math.max(...quenched), ' cm/s')}.`, source: set.source });
+      }
+    } else gaps.push({ topic: 'Airflow', text: `Flows above ${E.flowMax} cm/s weren’t tested in this set.`, source: set.source });
+  }
+  if (has('thickness')) gaps.push(E.thicknesses
+    ? { topic: 'Thickness', text: `BASS-II tested ${E.thicknesses.join(', ')} mm sheets. Thinner sheets spread faster in these tests, so the data doesn’t support stretching it to ${s.thickness} mm.`, source: SOURCES.report }
+    : { topic: 'Thickness', text: 'The report doesn’t record these samples’ thickness, so no thickness can be matched.', source: set.source });
   return gaps;
 }
 
 function nearestFor(s, failed) {
   const params = {}, changes = [];
-  if (failed.includes('material')) { params.material = 'pmma'; changes.push('acrylic'); }
+  if (failed.includes('material')) {
+    params.material = ['cotton', 'fabric'].includes(s.material.id) ? 'sibal' : 'pmma';
+    changes.push(params.material === 'sibal' ? 'SIBAL fabric' : 'acrylic');
+  }
   if (failed.includes('gravity')) { params.mission = 'iss'; params.air = 'earth'; changes.push('the ISS', 'Earth-normal air'); }
   else if (failed.includes('oxygen') || failed.includes('pressure')) { params.air = 'earth'; changes.push('Earth-normal air'); }
   if (failed.includes('airflow')) { params.airflow = 'none'; changes.push('any tested airflow'); }
   if (failed.includes('thickness')) {
-    const near = ENVELOPE.thicknesses.reduce((a, b) => Math.abs(b - s.thickness) < Math.abs(a - s.thickness) ? b : a);
-    params.thickness = near; changes.push(`${near} mm sheets`);
+    const T = (SETS[params.material ?? s.material.id] ?? SETS.pmma).envelope.thicknesses;
+    if (T) { const near = T.reduce((a, b) => Math.abs(b - s.thickness) < Math.abs(a - s.thickness) ? b : a); params.thickness = near; changes.push(`${near} mm sheets`); }
+    else { params.thickness = 'all'; changes.push('any thickness'); }
   }
   return { label: 'Show the nearest evidence we have', changes: `Switches to ${changes.join(', ')}.`, params };
 }
@@ -276,10 +332,46 @@ function evidenceFor(s) {
     finding = { lead: `${s.thickness} mm sheets`, text: `spread at ${slowest.spread}–${fastest.spread} mm/s across ${Math.min(...flows)}–${Math.max(...flows)} cm/s of airflow.` };
   }
   return {
-    thickness: s.thickness, airflow: s.airflow, ids: subset.map(r => r.id),
+    kind: 'spread', thickness: s.thickness, airflow: s.airflow, ids: subset.map(r => r.id),
     stats: { tests: subset.length, notTracked: subset.filter(r => !r.spread).length, burnMin: Math.min(...burn), burnMax: Math.max(...burn), fastest, slowest },
     finding, caveat: 'Descriptive, not a safety rating. Sheet width, burning sides and oxygen also change between tests.'
   };
+}
+
+// What happened to each fabric or Nomex sample, in words, from the report's own comment or note.
+const HAPPENED = {
+  burned: 'Burned', quenched: 'Burned, then went out as the airflow was turned down', blowoff: 'Burned, then blew out as the airflow was turned up',
+  'no-ignition': 'Didn’t ignite'
+};
+
+function outcomesFor(s) {
+  const set = setFor(s), tests = subsetFor(s);
+  const count = o => tests.filter(t => t.outcome === o).length;
+  const noIgnition = count('no-ignition');
+  const rows = tests.map(t => set.id === 'nomex'
+    ? { id: t.id, date: t.date, flowText: `air display ${t.airDisplay}`, oxygenText: t.oxygenFinal === null ? `${t.oxygenInitial}% → not read` : `${t.oxygenInitial}% → ${t.oxygenFinal}%`, happened: t.notes, sourceLocation: t.sourceLocation }
+    : { id: t.id, width: `${t.widthMm / 10} cm`, flowText: `${t.flowText} cm/s`, oxygenText: `${t.oxygen}%${t.oxygenNote ? '*' : ''}`, happened: HAPPENED[t.outcome], sourceLocation: t.sourceLocation, oxygen: t.oxygen, outcome: t.outcome });
+  const finding = set.id === 'nomex'
+    ? { lead: 'The report:', text: '“The three Nomex® samples did not ignite …” Each row shows the test’s own note.' }
+    : { lead: 'The report found:', text: '“Flames spread more slowly across the narrower samples, at lower flow velocities and at lower O2 percentages.” (p. 95)' };
+  const caveat = set.id === 'nomex'
+    ? 'Descriptive, not a safety rating. The airflow ran with the flame, and the report gives its speed only as an instrument reading.'
+    : `Descriptive, not a safety rating. The airflow in these tests ran with the flame, not against it as in the acrylic tests. ${set.excluded} reused samples are left out, as the report does. * The report says this O₂ reading might be inaccurate.`;
+  return { kind: 'outcomes', set: set.id, label: set.tested, airflow: s.airflow, ids: tests.map(t => t.id), tests: rows,
+    counts: { tests: tests.length, ignited: tests.length - noIgnition, quenched: count('quenched'), blowoff: count('blowoff'), noIgnition },
+    finding, caveat, source: set.source };
+}
+
+function outcomeVerdict(ev, E) {
+  const { tests: n, ignited, quenched, blowoff, noIgnition } = ev.counts;
+  const events = [quenched && `${quenched} went out as the airflow was turned down`, blowoff && `${blowoff} blew out as it was turned up`].filter(Boolean);
+  const eventText = events.length ? ` ${events.join(', and ')}.` : '';
+  if (ignited === n) return { state: 'burned', stamp: 'Burned', count: `${n} of ${n} tests`, headline: 'Yes. NASA watched it burn.', sub: `All ${n} ${ev.label} tests here burned in orbit.${eventText}` };
+  if (ignited === 0) return { state: 'no-burn', stamp: 'No flame held', count: `0 of ${n} tests`, headline: `Not in NASA’s tests. No flame held on it in ${n} tries.`,
+    sub: `That isn’t a safety rating: ${n} small samples, one igniter, airflow running with the flame and ${range(E.o2Min, E.o2Max, '% oxygen')} are all that was tested.` };
+  const o2 = ev.tests.filter(t => t.outcome === 'no-ignition').map(t => t.oxygen);
+  return { state: 'mixed', stamp: 'Mixed', count: `${ignited} of ${n} tests burned`, headline: `Sometimes. NASA saw it burn in ${ignited} of ${n} tests.`,
+    sub: `The ${noIgnition} that didn’t ignite were at ${range(Math.min(...o2), Math.max(...o2), '%')} oxygen.${eventText}` };
 }
 
 function canonicalFor(s) {
@@ -292,18 +384,21 @@ function canonicalFor(s) {
 /** The single entry point behind GET /api/ask. */
 export function ask(params = {}) {
   const s = resolveScenario(params);
+  const set = setFor(s);
   const checks = checksFor(s);
   const failed = checks.filter(c => !c.ok).map(c => c.key);
   const covered = failed.length === 0;
   const subset = subsetFor(s);
   const burn = subset.map(r => r.burnMin);
+  const evidence = !covered ? null : set.kind === 'spread' ? evidenceFor(s) : outcomesFor(s);
 
-  const verdict = covered
-    ? { state: 'burned', stamp: 'Burned', count: `${subset.length} of ${subset.length} tests`, headline: 'Yes. NASA watched it burn.',
+  const verdict = !covered
+    ? { state: 'no-data', stamp: 'No data', count: `0 of ${set.rows.length} tests match`, headline: headlineFor(s, failed),
+        sub: 'That is an answer too: NASA’s tests in this set don’t reach your cabin. Each gap says what is missing and where data may exist.' }
+    : set.kind === 'outcomes' ? outcomeVerdict(evidence, set.envelope)
+    : { state: 'burned', stamp: 'Burned', count: `${subset.length} of ${subset.length} tests`, headline: 'Yes. NASA watched it burn.',
         sub: (s.thickness === null ? `All ${subset.length} acrylic sheets in the BASS-II tests burned in orbit` : `All ${subset.length} of the ${s.thickness} mm sheets in the BASS-II tests burned in orbit`) +
-          `, for ${Math.round(Math.min(...burn))} to ${Math.round(Math.max(...burn))} minutes each.` + (s.mission.id === 'transit' ? ' On this trip, Earth is months away.' : '') }
-    : { state: 'no-data', stamp: 'No data', count: `0 of ${records.length} tests match`, headline: headlineFor(s, failed),
-        sub: 'That is an answer too: NASA’s tests in this set don’t reach your cabin. Step 2 shows what would close the gap.' };
+          `, for ${Math.round(Math.min(...burn))} to ${Math.round(Math.max(...burn))} minutes each.` + (s.mission.id === 'transit' ? ' On this trip, Earth is months away.' : '') };
 
   const understood = [
     { field: 'Mission', value: s.mission.name, from: s.from.mission },
@@ -314,7 +409,7 @@ export function ask(params = {}) {
   ];
 
   const gaps = covered ? [] : gapsFor(s, failed);
-  const sources = [SOURCES.report, ...gaps.map(g => g.source)].filter((x, i, a) => a.findIndex(y => y.url === x.url) === i);
+  const sources = [set.source, ...gaps.map(g => g.source)].filter((x, i, a) => a.findIndex(y => y.url === x.url && y.name === x.name) === i);
 
   return {
     question: params.q || '',
@@ -330,11 +425,13 @@ export function ask(params = {}) {
       return { id: m.id, name: m.name, sub: m.sub, gText: m.gText, home: m.home, matches, selected: m.id === s.mission.id };
     }),
     checks, verdict,
-    why: covered ? { lead: 'Passing on Earth isn’t proof for orbit.', text: 'Related BASS-II tests kept acrylic rods burning at 17% O₂ in orbit. On the ground, rods of the same sizes couldn’t keep a flame at 18% or below.', source: SOURCES.gravityRods } : null,
-    evidence: covered ? evidenceFor(s) : null,
-    // Ranked over all 20 tests, and shown only when those tests cover the cabin.
-    findings: covered ? FINDINGS : null,
+    why: covered && set.id === 'pmma' ? { lead: 'Passing on Earth isn’t proof for orbit.', text: 'Related BASS-II tests kept acrylic rods burning at 17% O₂ in orbit. On the ground, rods of the same sizes couldn’t keep a flame at 18% or below.', source: SOURCES.gravityRods } : null,
+    evidence,
+    // Ranked over all 20 acrylic tests, and shown only when those tests cover the cabin.
+    findings: covered && set.id === 'pmma' ? FINDINGS : null,
+    // Saffire-II sits beside the answer, never inside it: a separate rig, flow direction and O₂ method.
+    related: covered ? saffireRelated(set.id) : null,
     gaps, nearest: covered ? null : nearestFor(s, failed),
-    envelope: ENVELOPE, sources
+    envelope: set.envelope, sources
   };
 }

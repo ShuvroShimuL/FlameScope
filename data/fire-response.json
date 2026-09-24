@@ -10,7 +10,7 @@
     "intro": "For a fire on ISS, the following actions will be taken sequentially by the crew until the fire is extinguished:",
     "caveat": "NASA marks the brief “for reference only”: it does not supersede or waive existing requirements."
   },
-  "method": "NASA's steps are quoted word for word from the brief, in NASA's order. The NASA-STD-3001 requirement references that follow each step are left out. Evidence lines quote or summarise the source they cite, and one line is computed from data/bass-table.csv when the app starts.",
+  "method": "NASA's steps are quoted word for word from the brief, in NASA's order. The NASA-STD-3001 requirement references that follow each step are left out. Evidence lines quote or summarise the source they cite. Three lines are computed when the app starts: from data/bass-table.csv, from the report's Table 2.1 in data/bass-extinction.csv, and from NASA's FLEX table in data/psi-69-flex.csv.",
   "verification": "Quotes checked against the source PDFs by Claude Code on 2026-09-24. Second-person check pending.",
   "limitations": [
     "This is one NASA brief, from 2023, and NASA sources from other years describe some steps differently.",
@@ -20,13 +20,14 @@
     "saffireVI": { "label": "Saffire VI, ICES-2024-365", "name": "NASA ICES-2024-365: Preliminary results from the Saffire VI experiment", "url": "https://ntrs.nasa.gov/citations/20240002981" },
     "saffireIVV": { "label": "Saffire IV–V, ICES-2021-266", "name": "NASA ICES-2021-266: Fire safety implications of preliminary results from the Saffire IV and V experiments", "url": "https://ntrs.nasa.gov/citations/20210011521" },
     "bass": { "label": "BASS, NTRS 20140011099", "name": "NASA (2013): Thickness and fuel preheating effects on material flammability in microgravity from the BASS experiment", "url": "https://ntrs.nasa.gov/citations/20140011099" },
-    "bassII": { "label": "BASS-II report, §2.2", "name": "NASA/TM-20210011385: Burning and Suppression of Solids-II (BASS-II) summary report", "url": "https://ntrs.nasa.gov/citations/20210011385" },
-    "response2020": { "label": "NASA 2020, NTRS 20200011599", "name": "NASA (2020): Evolution of hardware and philosophy of emergency response actions on the International Space Station", "url": "https://ntrs.nasa.gov/citations/20200011599" }
+    "response2020": { "label": "NASA 2020, NTRS 20200011599", "name": "NASA (2020): Evolution of hardware and philosophy of emergency response actions on the International Space Station", "url": "https://ntrs.nasa.gov/citations/20200011599" },
+    "same": { "label": "SAME, PSI-102", "name": "NASA PSI-102: Smoke and Aerosol Measurement Experiment (SAME), reflown as SAME-R (PSI-101)", "url": "https://psi.nasa.gov/physci/repo/data/investigations/PSI-102" }
   },
   "steps": [
-    { "n": 1, "step": "Fire detection and warning", "status": "one",
+    { "n": 1, "step": "Fire detection and warning", "status": "some",
       "evidence": [
-        { "text": "Saffire VI: “The smoke from the fire event was readily detected by an ionization detector and a light scattering system but a typical alarm threshold was only achieved at 981 seconds.”", "source": "saffireVI" }
+        { "text": "Saffire VI: “The smoke from the fire event was readily detected by an ionization detector and a light scattering system but a typical alarm threshold was only achieved at 981 seconds.”", "source": "saffireVI" },
+        { "text": "SAME and its reflight SAME-R made smoke from Teflon, Kapton, silicone rubber and other materials in microgravity, to give “quantitative data on the sensitivity of these detectors to reduced gravity smokes.”", "source": "same" }
       ] },
     { "n": 2, "step": "Terminate ventilation in the affected module to slow the spread of fire.",
       "detail": "For fires detected by smoke detectors, software response automatically terminates intra-module ventilation within the affected module, terminates inter-module ventilation between that module and the rest of ISS, and closes powered inter-module ventilation valves in the affected and adjacent modules",
@@ -34,7 +35,7 @@
       "evidence": [
         { "computed": "bassIIAirflow" },
         { "text": "BASS: “Microgravity flames were found to be especially sensitive to air flow speed in the range 0 to 5 cm/s.”", "source": "bass" },
-        { "text": "The BASS-II report measured flames going out at low opposing airflow, at a critical speed that depends on oxygen (Table 2.1).", "source": "bassII" },
+        { "computed": "bassIIExtinction" },
         { "text": "Saffire V: a cotton-fabric flame kept going with the fan off for 70 seconds, then “grew back when the flow was turned on again.” The authors conclude that “extinction of the fire cannot be assumed to occur quickly under quiescent conditions.”", "source": "saffireIVV" },
         { "text": "Saffire IV and V: “reduced air flow and complex flow obstructions can allow the accumulation of fuel vapor, thereby creating a readily-ignited mixture that can produce a strong deflagration.”", "source": "saffireIVV" }
       ] },
@@ -50,6 +51,7 @@
       "status": "related",
       "evidence": [
         { "text": "BASS tried a nitrogen jet, not an extinguisher: “Nitrogen flow of 500 cc/min weakens but does not extinguish the flame.”", "source": "bass" },
+        { "computed": "flexSuppressants" },
         { "text": "We found no microgravity test that compares CO₂ and water-mist extinguishers.", "source": null }
       ],
       "differs": { "text": "A 2020 NASA paper puts it differently: “ISS crews only use water mist extinguishers for fires in the cabin; if a fire were to occur within a system or payload rack, the ISS crew use only CO2 extinguishers.”", "source": "response2020" } },

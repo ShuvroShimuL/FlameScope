@@ -32,7 +32,7 @@ test('every suggested question is read the way the UI promises', () => {
   assert.equal(still.scenario.airflow, 0); assert.equal(still.scenario.thickness, 1); assert.deepEqual(failed(still), ['airflow']);
 
   const nomex = ask({ q: 'Is Nomex safe on a Mars base?' });
-  assert.equal(nomex.scenario.material.id, 'nomex'); assert.equal(failed(nomex)[0], 'material');
+  assert.equal(nomex.scenario.material.id, 'nomex'); assert.equal(failed(nomex)[0], 'gravity'); assert.equal(nomex.verdict.state, 'no-data');
   assert.ok(nomex.notices.some(n => /can’t certify/.test(n)));
 });
 
@@ -75,7 +75,7 @@ test('gaps cite a source, and the nearest-evidence button really lands on eviden
     assert.ok(r.gaps.length && r.gaps.every(g => g.source.url.startsWith('https://')), q);
     const s = r.scenario;
     const next = ask({ mission: s.mission.id, material: s.material.id, thickness: s.thickness ?? 'all', airflow: s.airflow ?? 'none', air: s.air.key, ...r.nearest.params });
-    assert.equal(next.verdict.state, 'burned', q);
+    assert.notEqual(next.verdict.state, 'no-data', q);   // lands on evidence: Burned, Mixed or No flame held
   }
 });
 

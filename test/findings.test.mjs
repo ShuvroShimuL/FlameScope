@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { FINDINGS, rankFindings, tierFor } from '../src/compute/findings.mjs';
 import { records } from '../src/compute/evidence.mjs';
 import { ask } from '../src/compute/scenario.mjs';
+import { createServer } from '../src/api/server.mjs';
 
 test('findings are ranked by the documented rule, from the 20 rows', () => {
   assert.equal(FINDINGS.tests, 20);
@@ -69,4 +70,14 @@ test('ask() carries the ranking only when the tests cover the cabin', () => {
   assert.equal(ask({ thickness: 1 }).findings.tests, 20);
   assert.equal(ask({ mission: 'moon' }).findings, null);
   assert.equal(ask({ q: 'Will a 1 mm acrylic sheet burn in still air?' }).findings, null);
+});
+
+test('/api/data serves the ranking for the Findings section, whatever the question', async () => {
+  const server = createServer(); await new Promise(r => server.listen(0, '127.0.0.1', r));
+  try {
+    const data = await (await fetch(`http://127.0.0.1:${server.address().port}/api/data`)).json();
+    const row = f => [f.rank, f.key, f.tierLabel, f.agree, f.comparisons, f.ids.length];
+    assert.deepEqual(data.findings.ranked.map(row), FINDINGS.ranked.map(row));
+    assert.equal(data.findings.caveat, FINDINGS.caveat);
+  } finally { await new Promise(r => server.close(r)); }
 });

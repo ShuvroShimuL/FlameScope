@@ -5,6 +5,7 @@ import { resolve, extname } from 'node:path';
 import { records, provenance, search, makeBrief, comparison } from '../compute/evidence.mjs';
 import { ask, InputError } from '../compute/scenario.mjs';
 import { FIRE_RESPONSE } from '../compute/response.mjs';
+import { FINDINGS } from '../compute/findings.mjs';
 import { aiAvailable, selectEvidence } from '../agents/evidence-selector.mjs';
 
 const root=fileURLToPath(new URL('../../web/',import.meta.url));
@@ -12,7 +13,7 @@ const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application
 export function createServer() { return http.createServer(async(req,res)=>{
   try {
     const url=new URL(req.url,'http://localhost');
-    if(req.method==='GET' && url.pathname==='/api/data') return send(res,200,{records,provenance,fireResponse:FIRE_RESPONSE,aiAvailable:aiAvailable() && process.env.OFFLINE!=='1'});
+    if(req.method==='GET' && url.pathname==='/api/data') return send(res,200,{records,provenance,fireResponse:FIRE_RESPONSE,findings:FINDINGS,aiAvailable:aiAvailable() && process.env.OFFLINE!=='1'});
     if(req.method==='GET' && url.pathname==='/api/search') return send(res,200,search(Object.fromEntries(url.searchParams)));
     if(req.method==='GET' && url.pathname==='/api/ask') {
       try { return send(res,200,ask(Object.fromEntries(url.searchParams))); }
