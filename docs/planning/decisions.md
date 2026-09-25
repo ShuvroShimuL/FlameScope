@@ -153,10 +153,29 @@ The reader also swapped explicit but unsupported conditions for defaults: steel 
 - \+ The offline guarantee holds even if a route forgets its gate, and the key can't reach a cache file.
 - − Two network boundaries to document instead of one. AGENTS.md rule 5 now names both.
 
+## ADR-014 · A hosted copy on Vercel, beside the local server
+
+**Status:** Proposed · 2026-09-25, pending team review. Answers Q3.
+
+**Context.** The team wants a link judges and teammates can open without running the app. GitHub Pages serves only static files, but answers are computed on the server (`/api/ask`, `/api/compare`, `/api/brief`), `src/compute` reads `data/` with `readFileSync`, and a planned chatbot needs a model key that must stay server-side (rule 7). The local server also refused every Host but loopback, to stop DNS rebinding.
+
+**Decision.** Keep one handler and host it on Vercel:
+- `src/api/server.mjs` exports `createHandler()`. `createServer()` wraps it locally, and `api/index.mjs` exports it as a Vercel function.
+- `vercel.json` serves `web/` as static files with the same CSP and `nosniff` headers as the server (`test/deploy.test.mjs` keeps them equal), sends every other path to the function, and bundles `data/` with it.
+- The Host check still refuses unknown names. It also accepts `PUBLIC_HOSTS` and the names Vercel sets (`VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`), and a published name counts as an Origin only over https.
+- `HOST` sets the bind address for a container host such as Render. It defaults to `127.0.0.1`.
+
+**Consequences.**
+- + One link for judges, with no install. The science and its boundaries are unchanged, and no dependency is added.
+- + Render or any Node host works with `HOST=0.0.0.0` and `PUBLIC_HOSTS`.
+- − The live demo still runs locally with `OFFLINE=1`, since venue wifi can fail (rule 6). The hosted copy is the second path.
+- − A public model key could be spent by anyone. Until the chatbot has a limit, deploy without one, or give the key a spending cap at the provider.
+- − The Vercel config is only proven by a real deploy; the tests cover the handler and the headers.
+
 ---
 
 ## Open questions
 
 - **Q1.** What is the Bangladesh framing: the method only ("evidence envelope"), or also a FIRMS fire layer? Decide at M1. See [roadmap](roadmap.md) R3.
 - **Q2.** Should Saffire or SoFIE be the second evidence set? It depends on whether the numbers are published in tables.
-- **Q3.** Hosting for judges: a static export on GitHub Pages, or video only?
+- **Q3.** Hosting for judges: a static export on GitHub Pages, or video only? *Proposed in ADR-014: Vercel, running the same server.*

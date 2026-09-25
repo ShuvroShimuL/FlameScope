@@ -16,9 +16,11 @@ Requires Node.js 22+; no packages or install step needed.
 node src/api/server.mjs
 ```
 
-Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 102 checks: data contracts, applicability, the question reader, ranked findings, both views' frontend state, API security, MCP protocol handling, offline fallbacks and the compute boundary. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
+Open http://127.0.0.1:3000 for Will It Burn? (the home page) and http://127.0.0.1:3000/research/ for the FlameScope research view. `node --test` runs 112 checks: data contracts, applicability, the question reader, ranked findings, both views' frontend state, API security, MCP protocol handling, offline fallbacks and the compute boundary. `node scripts/evaluate.mjs` runs 20 offline retrieval/abstention cases. Equivalent npm scripts exist, but this machine's npm launcher is broken; the direct Node commands work without npm.
 
 **Offline demo:** `OFFLINE=1 node src/api/server.mjs` (PowerShell: `$env:OFFLINE="1"; node src/api/server.mjs`). Every public-data fetch goes through `src/acquire/safe.mjs` (live, then `cache/`, then committed `demo_fixtures/`; a corrupt cache file falls through to the fixture). Model calls go only through `src/agents/provider.mjs`, which refuses to run with `OFFLINE=1` (ADR-013). The home page's evidence is committed data in `data/`, not a fetch. See [docs/planning/offline-demo.md](docs/planning/offline-demo.md).
+
+**Hosted copy (ADR-014):** import the repo into Vercel with no build settings. `vercel.json` serves `web/` and sends the API to `api/index.mjs`, which runs the same handler as the local server. On another Node host, run `node src/api/server.mjs` with `HOST=0.0.0.0` and `PUBLIC_HOSTS=<your domain>`. Keep the local offline run for live demos.
 
 **MCP server:** `node src/agents/mcp-server.mjs` exposes the deterministic tools `will_it_burn`, `search_evidence`, `compare_tests`, `evidence_brief` and `get_provenance` to any MCP client. It is registered in `.mcp.json`. See [docs/planning/mcp-server.md](docs/planning/mcp-server.md).
 
@@ -81,7 +83,8 @@ FlameScope/
 ├─ AGENTS.md               portable agent instructions
 ├─ .claude/skills/         add-nasa-dataset · compute-boundary · offline-demo · provenance-audit · ai-use-log · demo-pitch
 ├─ .mcp.json               registers the flamescope MCP server
-├─ .env.example            PORT, OFFLINE, EDL_USER, FIRMS_MAP_KEY, NASA_API_KEY, ADS_API_TOKEN, OPENAI_*
+├─ vercel.json · api/      hosted copy on Vercel (ADR-014)
+├─ .env.example            PORT, HOST, PUBLIC_HOSTS, OFFLINE, EDL_USER, FIRMS_MAP_KEY, NASA_API_KEY, ADS_API_TOKEN, OPENAI_*
 ├─ cache/                  gitignored: downloaded NASA data
 ├─ demo_fixtures/          committed: the exact bytes the offline demo needs
 ├─ data/                   hand-transcribed BASS-II rows, NASA's FLEX table, provenance, eval cases, NASA's quoted fire-response steps
@@ -94,9 +97,9 @@ FlameScope/
 │  ├─ compute/             deterministic science, no LLM: question.mjs (reader), applicability.mjs (matching), scenario.mjs (answers), catalog.mjs, evidence.mjs, sets.mjs, saffire.mjs, findings.mjs, response.mjs, flex.mjs, csv.mjs
 │  ├─ agents/              evidence-selector.mjs (constrained LLM), provider.mjs (the model-call boundary), mcp-server.mjs
 │  └─ api/                 server.mjs: HTTP routes and static serving
-├─ web/                    static frontend: / Will It Burn? (home; state.js holds its request logic), /research/ FlameScope
+├─ web/                    static frontend: / Will It Burn? (home; state.js holds its request logic), /research/ FlameScope, theme.js (light/dark toggle)
 ├─ scripts/evaluate.mjs    offline evaluation runner
-└─ test/                   applicability, question, scenario, evidence, sets, saffire, findings, response, flex, psi, frontend (both views), api-security, mcp, acquire and boundary tests
+└─ test/                   applicability, question, scenario, evidence, sets, saffire, findings, response, flex, psi, frontend (both views), api-security, deploy, theme, mcp, acquire and boundary tests
 ```
 
 The layout follows the Space Apps template. We kept Node.js instead of FastAPI; see [ADR-001](docs/planning/decisions.md).

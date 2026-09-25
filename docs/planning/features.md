@@ -88,6 +88,7 @@
 | Q-01 | Works fully offline: no remote fonts, scripts or libraries, and `OFFLINE=1` | ✅ | CSP `default-src 'self'` |
 | Q-02 | Stale-reply guard and newest intent: fast tapping can never show an older answer, each tap builds on the newest intended scenario (Moon, then Nomex, keeps the Moon), and a tap made while a typed question is being read applies to that question | ✅ | `web/state.js` `createController`; `test/frontend-home.test.mjs` |
 | Q-03 | Light and dark themes in Apple's system colours and system fonts, with a colour-blind-safe chart ramp | ✅ | `prefers-color-scheme` |
+| Q-09 | Theme toggle: a moon or sun button in the toolbar of both pages switches light and dark. The choice is remembered on this device and applies before the page draws. With nothing chosen, the page follows the system. The research page now has a light theme too, and its text passes WCAG AA contrast in both. | ✅ | `web/theme.js`; `test/theme.test.mjs` |
 | Q-04 | Respects reduced motion. The flame pauses when off screen. | ✅ | `matchMedia`, `IntersectionObserver` |
 | Q-05 | Keyboard and screen reader: labelled controls, `aria-live` results, focusable chart dots. Section links carry `aria-current`, and each section's heading takes focus when you switch. | ✅ | |
 | Q-06 | Responsive down to phone width. On phones the sidebar becomes a bottom tab bar. | ✅ | breakpoints at 1180, 980, 820 and 420 px |
@@ -100,6 +101,7 @@
 |---|---|---|---|
 | D-01 | `GET /api/ask` JSON API (q, mission, air, o2, psi, material, thickness, airflow) | ✅ | [technical doc §8](../will-it-burn-technical.md) |
 | D-02 | MCP tool `will_it_burn`, so any agent can ask the same question | ✅ | [mcp-server.md](mcp-server.md) |
+| D-03 | Hosted copy: the same server runs as a Vercel function, with `web/` served as static files under the same CSP (ADR-014) | 🧪 | `api/index.mjs`, `vercel.json`; `test/deploy.test.mjs`. Not deployed yet. |
 
 ## 9. NASA's fire response
 
@@ -128,7 +130,6 @@ Move a row into a section above, with a new ID, once it ships.
 | Second evidence set: more BASS-II tables first, then Saffire IV–VI ([datasets.md](datasets.md) §5). Saffire VI reached about 8 psi and 29–31% O₂, so a 34% cabin stays a gap. | Relevance, and fewer "No data" answers | L |
 | Rank materials once a second material exists | Extends the ranked findings (E-07) | M |
 | Bangla language toggle | Local audience | M |
-| Static export of pre-computed answers for hosting | Repo access, offline safety net step 4 | M |
 
 ## Change log
 
@@ -145,3 +146,4 @@ Move a row into a section above, with a new ID, once it ships.
 | 2026-09-24 | F-01 gained two evidence lines: FLEX's CO₂ and helium suppressant tests (computed from NASA's PSI-69 table) under step 5, and SAME's smoke measurements (PSI-102) under step 1, which now reads "Some evidence" | Claude Code |
 | 2026-09-24 | Apple-style dashboard redesign. Added L-01 (app window with sidebar, tab bar and section addresses), L-02 (Overview cards) and C-07 (material picker). E-04 is now the key-number cards, with an outcome bar for fabric and Nomex. E-07 has its own section and an Overview card, is served by `/api/data` for every answer, and shows one dot per comparison. P-04 is now the Sources section. A-03's words open under the Ask field. Updated A-05, C-01, V-01, V-03, V-06, E-08, P-01, P-03, Q-03, Q-05, Q-06 and F-01. The No data subline no longer mentions "Step 2". | Claude Code |
 | 2026-09-24 | Audit fixes. Answers now use joint applicability (ADR-012): a test counts only if its own row records every condition given, so 1 mm at 16.8% O₂ and 21 cm/s, and SIBAL at 21% O₂ and 53 cm/s, now answer No data with the closest tests instead of Burned. The reader no longer swaps an explicit condition for a default (steel, Earth, 0% O₂, 100 psi, 1 m/s, 20 mm/s), and a safety question never gets a yes or no. Added A-09 (Unclear), V-04 (replaces "envelope derived from data") and V-08 (closest tests). E-07 now says what isn't matched and counts distinct tests. The page keeps the newest intended scenario, opens and fails in neutral states, and lights the flame only for matched evidence. After an independent review, any number the reader can't place answers Unclear, and a tap after Unclear sends the question again, so a value read from an unclear question can never reach an answer. Updated A-04 to A-08, V-01 to V-03, V-06, E-04, G-01, G-03, P-06 and Q-02. | Claude Code |
+| 2026-09-25 | Added Q-09, the light/dark toggle on both pages (the research page gained a light theme), and D-03, Vercel hosting (ADR-014). Removed the static-export backlog idea. | Claude Code |

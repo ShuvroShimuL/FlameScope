@@ -30,6 +30,7 @@ src/compute/     deterministic science. No fetch, no LLM, no process.env, no Mat
 src/agents/      the only LLM/agent code: evidence-selector.mjs, mcp-server.mjs, and provider.mjs,
                  the one boundary for authenticated model calls (ADR-013)
 src/api/         HTTP routing + validation + static serving of web/. No science here.
+api/index.mjs    Vercel entry: exports src/api's handler and nothing else (ADR-014)
 web/             static frontend; renders JSON, escapes all text, no remote assets
 cache/           gitignored downloads
 demo_fixtures/   committed bytes the offline demo needs
