@@ -1,5 +1,8 @@
 // Will It Burn? — browser side. It never decides anything scientific itself:
 // it sends the question or tapped controls to GET /api/ask and renders the JSON.
+// Request ordering and tap handling live in state.js, which the Node tests run directly.
+import { createController, verdictView, askedFor } from './state.js';
+
 const QUESTIONS = [
   'Will acrylic burn on the ISS?',
   'Will it burn on a Moon base at 34% oxygen?',
@@ -17,7 +20,7 @@ const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const input = $('#q');
-let records = [], result = null, version = 0;
+let records = [], result = null, asked = '', firstAnswer = true;
 
 async function api(path) {
   const response = await fetch(path);
@@ -26,6 +29,7 @@ async function api(path) {
   return data;
 }
 function showError(message) { const e = $('#ask-error'); e.textContent = message; e.hidden = !message; }
+const unreachable = error => error instanceof TypeError ? 'Couldn’t reach the local server. Start it with: node src/api/server.mjs' : error.message;
 
 // ---------- Sections: a sidebar on wide screens, a tab bar on phones, both driven by the URL hash ----------
 function showTab(focus) {
@@ -40,43 +44,27 @@ addEventListener('hashchange', () => showTab(true));
 showTab(false);
 
 // ---------- Talking to the server ----------
-function paramsFrom(s) {
-  const p = { mission: s.mission.id, material: s.material.id, thickness: s.thickness ?? 'all', airflow: s.airflow ?? 'none' };
-  if (s.air.key === 'custom') { p.o2 = s.air.o2; p.psi = s.air.psi; } else p.air = s.air.key;
-  return p;
-}
-async function ask(params, { fromControl = false, animate = true } = {}) {
-  const v = ++version;
-  $('#result').setAttribute('aria-busy', 'true');
-  try {
-    const query = new URLSearchParams(Object.entries(params).filter(([, x]) => x !== undefined && x !== null && x !== ''));
-    const data = await api('/api/ask?' + query);
-    if (v !== version) return; // a newer request already won
+const controller = createController({
+  request: params => api('/api/ask?' + new URLSearchParams(Object.entries(params).filter(([, x]) => x !== undefined && x !== null && x !== ''))),
+  onBusy: busy => { if (busy) $('#result').setAttribute('aria-busy', 'true'); else $('#result').removeAttribute('aria-busy'); },
+  onAnswer: (data, meta) => {
     result = data;
-    if (fromControl) input.value = data.canonical;
+    asked = askedFor(data, meta);
+    if (meta.kind === 'tap') input.value = data.canonical;
     showError('');
-    render(animate);
-  } catch (error) {
-    if (v !== version) return;
-    showError(error instanceof TypeError ? 'Couldn’t reach the local server. Start it with: node src/api/server.mjs' : error.message);
-  } finally {
-    if (v === version) $('#result').removeAttribute('aria-busy');
-  }
-}
-// A tap changes one field and sends every field explicitly, so the question text no longer applies.
-function change(patch) {
-  const p = { ...paramsFrom(result.scenario), ...patch };
-  if ('air' in patch || 'mission' in patch) { delete p.o2; delete p.psi; }
-  if ('mission' in patch && !('air' in patch)) delete p.air; // a new mission brings its own default air
-  ask(p, { fromControl: true });
-}
+    render(!firstAnswer);
+    firstAnswer = false;
+  },
+  onError: (error, meta) => showUnanswered(unreachable(error), meta.kind === 'question' ? meta.question : input.value)
+});
+const change = patch => controller.change(patch);
 
 // ---------- Asking: the field, suggested questions and words to add ----------
 $('#questions').innerHTML = QUESTIONS.map(q => `<button type="button" class="sug" data-q="${esc(q)}">${esc(q)}</button>`).join('');
 $('#keywords').innerHTML = KEYWORDS.map(k => `<button type="button" class="kw" data-k="${esc(k)}">${esc(k)}</button>`).join('');
 $('#questions').addEventListener('click', e => {
   const b = e.target.closest('[data-q]'); if (!b) return;
-  input.value = b.dataset.q; ask({ q: b.dataset.q });
+  input.value = b.dataset.q; controller.ask(b.dataset.q);
 });
 // The word list shows while the field has focus. Pressing a word keeps the caret in the field.
 $('.ask-pop').addEventListener('pointerdown', e => e.preventDefault());
@@ -93,15 +81,15 @@ $('#ask-form').addEventListener('submit', e => {
   if (!q) { showError('Type a question, or tap one of the suggestions below.'); return; }
   document.activeElement?.blur();
   if (location.hash && location.hash !== '#overview') location.hash = '#overview';
-  ask({ q });
+  controller.ask(q);
 });
 
 function renderRead() {
-  $('#read').innerHTML = result.understood.map(u => `<span class="rchip ${u.from}"><b>${esc(u.field)}</b>${esc(u.value)}</span>`).join('');
+  $('#read').innerHTML = result.understood.map(u => `<span class="rchip ${esc(u.from)}"><b>${esc(u.field)}</b>${esc(u.value)}</span>`).join('');
   $('#notices').innerHTML = result.notices.map(n => `<p class="notice">${esc(n)}</p>`).join('');
 }
 function renderTiles() {
-  $('#tiles').innerHTML = result.missions.map(m => `<button type="button" class="tile" data-m="${m.id}" aria-pressed="${m.selected}">
+  $('#tiles').innerHTML = result.missions.map(m => `<button type="button" class="tile" data-m="${esc(m.id)}" aria-pressed="${m.selected}">
       <span class="tile-top"><span class="tile-name">${esc(m.name)}</span><span class="tile-g">${esc(m.gText)}</span></span>
       <span class="tile-sub">${esc(m.sub)}</span>
       <span class="tile-home">${esc(m.home)}</span>
@@ -109,52 +97,76 @@ function renderTiles() {
     </button>`).join('');
 }
 $('#tiles').addEventListener('click', e => {
-  const b = e.target.closest('.tile'); if (!b || !result) return;
+  const b = e.target.closest('.tile'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   change({ mission: b.dataset.m });
   const top = $('#result').getBoundingClientRect().top;
   if (top > innerHeight * 0.6) $('#result').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
 });
 
 // ---------- Verdict, chamber and cabin ----------
-function renderVerdict(animate) {
-  const { verdict, scenario: s, checks } = result;
+// Neutral states: nothing is shown as an answer until an answer arrives for the question on screen.
+function showVerdictState(cls, word, count, headline, sub, question) {
   const stamp = $('#stamp');
-  stamp.className = 'stamp ' + ({ burned: 'burn', mixed: 'mixed', 'no-burn': 'held' }[verdict.state] ?? 'gap');
-  stamp.innerHTML = `<span class="stamp-word">${esc(verdict.stamp)}</span><span class="stamp-count">${esc(verdict.count)}</span>`;
-  if (animate && !reduced) { void stamp.offsetWidth; stamp.classList.add('in'); }
-  $('#headline').textContent = verdict.headline;
-  $('#sub').textContent = verdict.sub;
+  stamp.className = 'stamp ' + cls;
+  stamp.innerHTML = `<span class="stamp-word">${esc(word)}</span>${count ? `<span class="stamp-count">${esc(count)}</span>` : ''}`;
+  $('#headline').textContent = headline;
+  $('#sub').textContent = sub;
+  $('#why').hidden = true;
+  const answering = $('#answering');
+  answering.hidden = !question;
+  answering.textContent = question ? `Asked: “${question}”` : '';
+}
+function showUnanswered(message, question) {
+  result = null;
+  showError('');
+  showVerdictState('unavailable', 'Not answered', '', 'This question wasn’t answered.', message, question);
+  $('#read').innerHTML = ''; $('#notices').innerHTML = '';
+  $('#kpis').hidden = true;
+  $('#match').innerHTML = ''; $('#match-note').textContent = '';
+  $('#s2').textContent = 'Evidence'; $('#s2-aside').textContent = '';
+  $('#panel2').innerHTML = '<p class="note">No answer to show. Try again, or ask another question.</p>';
+  $('#proof-text').textContent = 'Source rows appear here once a question is answered.';
+  $('#open-proof').hidden = true;
+  for (const b of $$('#seg [data-air], #materials [data-material]')) b.setAttribute('aria-pressed', 'false');
+  for (const t of $$('#tiles .tile')) t.setAttribute('aria-pressed', 'false');
+  flame.set(0, false, true);
+  $('#ov-msg').hidden = false;
+  $('#caption').textContent = 'No answer, so the flame is only a dashed outline.';
+}
+
+function renderVerdict(animate) {
+  const { verdict, scenario: s, checks } = result, view = verdictView(result);
+  showVerdictState(view.stampClass, verdict.stamp, verdict.count, verdict.headline, verdict.sub, asked);
+  if (animate && !reduced) { const stamp = $('#stamp'); void stamp.offsetWidth; stamp.classList.add('in'); }
   const why = $('#why');
   why.hidden = !result.why;
   if (result.why) why.innerHTML = `<b>${esc(result.why.lead)}</b> ${esc(result.why.text)} <a href="${esc(result.why.source.url)}" target="_blank" rel="noopener">Source</a>`;
 
-  for (const key of ['earth', 'exploration']) $('#air-' + key).setAttribute('aria-pressed', String(s.air.key === key));
+  for (const key of ['earth', 'exploration']) $('#air-' + key).setAttribute('aria-pressed', String(!s.air.explicitO2 && !s.air.explicitPsi && s.air.preset === key));
   $('#air-note').textContent = s.air.key === 'custom' ? `Custom air from your question: ${s.air.o2}% O₂ at ${s.air.psi} psi.` : s.mission.note;
   for (const b of $$('#materials [data-material]')) b.setAttribute('aria-pressed', String(b.dataset.material === s.material.id));
 
-  $('#match').innerHTML = checks.map(c => `<div class="match-row"><span class="k">${esc(c.label)}</span><span class="pill ${c.ok ? 'ok' : 'miss'}">${c.ok ? '✓ Match' : '✕ Gap'}</span>
-    <span class="vals"><span>Your cabin: <b>${esc(c.yours)}</b></span><span>NASA’s tests: <b>${esc(c.tested)}</b></span></span></div>`).join('');
-  $('#match-note').textContent = checks.find(c => c.key === 'pressure')?.note || '';
+  const pill = c => c.ok ? ({ match: 'ok', context: 'ctx', unrecorded: 'nr' }[c.status] ?? 'ok') : 'miss';
+  $('#match').innerHTML = checks.map(c => `<div class="match-row"><span class="k">${esc(c.label)}</span><span class="pill ${pill(c)}">${c.ok && c.status === 'match' ? '✓ ' : !c.ok ? '✕ ' : ''}${esc(c.statusLabel)}</span>
+    <span class="vals"><span>Your cabin: <b>${esc(c.yours)}</b></span><span>NASA’s tests: <b>${esc(c.tested)}</b></span></span>
+    ${c.note ? `<span class="mnote">${esc(c.note)}</span>` : ''}</div>`).join('');
+  $('#match-note').textContent = '';
 
   $('#ov-cam').textContent = s.mission.name;
   $('#ov-g').textContent = s.mission.gText;
   $('#ov-gname').textContent = s.mission.gName;
   $('#ov-air').textContent = `${s.air.o2}% O₂ at ${s.air.psi} psi`;
   $('#ov-po2').textContent = `O₂ pressure ${s.air.po2} kPa`;
-  $('#ov-msg').hidden = s.mission.g === 0;
-  $('#caption').textContent = verdict.state === 'no-burn'
-    ? 'No flame held on this material in NASA’s tries, so the sample is drawn without one.'
-    : s.mission.g === 0
-    ? 'In orbit nothing rises. Oxygen reaches the flame only by slow diffusion and airflow, so it rounds out, dims and turns blue. Earth’s teardrop flame is shown small for comparison.'
-    : `At ${s.mission.id === 'moon' ? '1/6' : '0.38'} of Earth’s gravity some hot gas still rises. How a flame spreads here is barely tested, so the outline is dashed.`;
-  flame.set(s.mission.g, s.mission.g === 0, verdict.state !== 'no-burn');
+  $('#ov-msg').hidden = !view.shapeNote;
+  $('#caption').textContent = view.caption;
+  flame.set(view.flame.g, view.flame.known, view.flame.lit);
 }
 $('#seg').addEventListener('click', e => {
-  const b = e.target.closest('button[data-air]'); if (!b || !result || b.dataset.air === result.scenario.air.key) return;
+  const b = e.target.closest('button[data-air]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   change({ air: b.dataset.air });
 });
 $('#materials').addEventListener('click', e => {
-  const b = e.target.closest('button[data-material]'); if (!b || !result || b.dataset.material === result.scenario.material.id) return;
+  const b = e.target.closest('button[data-material]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   change({ material: b.dataset.material, thickness: 'all' });
 });
 
@@ -167,11 +179,11 @@ function renderKpis() {
       <span class="kpi-l">${esc(label)}</span><span class="kpi-v">${esc(value)}${unit ? `<small>${esc(unit)}</small>` : ''}</span>
       <span class="kpi-s">${esc(sub)}</span><span class="kpi-go">${esc(go)}</span></button>`;
   if (ev.kind === 'outcomes') {
-    const c = ev.counts;
-    // The same words the server uses for each test, and the parts add up to every test.
-    const parts = [['burned', c.ignited - c.quenched - c.blowoff, 'burned'],
-      ['quenched', c.quenched, 'burned, then went out as the airflow was turned down'],
-      ['blowoff', c.blowoff, 'burned, then blew out as the airflow was turned up'],
+    const c = ev.counts, at = ev.airflow === null ? '' : ` to ${ev.airflow} cm/s`;
+    // The same words the server uses for each test, and the parts add up to every matching test.
+    const parts = [['burned', c.burned, ev.airflow === null ? 'burned' : `burning at ${ev.airflow} cm/s`],
+      ['quenched', c.quenched, `burned, then went out as the airflow was turned down${at}`],
+      ['blowoff', c.blowoff, `burned, then blew out as the airflow was turned up${at}`],
       ['none', c.noIgnition, ev.set === 'nomex' ? 'held no flame' : 'didn’t ignite']].filter(p => p[1] > 0);
     box.innerHTML = kpi('Tests', c.tests, '', ev.label, ev.ids)
       + `<button type="button" class="kpi wide" data-ids="${esc(ev.ids.join(','))}"><span class="kpi-l">What happened</span>
@@ -181,26 +193,38 @@ function renderKpis() {
     for (const seg of box.querySelectorAll('.ob [data-n]')) seg.style.flexGrow = seg.dataset.n;
     return;
   }
-  const st = ev.stats;
+  const st = ev.stats, spreadKpi = (label, p) => p
+    ? kpi(label, p.spread, 'mm/s', `${p.id}, ${p.thicknessMm} mm sheet, ${p.velocity} cm/s air`, [p.id], 'Source row')
+    : kpi(label, 'Not tracked', '', 'No spread was tracked at these conditions', ev.ids);
   box.innerHTML = kpi('Tests', st.tests, '', st.notTracked ? `${st.notTracked} with spread not tracked` : 'All with spread tracked', ev.ids)
     + kpi('Burned for', `${Math.round(st.burnMin)}–${Math.round(st.burnMax)}`, 'min', 'per test', ev.ids)
-    + kpi('Fastest spread', st.fastest.spread, 'mm/s', `${st.fastest.id}, ${st.fastest.thicknessMm} mm sheet, ${st.fastest.velocity} cm/s air`, [st.fastest.id], 'Source row')
-    + kpi('Slowest spread', st.slowest.spread, 'mm/s', `${st.slowest.id}, ${st.slowest.thicknessMm} mm sheet, ${st.slowest.velocity} cm/s air`, [st.slowest.id], 'Source row');
+    + spreadKpi('Fastest spread', st.fastest) + spreadKpi('Slowest spread', st.slowest);
 }
 $('#kpis').addEventListener('click', e => {
   const b = e.target.closest('.kpi'); if (!b || !result?.evidence) return;
   openProof(result.evidence.kind === 'outcomes' ? result.evidence : b.dataset.ids.split(','));
 });
 
-// ---------- Evidence: the chart, the report's own rows, or the gaps ----------
+// ---------- Evidence: the chart, the report's own rows, the gaps, or what couldn't be read ----------
 function renderPanel2() {
   const panel = $('#panel2');
+  if (result.verdict.state === 'unresolved') {
+    $('#s2').textContent = 'What couldn’t be read';
+    $('#s2-aside').textContent = 'Nothing is answered until it is clear';
+    // An unreadable acrylic thickness can be replaced with a tap, so its chips stay on screen, none of them chosen.
+    const pickSize = result.scenario.material.id === 'pmma' && result.unresolved.some(u => u.key === 'thickness');
+    panel.innerHTML = `<div class="gaps">${result.unresolved.map(u => `<div class="gap-card unclear"><span class="t">${esc(u.label)}</span><p>${esc(u.reason)}</p></div>`).join('')}</div>
+      ${pickSize ? `<div class="mat-row"><div class="mat"><b>Pick a tested thickness</b><span>It replaces the one that couldn’t be read</span></div>${thicknessChips(undefined)}</div>` : ''}`;
+    if (pickSize) wireThicknessChips(panel);
+    return;
+  }
   if (!result.evidence) {
     $('#s2').textContent = 'What would close this gap?';
     $('#s2-aside').textContent = 'Each card links to its source';
     panel.innerHTML = `<div class="gaps">${result.gaps.map(g => `<div class="gap-card"><span class="t">${esc(g.topic)}</span><p>${esc(g.text)}</p><a href="${esc(g.source.url)}" target="_blank" rel="noopener">${esc(g.source.name)}</a></div>`).join('')}</div>
-      <div class="row-actions"><button class="btn alt" type="button" id="nearest">${esc(result.nearest.label)}</button><span class="note">${esc(result.nearest.changes)}</span></div>`;
-    $('#nearest').addEventListener('click', () => change(result.nearest.params));
+      ${closestHtml(result.closest)}
+      ${result.nearest ? `<div class="row-actions"><button class="btn alt" type="button" id="nearest">${esc(result.nearest.label)}</button><span class="note">${esc(result.nearest.changes)}</span></div>` : ''}`;
+    $('#nearest')?.addEventListener('click', () => change(result.nearest.params));
     return;
   }
   if (result.evidence.kind === 'outcomes') return renderOutcomes(result.evidence);
@@ -210,28 +234,45 @@ function renderPanel2() {
   panel.innerHTML = `
     <div class="mat-row">
       <div class="mat"><b>${esc(result.scenario.material.name)}</b><span>NASA’s standard test fuel</span></div>
-      <div class="chips" role="group" aria-label="Sheet thickness">
-        <button type="button" data-t="all" aria-pressed="${t === null}">All</button>
-        ${THICKNESSES.map(n => `<button type="button" data-t="${n}" aria-pressed="${t === n}"><i class="sw sw${n}"></i>${n} mm</button>`).join('')}
-      </div>
+      ${thicknessChips(t)}
     </div>
     <div class="chart-wrap" id="chart"></div><div class="legend" id="legend"></div>
     <p class="finding"><b>${esc(ev.finding.lead)}</b> ${esc(ev.finding.text)}</p>
     <p class="caveat">${esc(ev.caveat)}</p>
     ${relatedHtml(result.related)}`;
-  panel.querySelector('.chips').addEventListener('click', e => {
-    const b = e.target.closest('button[data-t]'); if (!b) return;
-    change({ thickness: b.dataset.t });
-  });
+  wireThicknessChips(panel);
   renderChart(ev);
 }
 
+// The thickness chips. `selected` is null for all sheets, a thickness, or undefined when none is chosen yet.
+function thicknessChips(selected) {
+  return `<div class="chips" role="group" aria-label="Sheet thickness">
+        <button type="button" data-t="all" aria-pressed="${selected === null}">All</button>
+        ${THICKNESSES.map(n => `<button type="button" data-t="${n}" aria-pressed="${selected === n}"><i class="sw sw${n}"></i>${n} mm</button>`).join('')}
+      </div>`;
+}
+function wireThicknessChips(panel) {
+  panel.querySelector('.chips').addEventListener('click', e => {
+    const b = e.target.closest('button[data-t]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    change({ thickness: b.dataset.t });
+  });
+}
+
+// Tests that recorded some of the conditions but not all: shown with their own rows, never counted as a match.
+function closestHtml(c) {
+  if (!c) return '';
+  return `<div class="closest"><h3>Closest tests, and what each one recorded</h3>
+    <div class="tbl"><table><thead><tr><th>Test</th>${c.tests[0].conditions.map(x => `<th>${esc(x.label)}</th>`).join('')}<th>Source</th></tr></thead>
+    <tbody>${c.tests.map(t => `<tr><td><b>${esc(t.id)}</b></td>${t.conditions.map(x => `<td class="${x.ok ? 'hit' : 'miss'}">${x.ok ? '✓' : '✕'} ${esc(x.recorded)}</td>`).join('')}
+      <td>${esc(t.sourceLocation)}${t.untied ? '<br><span class="note">The table can’t tie this test’s oxygen to one airflow reading.</span>' : ''}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
 // Fabric and Nomex: every test as the report lists it, with what happened in the server's words.
-const outcomeRows = ev => ev.tests.map(t => `<tr><td><b>${esc(t.id)}</b></td><td class="n">${esc(ev.set === 'nomex' ? t.date : t.width)}</td><td class="n">${esc(t.flowText)}</td><td class="n">${esc(t.oxygenText)}</td><td>${esc(t.happened)}</td></tr>`).join('');
-const outcomeTable = ev => `<div class="tbl"><table><thead><tr><th>Test</th><th>${ev.set === 'nomex' ? 'Date' : 'Width'}</th><th>Airflow</th><th>O₂</th><th>What happened</th></tr></thead><tbody>${outcomeRows(ev)}</tbody></table></div>`;
+const outcomeRows = ev => ev.tests.map(t => `<tr><td><b>${esc(t.id)}</b></td><td class="n">${esc(ev.set === 'nomex' ? t.date : t.width)}</td><td class="n">${esc(t.flowText)}</td><td class="n">${esc(t.oxygenText)}</td><td>${esc(t.happened)}</td>${ev.airflow !== null ? `<td>${esc(t.atYourAirflow)}</td>` : ''}</tr>`).join('');
+const outcomeTable = ev => `<div class="tbl"><table><thead><tr><th>Test</th><th>${ev.set === 'nomex' ? 'Date' : 'Width'}</th><th>Airflow</th><th>O₂</th><th>What happened</th>${ev.airflow !== null ? `<th>At ${esc(ev.airflow)} cm/s</th>` : ''}</tr></thead><tbody>${outcomeRows(ev)}</tbody></table></div>`;
 function renderOutcomes(ev) {
   $('#s2').textContent = 'What NASA saw';
-  $('#s2-aside').textContent = 'Every test, as the report lists it';
+  $('#s2-aside').textContent = 'Every matching test, as the report lists it';
   $('#panel2').innerHTML = `
     <div class="mat-row"><div class="mat"><b>${esc(ev.label)}</b><span>${esc(ev.source.name)}</span></div></div>
     ${outcomeTable(ev)}
@@ -263,8 +304,11 @@ function renderChart(ev) {
     if (pts.length > 1) h += `<polyline fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-opacity="${on.has(r.id) ? 0.55 : 0.8}" points="${pts.map(p => x(p.v) + ',' + y(p.s)).join(' ')}"/>`;
     for (const p of pts) h += `<circle cx="${x(p.v)}" cy="${y(p.s)}" r="5" fill="${col}" stroke="var(--card)" stroke-width="2"/>`;
   }
-  const f = ev.stats.fastest, fx = x(f.velocity), fy = y(f.spread), end = fx > W - 120;
-  h += `<text class="dlabel" x="${fx + (end ? -10 : 10)}" y="${fy + 4}" text-anchor="${end ? 'end' : 'start'}">${f.id}, ${f.spread} mm/s</text>`;
+  const f = ev.stats.fastest;
+  if (f) {
+    const fx = x(f.velocity), fy = y(f.spread), end = fx > W - 120;
+    h += `<text class="dlabel" x="${fx + (end ? -10 : 10)}" y="${fy + 4}" text-anchor="${end ? 'end' : 'start'}">${esc(f.id)}, ${esc(f.spread)} mm/s</text>`;
+  }
   for (const r of order) for (const p of pairs(r)) h += `<circle class="hit" cx="${x(p.v)}" cy="${y(p.s)}" r="11" tabindex="0" role="button" data-id="${r.id}" data-t="${r.thicknessMm}" data-v="${p.v}" data-s="${p.s}" aria-label="${r.id}, ${r.thicknessMm} millimetre sheet, ${p.v} centimetres per second, spread ${p.s} millimetres per second. Opens the source row."/>`;
 
   const wrap = $('#chart');
@@ -272,7 +316,7 @@ function renderChart(ev) {
   const tip = wrap.querySelector('.tip');
   const show = el => {
     const r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
-    tip.innerHTML = `<b>${el.dataset.id}</b>, ${el.dataset.t} mm sheet<br>Airflow ${el.dataset.v} cm/s, spread <b>${el.dataset.s}</b> mm/s<br>Tap for the source row`;
+    tip.innerHTML = `<b>${esc(el.dataset.id)}</b>, ${esc(el.dataset.t)} mm sheet<br>Airflow ${esc(el.dataset.v)} cm/s, spread <b>${esc(el.dataset.s)}</b> mm/s<br>Tap for the source row`;
     tip.style.left = Math.min(Math.max(r.left + r.width / 2 - wr.left, 90), wr.width - 90) + 'px';
     tip.style.top = (r.top - wr.top + 6) + 'px';
     tip.hidden = false;
@@ -296,7 +340,7 @@ function openProof(ids) {
   if (ids === 'gap') {
     const E = result.envelope;
     $('#proof-title').textContent = 'The sources behind this gap';
-    body.innerHTML = `<div class="cite"><b>What the matching NASA tests cover</b><span>${esc(E.summary)}</span><span>${esc(E.pressureNote)}</span></div>
+    body.innerHTML = `<div class="cite"><b>What this set of NASA tests covers overall</b><span>${esc(E.summary)}</span><span>${esc(E.pressureNote)}</span><span>${esc(result.applicability.policy)}</span></div>
       ${result.sources.map(s => `<div class="cite"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a></div>`).join('')}
       <p class="note">Oxygen and nitrogen partial pressures are calculated from each cabin’s total pressure and oxygen share.</p>`;
   } else if (ids && ids.kind === 'outcomes') {
@@ -304,7 +348,7 @@ function openProof(ids) {
     $('#proof-title').textContent = `The ${ev.tests.length} rows behind this answer`;
     body.innerHTML = `<div class="cite"><b>${esc(ev.source.name)}</b><span>Copied from the report, with each test’s own comment or note.</span><a href="${esc(ev.source.url)}" target="_blank" rel="noopener">Open the report on NASA NTRS</a></div>
       ${outcomeTable(ev)}
-      <p class="note">${esc(ev.caveat)} Transcribed by our team; independent check pending.</p>`;
+      <p class="note">${esc(ev.caveat)} Transcribed with AI assistance and checked against the page images; an independent human check is pending.</p>`;
   } else {
     const list = ids || records.map(r => r.id);
     const rows = records.filter(r => list.includes(r.id));
@@ -324,23 +368,28 @@ function openProof(ids) {
   if (!dialog.open) dialog.showModal();
   body.scrollTop = 0;
 }
-$('#open-proof').addEventListener('click', () => openProof(!result?.evidence ? 'gap' : result.evidence.kind === 'outcomes' ? result.evidence : result.evidence.ids));
+$('#open-proof').addEventListener('click', () => { if (result) openProof(!result.evidence ? 'gap' : result.evidence.kind === 'outcomes' ? result.evidence : result.evidence.ids); });
 $('#proof').addEventListener('click', e => { if (e.target === e.currentTarget || e.target.closest('[data-close]')) e.currentTarget.close(); });
 function renderProofText() {
-  const ev = result.evidence;
-  $('#proof-text').textContent = ev ? (ev.kind === 'outcomes' ? 'Every row above is copied from NASA’s report, with its own comment. Nothing here is generated.' : 'Every number, dot and card opens its row in NASA’s report. Nothing here is generated.') : 'Every gap above links to its NASA or journal source, next to what the BASS-II tests do cover.';
+  const ev = result.evidence, unclear = result.verdict.state === 'unresolved';
+  $('#open-proof').hidden = unclear;
+  $('#proof-text').textContent = unclear ? 'Nothing was answered, so there are no source rows for this question yet.'
+    : ev ? (ev.kind === 'outcomes' ? 'Every row above is copied from NASA’s report, with its own comment. Nothing here is generated.' : 'Every number, dot and card opens its row in NASA’s report. Nothing here is generated.')
+    : 'Every gap above links to its NASA or journal source, next to what the tests in this set do cover.';
   $('#open-proof').textContent = ev ? `Open the ${ev.ids.length} source rows` : 'Open the sources';
 }
 
 // ---------- Ranked findings: computed on the server over all 20 acrylic tests. The page only lays them out. ----------
-// One dot per like-for-like comparison, filled when it agrees, so a small sample looks small.
-const agreeText = x => `Agrees in ${x.agree} of ${x.comparisons} comparison${x.comparisons === 1 ? '' : 's'}`;
+// One dot per reading pair, filled when it agrees, so a small sample looks small.
+const agreeText = x => `${x.agree} of ${x.comparisons} reading pair${x.comparisons === 1 ? '' : 's'} agree, from ${x.tests} test${x.tests === 1 ? '' : 's'}`;
 const dotsHtml = x => `<span class="dots" role="img" aria-label="${esc(agreeText(x))}">${'<i class="y"></i>'.repeat(x.agree)}${'<i></i>'.repeat(x.comparisons - x.agree)}</span>`;
 const tierHtml = x => `<span class="tier ${esc(x.tier)}">${esc(x.tierLabel)}</span>`;
 function renderFindings(f) {
   $('#findings-body').innerHTML = `<ol class="rank" role="list">${f.ranked.map(x => `<li class="${esc(x.tier)}">
       <span class="rn" aria-hidden="true">${esc(x.rank)}</span>
-      <div class="rb"><p class="rl"><b>${esc(x.lead)}</b> ${esc(x.text)}</p><p class="rc">${esc(x.caveat)}</p></div>
+      <div class="rb"><p class="rl"><b>${esc(x.lead)}</b> ${esc(x.text)}</p>
+        <p class="rc">Matched on ${esc(x.matchedOn.join(', '))}. Not matched: ${esc(x.notMatched.join(', '))}.</p>
+        <p class="rc">${esc(x.caveat)}</p></div>
       <div class="rs">${tierHtml(x)}<span class="rcount">${esc(agreeText(x))}</span>${dotsHtml(x)}
         ${x.ids.length ? `<button type="button" class="rank-go" data-ids="${esc(x.ids.join(','))}" aria-label="Open the ${esc(x.ids.length)} source rows behind finding ${esc(x.rank)}">${esc(x.ids.length)} source rows</button>` : ''}</div>
     </li>`).join('')}</ol>
@@ -380,7 +429,7 @@ function renderFireResponse(fr) {
 const flame = (() => {
   const cv = $('#flame'), ctx = cv.getContext('2d');
   const UI = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
-  let W = 0, H = 0, g = 0, gT = 0, known = true, lit = true, raf = 0, visible = true;
+  let W = 0, H = 0, g = 0, gT = 0, known = false, lit = true, raf = 0, visible = true;
   function size() {
     const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
     W = r.width; H = r.height; cv.width = Math.round(W * d); cv.height = Math.round(H * d);
@@ -461,7 +510,7 @@ const flame = (() => {
   function start() { cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); }
   new ResizeObserver(() => { size(); start(); }).observe(cv);
   new IntersectionObserver(entries => { visible = entries[0].isIntersecting; if (visible) start(); }).observe(cv);
-  return { set(gg, isKnown, isLit = true) { gT = gg; known = isKnown; lit = isLit; if (reduced) g = gg; start(); } };
+  return { set(gg, isKnown, isLit = true) { gT = Math.min(gg, 1); known = isKnown; lit = isLit; if (reduced) g = gT; start(); } };
 })();
 
 function render(animate) { renderRead(); renderTiles(); renderVerdict(animate); renderKpis(); renderPanel2(); renderProofText(); }
@@ -473,7 +522,12 @@ function render(animate) { renderRead(); renderTiles(); renderVerdict(animate); 
     records = data.records;
     renderFireResponse(data.fireResponse);
     if (data.findings) renderFindings(data.findings);
-  } catch { showError('Couldn’t reach the local server. Start it with: node src/api/server.mjs'); return; }
+  } catch (error) {
+    showVerdictState('unavailable', 'Unavailable', '', 'NASA’s tests didn’t load.', unreachable(error), '');
+    $('#panel2').innerHTML = '<p class="note">Nothing to show until the tests load.</p>';
+    $('#open-proof').hidden = true;
+    return;
+  }
   input.value = QUESTIONS[0];
-  await ask({ q: QUESTIONS[0] }, { animate: false });
+  await controller.ask(QUESTIONS[0]);
 })();

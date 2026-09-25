@@ -24,7 +24,9 @@ Run the tests with `node --test`.
 ```mermaid
 flowchart LR
   CSV["data/bass-table.csv<br/>20 NASA test rows"] --> EV["src/compute/evidence.mjs<br/>parse and normalise"]
-  EV --> SC["src/compute/scenario.mjs<br/>read question, check, build answer"]
+  EV --> AP["src/compute/applicability.mjs<br/>check each test's own row"]
+  QR["src/compute/question.mjs<br/>read the question"] --> SC
+  AP --> SC["src/compute/scenario.mjs<br/>merge taps, build the answer"]
   SC --> API["src/api/server.mjs<br/>GET /api/ask"]
   EV --> DATA["src/api/server.mjs<br/>GET /api/data"]
   API --> UI["web/app.js<br/>render the dashboard"]
@@ -39,8 +41,11 @@ The server decides every scientific statement. The browser only draws what the s
 | `data/bass-table.csv` | The 20 BASS-II rows, transcribed from NASA/TM-20210011385, Table 5.1, printed p. 57 |
 | `data/provenance.json` | Where the rows came from, how they were transcribed, and their known limits |
 | `src/compute/evidence.mjs` | Loads the CSV into clean records. It is shared with FlameScope. |
-| `src/compute/scenario.mjs` | Reads the question, merges it with taps, checks it against the evidence, and builds the answer |
-| `src/compute/findings.mjs` | Ranks what the 20 rows show by how consistently matched comparisons agree |
+| `src/compute/question.mjs` | Reads the question into conditions. Each one is given, omitted, unresolved or unrecorded. |
+| `src/compute/applicability.mjs` | The applicability policy (ADR-012): checks the material, gravity and air for the whole set, then every other condition against each test's own row, all together. Derives each set's bounds from its rows. |
+| `src/compute/catalog.mjs` | Missions, other places, cabin airs, materials and the cited sources |
+| `src/compute/scenario.mjs` | Merges the question with taps and builds the answer: verdict, evidence, gaps, closest tests and nearest evidence |
+| `src/compute/findings.mjs` | Ranks what the 20 rows show by how consistently pairs of readings agree, with pair and distinct-test counts |
 | `data/fire-response.json`, `src/compute/response.mjs` | NASA's ISS fire-response steps, quoted in NASA's order, with the evidence for each step |
 | `src/acquire/psi.mjs` | Fetches NASA's PSI experimental tables through `safe.mjs`: PSI-25 to cross-check our O₂ values, and PSI-69 (FLEX) |
 | `data/bass-fabric.csv`, `bass-nomex.csv`, `bass-extinction.csv`, `src/compute/sets.mjs` | SIBAL fabric (Table 7.1), Nomex (Table A.2) and extinction speeds (Table 2.1), from the same report. `ask()` answers fabric and Nomex from their outcomes: **Mixed** or **No flame held** (ADR-011). |
@@ -49,7 +54,8 @@ The server decides every scientific statement. The browser only draws what the s
 | `src/compute/csv.mjs` | The CSV reader shared by the loaders and the PSI fetcher |
 | `src/api/server.mjs` | The local HTTP server: static files plus the JSON routes |
 | `web/index.html`, `style.css`, `app.js` | The Will It Burn? page |
-| `test/scenario.test.mjs` | Tests for the question reader, the answer rules and the routes |
+| `web/state.js` | The page's request logic, with no DOM, so Node tests run the same code: the newest intent wins, stale replies are dropped, and an Unclear answer is never a base for taps |
+| `test/` | The question, applicability, scenario, frontend, API, MCP and data tests (§11) |
 
 ## 1. Where the data comes from
 
@@ -87,37 +93,55 @@ When the server starts, `evidence.mjs` reads the CSV once and turns each line in
 
 Both FlameScope and Will It Burn? use these same records.
 
-## 3. The evidence envelope
+## 3. What the tests recorded, and how a question is matched
 
-`src/compute/scenario.mjs` computes what the 20 rows cover. It derives this from the records, never from typed-in numbers, so it updates by itself if rows are added.
+`src/compute/applicability.mjs` derives what the rows record from the records themselves, never from typed-in numbers, so it updates by itself if rows are added. For acrylic:
 
-| Condition | Covered by the tests | How it's worked out |
+| Condition | Recorded by the tests | How a question is checked |
 |---|---|---|
-| Material | Acrylic (PMMA) | Every row is PMMA |
-| Gravity | Microgravity on the ISS | BASS-II ran in orbit |
-| Oxygen | 16.8% to 22.2% | Lowest and highest of all start and end values |
-| Oxygen partial pressure | 17 to 22.5 kPa | The oxygen range multiplied by station pressure |
-| Pressure | About 14.7 psi | Not in the table. BASS-II ran in the station glovebox at about 1 atm, and this is stated on screen. |
-| Airflow | 2 to 21 cm/s | Lowest and highest airflow reading |
-| Thickness | 1, 2, 3, 4 and 5 mm | The distinct thickness values |
+| Material | Acrylic (PMMA). Every row is PMMA. | For the whole set |
+| Gravity | Microgravity on the ISS, where BASS-II ran | For the whole set |
+| Cabin air | The station's own air, in a glovebox | For the whole set. A cabin-air preset is shown as "station air" (context), not as a measured oxygen match. |
+| Oxygen | Each test's start and end values, 16.8% to 22.2% overall | Per test: an oxygen you give must lie within that test's start-to-end span |
+| Pressure | Not recorded in any table | Never a match. BASS-II ran at the station's nominal 14.7 psi (1 atm), so that value is shown as "Not recorded". Any other pressure is a gap. |
+| Airflow | Each test's set values, 2 to 21 cm/s overall | Per test: it must be one of that test's settings |
+| Thickness | 1, 2, 3, 4 and 5 mm | Per test: exact |
+| Width | 12 and 22 mm | Per test: exact |
+
+A test counts only if its own row records **every** condition you gave, all together. The overall ranges are context for headlines, never a match. Nothing is interpolated between recorded values or stretched beyond them, and there is no tolerance (ADR-012).
+
+Acrylic oxygen and airflow are never tied within one test. The table gives oxygen only at the start and end, so it can't say what the oxygen was at a given airflow reading. A question that gives both therefore answers No data, with a note saying why.
+
+Fabric and Nomex have their own rules. A SIBAL flow ramp such as "10 to 5" counts as passed through, with the outcome the report names at the ramp's end, and the test's single oxygen value must match exactly. Nomex airflow is an instrument reading, so it never matches a cm/s question.
 
 ## 4. How the search works: `parseQuestion()`
 
-The search box is **not an AI model**. It is a small, rule-based reader. It is predictable, it runs offline, and every rule is covered by tests. It never answers the question. It only turns the words into structured fields.
+The search box is **not an AI model**. It is a small, rule-based reader in `src/compute/question.mjs`. It is predictable, it runs offline, and every rule is covered by tests. It never answers the question. It only turns the words into structured fields, and each condition ends in one of four states:
+- **given**: a value the question states, in normalised units, even one no test covers;
+- **omitted**: the default applies, and it is shown as a default;
+- **unresolved**: malformed, contradictory, or in a unit the app can't convert. The answer is **Unclear**.
+- **unrecorded**: clear, but no table records it, such as temperature, sample length or humidity. It blocks a yes or no answer.
 
-Step by step:
+Every rule masks the words it reads, so no two rules read the same number. Step by step:
 
 1. **Normalise.** Lower-case the text, turn `O₂` into `o2`, and collapse spaces.
-2. **Find the place.** Each mission has a word pattern. If several match, the one mentioned first wins, and a notice says so. "Mars transit" or "on the way to Mars" beats plain "Mars."
-3. **Find the cabin air.** Words like "exploration" or "low pressure" select the Exploration preset. Words like "Earth-normal" or "sea level" select Earth-normal.
-4. **Find numbers with units.**
-   - Pressure in psi, kPa or atm is converted to psi.
-   - Oxygen is read from `34% oxygen`, `O2 at 30%`, or a bare `34%`.
-   - Airflow is read from `12 cm/s`. "Still air", "no ventilation" and "fans off" mean 0 cm/s.
-5. **Find the thickness.** One `N mm` sets that thickness. Two or more mean you are comparing, so every thickness is shown. "Thin" and "thick" map to the thinnest and thickest tested sheet, with a notice.
-6. **Find the material.** It checks a list of known materials. If acrylic is mentioned, it wins and a notice says the others aren't in the data. Otherwise the first untested material is used, such as Nomex.
-7. **Watch for safety words.** "Safe", "certify" and "recommend" add a notice that the tool can't certify materials.
-8. **Say when nothing was found.** If no field matched, a notice says the defaults are shown.
+2. **Airflow first**, so "20 mm/s" can never be read as a 20 mm sheet. mm/s, cm/s, m/s, ft/s, per minute or hour, km/h, mph and knots become cm/s. "Still air", "no ventilation" and "fans off" mean 0 cm/s.
+3. **Pressure.** psi, kPa, atm, bar, mbar, hPa, Pa, mmHg and torr become psi. Two different pressures are unresolved.
+4. **Humidity** is unrecorded. **Oxygen** is read from `34% oxygen` or `O2 at 30%`, or from a bare `34%` with a notice. Two different oxygen shares, or one outside 0–100%, are unresolved.
+5. **Airflow or pressure with no usable unit**, such as "airflow of 5", "a flow of 0.3 cm" or "ventilation at 50%", is unresolved, and masked so no later rule reads it as a thickness or an oxygen share.
+6. **Temperature** is unrecorded.
+7. **Sizes.** mm, cm, µm and inch become mm, with or without a hyphen ("0.5-inch"). "Wide" makes a width, and "long" a length, which is unrecorded. Two thicknesses mean you are comparing, so every thickness is shown.
+8. **Place.** The four missions, Earth ("on Earth", "1 g"), other worlds, a gravity number or fraction ("0.38 g", "1/6 g") and gravity words ("partial gravity", "zero gravity"). A room on Earth ("in my kitchen") counts only if nothing else is named. If several places match, the first one wins and a notice says so. "Mars transit" or "on the way to Mars" beats plain "Mars".
+9. **Cabin air.** "Exploration" or "low pressure" select the Exploration preset. "Earth-normal" or "sea level" select Earth-normal.
+10. **Numbers nothing else read.**
+    - A comparison between results ("3 times faster") gets a notice.
+    - Years and mission numbers ("2030", "Artemis 3") are names.
+    - Chemical names (O2, CO2, N2, H2O) and JP-8 are fine.
+    - Any other number, or a digit glued to letters such as "M7", is unresolved, so the answer is Unclear.
+11. **Thin and thick** map to the thinnest and thickest tested sheet, with a notice, but only when no size was given and no number was left unread.
+12. **Material.** If the subject of the question names something the catalog doesn't list, such as "steel", it stays that material and answers No data. Otherwise the first tested material wins, and a notice says the others aren't shown. Otherwise the first untested one is used.
+13. **Safety words.** "Safe", "certify" and "recommend" add a notice that the tool can't certify materials.
+14. **Say when nothing was found.** If no field matched, a notice says the defaults are shown.
 
 Examples, taken from the tests:
 
@@ -130,6 +154,12 @@ Examples, taken from the tests:
 | Will a 1 mm acrylic sheet burn in still air? | thickness `1`, airflow `0`, material `pmma` |
 | Is Nomex safe on a Mars base? | mission `mars`, material `nomex`, with a safety notice |
 | plexiglass at 56.5 kPa | material `pmma`, pressure `8.2` psi |
+| Will acrylic burn on the ISS with 20 mm/s airflow? | airflow `2`, never a 20 mm sheet |
+| Will steel burn on the ISS? | material `other` ("steel"), answers No data |
+| Will acrylic burn on the ISS at 0% oxygen? | oxygen `0`, answers No data |
+| acrylic at 21% and 34% oxygen | unresolved oxygen, answers Unclear |
+| Will a 0.5 in acrylic sheet burn on the ISS? | unresolved number ("0.5 in"), answers Unclear |
+| Will acrylic burn at 25 °C? | unrecorded temperature, answers No data |
 
 ### Why not use an AI model for this?
 
@@ -148,7 +178,9 @@ Each field is filled in this order:
    - Thickness defaults to all sheets.
    - Airflow defaults to any tested airflow.
 
-The server records where each field came from: `picked`, `question` or `default`. The page shows that as the chip colours in the **Read as** row.
+The server records where each field came from: `picked`, `question` or `default`, plus `unresolved` for a condition it couldn't read. The page shows that as the chip colours in the **Read as** row. An explicit value is never swapped for a default: 0% oxygen stays 0%, and a place or material outside the data stays what was asked.
+
+An unresolved condition stays unresolved unless a tap replaces it. A cabin-air tap replaces an unreadable oxygen share or pressure, a thickness tap an unreadable thickness, and a mission tap an unreadable gravity. A number the reader couldn't place has no tap, so the question has to be reworded. The Unclear subline names only the taps that would help.
 
 Cabin air works like this:
 
@@ -157,35 +189,36 @@ Cabin air works like this:
 - If the result matches a preset exactly, it takes that preset's name. Otherwise it is called "Custom."
 - The server always calculates oxygen partial pressure in kPa as well.
 
-Bad input is refused rather than guessed. Examples are an unknown mission, a non-number thickness, or a question longer than 500 characters. The server returns HTTP 400 with a plain message.
+Bad input is refused rather than guessed. Examples are an unknown mission, a non-number thickness, a boolean where a number goes, a value out of range, or a question longer than 500 characters. The server returns HTTP 400 with a plain message.
 
 ## 6. Checking the cabin against the evidence
 
-`checksFor()` builds one row per condition:
+`applicability()` in `src/compute/applicability.mjs` builds one row per condition. Each row has a status:
 
-| Check | Passes when | Always shown? |
-|---|---|---|
-| Material | The material is acrylic | Yes |
-| Gravity | The mission is in microgravity | Yes |
-| Oxygen | The oxygen share is within 16.8% to 22.2% | Yes |
-| Pressure | The pressure is within 0.5 psi of 14.7 | Yes |
-| Airflow | The airflow is within 2 to 21 cm/s | Only if you gave an airflow |
-| Thickness | The thickness is one of the tested values | Only if you gave a thickness |
+| Check | Status when it holds | Status when it fails | Shown |
+|---|---|---|---|
+| Material | `match`: the material has an evidence set | `mismatch` | Always |
+| Gravity | `match`: microgravity | `mismatch` | Always |
+| Oxygen | `context` for the station's own air given as a preset ("station air"). `match` when an oxygen share you gave lies in at least one test's recorded span. | `mismatch`, including a preset such as Exploration air | Always |
+| Pressure | `unrecorded` at 14.7 psi: consistent, but not in any table | `mismatch` | Always |
+| Airflow, thickness, width | `match` when at least one test recorded that value | `mismatch` | When you gave one |
+| Temperature, length, humidity | none | `unrecorded`, which blocks a yes or no | When you gave one |
+| Together | none | `separately`: each condition is recorded somewhere, but no single test has them all | When you gave more than one |
 
-If **every** check passes, the evidence covers your cabin. If any check fails, the answer is "No data."
+The answer is Burned, Mixed or No flame held only if every set-level check holds and at least one test's own row passes every per-test check. That test's ID goes in `applicability.matched`. Otherwise the answer is **No data**. When some tests record some of your conditions, `closest` lists them, with each recorded value and each miss. A test that records some of your conditions but not all is never counted as a match.
 
 ## 7. Building the answer: `ask()`
 
 `ask()` is the single function behind `GET /api/ask`. It returns everything the page needs.
 
-**When every check passes:**
+**When at least one test matches:**
 
-- **Verdict:** a "Burned" stamp plus the burn-time range for the matching rows.
-- **Evidence:**
+- **Verdict:** a "Burned" stamp, a count such as "4 of 4 matching tests", and the burn-time range for the matching rows. Fabric answers Mixed and Nomex answers No flame held, from their outcomes.
+- **Evidence** (matching tests only):
   - The matching test IDs.
   - A count of tests and of tests with spread not tracked.
   - The shortest and longest burn.
-  - The fastest and slowest spread, each with its test ID, thickness and airflow.
+  - The fastest and slowest spread, each with its test ID, thickness and airflow. These are `null` when no matching test tracked its spread.
 - **Finding:** with all thicknesses, it compares the fastest 1 mm sheet with the fastest 5 mm sheet. With one thickness, it gives that thickness's spread range and airflow range.
 - **Why it matters:** a sourced line from the related BASS-II rod study.
 - **Ranked findings:** five descriptive findings over all 20 tests, from `findings.mjs`. See below.
@@ -194,23 +227,50 @@ If **every** check passes, the evidence covers your cabin. If any check fails, t
 
 The challenge asks the dashboard to rank findings. `rankFindings()` does this with fixed, checkable rules. It computes the result once, when the server starts:
 
-1. **Comparisons.** For each factor (airflow, thickness, width, oxygen, burning sides), pair every two measured spreads that match on all the other listed conditions. Airflow pairs come from inside one test, where the sample stays the same. The others pair different tests at the same airflow. Untracked spreads (M6, M12) never enter a pair.
+1. **Reading pairs.** For each factor (airflow, thickness, width, oxygen, burning sides), pair every two measured spreads that match on the listed conditions. Each finding says what is matched (`matchedOn`) and what isn't (`notMatched`).
+   - Airflow pairs come from inside one test, where the sample stays the same, but the oxygen at each reading isn't known.
+   - The others pair different tests at the same airflow. Their oxygen differs, and the text says so ("but not the same oxygen").
+   - Untracked spreads (M6, M12) never enter a pair.
 2. **Agreement.** A pair agrees when the side the lead expects to be faster really spread faster. For example, the thinner sheet in a thickness pair.
-3. **Tier.** Consistent: 10 or more comparisons, with at least 85% agreeing. Suggestive: 4 or more, with at least 75%. Mixed: 4 or more, under 75%. Too few tests: under 4. Only Consistent and Suggestive findings get a claim as their lead. The others show just the topic.
-4. **Order.** Sort by tier, then by the share that agrees, then by the number of comparisons.
-5. **Caveats from the rows.** Oxygen fell during every test, and the table gives only start and end oxygen, so airflow can't be separated from it. The one airflow exception, M3, is also the only test listed from low to high flow. All 3 thickness exceptions had more starting oxygen on the thicker sheet.
+3. **Counts.** Pairs reuse readings, so they aren't independent results. Each finding shows its pair count beside the number of distinct tests, and names the test that appears in the most pairs (`busiest`).
+4. **Tier.** This is the app's display rule, not a statistical test:
+   - Consistent: 10 or more reading pairs, with at least 85% agreeing.
+   - Suggestive: 4 or more, with at least 75%.
+   - Mixed: 4 or more, under 75%.
+   - Too few pairs: under 4.
 
-Today's result: airflow 29 of 30 (Consistent), thickness 23 of 26 (Consistent), width 3 of 4 (Suggestive), oxygen 2 of 2 (Too few tests), burning sides 0 of 1 (Too few tests). Every pair is returned in `pairs`, so each count can be checked row by row.
+   Only Consistent and Suggestive findings get a claim as their lead. The others show just the topic.
+5. **Order.** Sort by tier, then by the share that agrees, then by the number of pairs.
+6. **Caveats from the rows.** Oxygen fell during every test, and the table gives only start and end oxygen, so airflow can't be separated from it. The one airflow exception, M3, is also the only test listed from low to high flow. All 3 thickness exceptions had more starting oxygen on the thicker sheet.
 
-**When a check fails:**
+Today's result:
 
-- **Headline:** built from the first failing check, in this order: material, gravity, oxygen, pressure, airflow, thickness.
+| Finding | Agreeing pairs | Distinct tests | Tier |
+|---|---|---|---|
+| Airflow | 29 of 30 | 13 | Consistent |
+| Thickness | 23 of 26 | 16 | Consistent |
+| Width | 3 of 4 | 6 | Suggestive |
+| Oxygen | 2 of 2 | 4 | Too few pairs |
+| Burning sides | 0 of 1 | 2 | Too few pairs |
+
+Every pair is returned in `pairs`, so each count can be checked row by row.
+
+**When no test matches:**
+
+- **Headline:** built from the first failing check, in this order: material, gravity, oxygen, pressure, airflow, thickness, width, an unrecorded condition, then "together". For example: "Unknown. No single test had all of these conditions."
 - **Gap cards:** each failing check adds one or two cards, and every card carries its source link.
   - **Gravity:** two cards. One cites LUCI, the first lunar-gravity burns longer than 25 seconds (NTRS 20250010653). The other cites the Fire Safety Journal rod study, which puts lunar gravity near the worst case for acrylic rods.
   - **Oxygen and pressure:** one card compares oxygen partial pressure with the tested range. When that pressure is inside the range, it adds that the cabin has less than half the nitrogen. Saffire V and VI are named as where the data lives: about 10 psi and 26% O₂, and about 8 psi and 29–31% O₂ (ICES-2024-365, Table 1). SoFIE is named too.
-  - **Airflow:** still air, or flows above the tested range.
-  - **Thickness:** the tested sheet sizes.
-- **Nearest evidence:** a set of parameters that fixes every failing check. It switches to acrylic, the ISS, Earth-normal air, any tested airflow, or the nearest tested thickness. The tests confirm this always lands on a "Burned" answer.
+  - **Airflow:** still air, flows outside the tested range, or a value between two set values, naming the nearest settings and their tests.
+  - **Thickness and width:** the tested sizes.
+  - **Together:** when each condition is recorded somewhere but no single test has them all.
+- **Closest tests:** tests that record some of your conditions, each with its recorded values and misses. They are never counted as matches.
+- **Nearest evidence:** a set of parameters that reaches matching tests.
+  - It first fixes the set-level checks: acrylic (or SIBAL for cotton and fabric), the ISS with Earth-normal air, or Earth-normal air alone.
+  - Then it relaxes the smallest set of per-test conditions that lands on a match: any tested airflow, any width, station air, or the nearest tested thickness.
+  - It says what it switches to and what it leaves out.
+  - The tests check that it lands on Burned, Mixed or No flame held for each kind of gap they cover (11 questions, from the audit cases to Earth, steel and an unrecorded temperature). That is not a proof for every possible question.
+- **Unclear:** when a condition couldn't be read, there is no evidence, no gap card and no nearest button. `unresolved` gives the reason for each unreadable condition, and `canonical` is the question exactly as asked.
 
 **In both cases the response also includes:**
 
@@ -227,13 +287,18 @@ Every parameter is optional.
 | Parameter | Values | Meaning |
 |---|---|---|
 | `q` | Up to 500 characters | The typed question |
-| `mission` | `iss`, `moon`, `transit`, `mars` | A tapped mission |
+| `mission` | `iss`, `moon`, `transit`, `mars`, `earth`, `other` | A tapped mission, Earth, or another place |
+| `place`, `g` | Text; 0 to 10 | With `mission=other`: the place's name and its gravity in g |
 | `air` | `earth`, `exploration` | A tapped cabin-air preset |
-| `o2` | 1 to 100 | A custom oxygen share in % |
-| `psi` | 1 to 30 | A custom cabin pressure in psi |
-| `material` | `pmma`, `nomex`, `cotton` and others | A material id |
-| `thickness` | `all`, or 0.1 to 50 | Sheet thickness in mm |
-| `airflow` | `none`, or 0 to 200 | Airflow in cm/s |
+| `o2` | 0 to 100 | An explicit oxygen share in % |
+| `psi` | 0 to 1000 | An explicit cabin pressure in psi |
+| `material` | `pmma`, `sibal`, `nomex`, `cotton`, `other` and others | A material id |
+| `materialName` | Text | With `material=other`: the material's name, reduced to plain words |
+| `thickness` | `all`, or 0.001 to 1000 | Sheet thickness in mm |
+| `width` | `all`, or 0.1 to 10000 | Sample width in mm |
+| `airflow` | `none`, or 0 to 100000 | Airflow in cm/s |
+
+A value outside these ranges, or of the wrong type (a boolean where a number goes), is refused with HTTP 400. A value inside them that no test covers, such as 0% oxygen or 100 psi, is kept and answers No data.
 
 A trimmed real response for `q=Will a 1 mm acrylic sheet burn on the ISS?`:
 
@@ -242,31 +307,35 @@ A trimmed real response for `q=Will a 1 mm acrylic sheet burn on the ISS?`:
   "canonical": "Will a 1 mm acrylic sheet burn on the ISS in Earth-normal air?",
   "notices": [],
   "understood": [{ "field": "Mission", "value": "ISS", "from": "question" }],
-  "scenario": { "mission": { "id": "iss" }, "air": { "key": "earth", "psi": 14.7, "o2": 21, "po2": 21.3 }, "thickness": 1, "airflow": null },
+  "scenario": { "mission": { "id": "iss" }, "air": { "key": "earth", "psi": 14.7, "o2": 21, "po2": 21.3 }, "thickness": 1, "width": null, "airflow": null },
   "missions": [{ "id": "iss", "matches": 4, "selected": true }, { "id": "moon", "matches": 0, "selected": false }],
-  "checks": [{ "key": "gravity", "yours": "µg", "tested": "µg (ISS)", "ok": true }],
-  "verdict": { "state": "burned", "stamp": "Burned", "count": "4 of 4 tests",
+  "checks": [{ "key": "gravity", "label": "Gravity", "yours": "µg", "tested": "µg (ISS)", "status": "match", "statusLabel": "Match", "ok": true, "note": null }],
+  "applicability": { "policy": "A test counts only if its own row records every condition you gave, all together. …", "matched": ["M1", "M6", "M7", "M16"], "given": ["thickness"] },
+  "verdict": { "state": "burned", "stamp": "Burned", "count": "4 of 4 matching tests",
                "sub": "All 4 of the 1 mm sheets in the BASS-II tests burned in orbit, for 6 to 18 minutes each." },
   "evidence": {
     "ids": ["M1", "M6", "M7", "M16"],
     "stats": { "tests": 4, "notTracked": 1, "burnMin": 6.4, "burnMax": 18.4,
-               "fastest": { "id": "M16", "velocity": 5, "spread": 0.144 },
-               "slowest": { "id": "M7", "velocity": 3, "spread": 0.07 } },
+               "fastest": { "id": "M16", "thicknessMm": 1, "velocity": 5, "spread": 0.144 },
+               "slowest": { "id": "M7", "thicknessMm": 1, "velocity": 3, "spread": 0.07 } },
     "finding": { "lead": "1 mm sheets", "text": "spread at 0.07–0.144 mm/s across 2–10 cm/s of airflow." }
   },
   "findings": {
     "tests": 20,
-    "ranked": [{ "rank": 1, "key": "airflow", "tier": "consistent", "tierLabel": "Consistent", "agree": 29, "comparisons": 30,
+    "rule": "This is the app’s display rule, not a statistical test. Consistent: 10 or more reading pairs, at least 85% agreeing. …",
+    "ranked": [{ "rank": 1, "key": "airflow", "tier": "consistent", "tierLabel": "Consistent", "agree": 29, "comparisons": 30, "tests": 13,
                  "lead": "More airflow, faster spread.",
-                 "text": "Within a test, the faster airflow had the faster spread in 29 of 30 comparisons, across 13 tests.",
+                 "text": "Inside single tests, the faster airflow had the faster spread in 29 of 30 reading pairs, from 13 tests.",
+                 "matchedOn": ["the same test"], "notMatched": ["oxygen at each reading"], "busiest": { "id": "M7", "pairs": 6 },
                  "exceptions": ["M3"], "ids": ["M2", "M3", "…"], "pairs": ["…"] }]
   },
+  "closest": null,
   "gaps": [],
   "nearest": null
 }
 ```
 
-`findings` is the same for every covered answer, because it ranks all 20 tests. It is `null` whenever the answer is **No data**, so the page never shows ISS findings next to a cabin the tests don't cover.
+`findings` is the same for every acrylic answer with matching tests, because it ranks all 20 acrylic tests. It is `null` otherwise, including for fabric and Nomex, so the page never shows these findings next to a cabin or material the tests don't cover.
 
 For a gap, such as `q=Mars transit in exploration air`, `evidence` and `findings` are `null`, and `gaps` and `nearest` are filled in:
 
@@ -277,6 +346,33 @@ For a gap, such as `q=Mars transit in exploration air`, `evidence` and `findings
              "text": "Your cabin’s oxygen partial pressure, 19.2 kPa, sits inside the tested 17–22.5 kPa. But it has less than half the nitrogen…",
              "source": { "name": "NASA evidence report (2015): the 8.2 psia, 34% O₂ exploration atmosphere", "url": "https://ntrs.nasa.gov/citations/20150021491" } }],
   "nearest": { "label": "Show the nearest evidence we have", "changes": "Switches to Earth-normal air.", "params": { "air": "earth" } }
+}
+```
+
+When each condition is recorded somewhere but no single test has them all, as in `q=Will a 1 mm acrylic sheet burn on the ISS at 16.8% oxygen and 21 cm/s?`, a `together` check fails and `closest` lists the tests that come nearest:
+
+```json
+{
+  "verdict": { "state": "no-data", "headline": "Unknown. No single test had all of these conditions." },
+  "checks": [{ "key": "together", "status": "mismatch", "statusLabel": "Not in one test", "note": "No single test recorded all of these." }],
+  "closest": { "tests": [{ "id": "M1", "sourceLocation": "Table 5.1, printed p. 57, row M1", "conditions": [
+    { "key": "oxygen", "ok": false, "recorded": "22.2% → 21.9%" },
+    { "key": "airflow", "ok": false, "recorded": "9 cm/s" },
+    { "key": "thickness", "ok": true, "recorded": "1 mm" }] }] },
+  "nearest": { "changes": "Switches to Earth-normal air and any tested airflow.", "params": { "air": "earth", "airflow": "none" } }
+}
+```
+
+When part of the question can't be read, as in `q=Will a 1 mm acrylic sheet burn at 150% oxygen?`, nothing is answered:
+
+```json
+{
+  "canonical": "Will a 1 mm acrylic sheet burn at 150% oxygen?",
+  "verdict": { "state": "unresolved", "stamp": "Unclear", "count": "Not answered",
+               "headline": "Unclear. An oxygen share has to be between 0% and 100%.",
+               "sub": "This app won’t guess a value you didn’t give. Reword the question, or tap the cabin air to replace it." },
+  "unresolved": [{ "key": "o2", "label": "Oxygen", "reason": "An oxygen share has to be between 0% and 100%." }],
+  "evidence": null, "closest": null, "gaps": [], "nearest": null
 }
 ```
 
@@ -305,14 +401,20 @@ The page is laid out like a Mac app window: a toolbar with the Ask field, a side
 - **Submitting the form** sends only `q`.
 - **Tapping a suggested question** fills the box and sends `q`.
 - **Tapping a keyword** adds it to the box without sending anything. The keywords open under the Ask field while it has focus.
-- **Tapping a tile, the air switch, a material, a thickness chip or "nearest evidence"** calls `change(patch)`. A material tap also resets the thickness to all:
-  - It copies every current field from the last answer, overrides the one that was tapped, and sends them all as explicit parameters.
+- **Tapping a tile, the air switch, a material, a thickness chip or "nearest evidence"** calls `change(patch)` in `web/state.js`. A material tap also resets the thickness to all.
+  - The tap builds on the newest *intended* scenario, not on the last reply, so two quick taps both count.
+  - The base is the answered scenario as explicit parameters (`paramsFrom`), with the tapped field overridden.
   - A new mission drops the air fields, so that mission's default air applies.
-  - The reply's canonical question replaces the text in the box.
+  - After an **Unclear** answer, the tap sends the question again with the tapped field (`baseFrom`). The answer stays Unclear unless the tap replaces the part that couldn't be read. Nothing read from an unclear question ever travels as a tapped value.
+  - A tap made while a typed question is still being read waits for that answer, then applies to it.
+  - The reply's canonical question replaces the text in the box. For an Unclear reply, that is the question as asked.
 
-**Stale replies**
+**Stale replies and neutral states**
 
-Every request gets a version number. If an older reply arrives after a newer one, it is ignored, so fast tapping can never show the wrong answer.
+- Every request gets a version number. If an older reply arrives after a newer one, it is ignored, so fast tapping can never show the wrong answer.
+- The page opens on a neutral "Loading…" stamp, not a verdict.
+- A failed request shows "Not answered", clears the answer panels, and says which question it was.
+- While an answer is on screen, "Asked: “…”" shows the question it answers.
 
 **Where each response field is drawn**
 
@@ -323,8 +425,10 @@ Every request gets a version number. If an older reply arrives after a newer one
 | `verdict`, `why` | The verdict word and test count, the headline, the subline and the "why it matters" line |
 | `scenario.air` | The cabin-air switch, the chamber readouts and the partial pressure |
 | `scenario.material` | The checkmark in the Cabin card's material picker |
-| `checks` | The Evidence match card |
-| `scenario.mission.g` | The chamber flame: a blue sphere in orbit, a dashed outline at partial gravity |
+| `checks` | The Evidence match card: one pill per condition with its status label (Match, Station air, Not recorded, In other tests or Gap, and "Not in one test" for the together row), plus its note |
+| `unresolved` | The "What couldn't be read" cards, in place of the evidence |
+| `closest` | The closest-tests table under the gap cards, each recorded value and each miss |
+| `scenario.mission.g`, `verdict.state`, `evidence` | The chamber flame: solid only for matched evidence in microgravity, the unlit sample for No flame held, and a dashed outline otherwise |
 | `evidence` | The key-number cards (`renderKpis`: four numbers for acrylic, or the test count and an outcome bar for fabric and Nomex), and the evidence card with the thickness chips, chart, finding and caveat, or the report's rows |
 | `findings` (from `/api/data`) | The Ranked findings section and its Overview card. Each row has its tier, "Agrees in N of M comparisons", one dot per comparison, and a button that opens its rows. |
 | `fireResponse` (from `/api/data`) | The Fire response section, and the Overview card with one line per step and its status |
@@ -349,22 +453,44 @@ The page follows Apple's design language. It uses Apple's system colours for lig
 
 The flame is a canvas animation. It is drawn from simple shapes and is always labelled "Illustration":
 
-- In orbit it is a blue sphere, with a small Earth teardrop for comparison.
-- At Moon or Mars gravity it is a dashed outline with a question mark.
+- For matched evidence in orbit it is a blue sphere, with a small Earth teardrop for comparison.
+- For No flame held, only the unlit sample is drawn.
+- For every other answer, including No data in orbit, an Unclear question and a failed request, it is a dashed outline with a question mark.
 - It pauses when scrolled off screen, and stays still if the user prefers reduced motion.
 
 ## 10. Security and offline use
 
-- The server listens on 127.0.0.1 only.
+- The server listens on 127.0.0.1 only. It answers only requests whose Host header is one of its own loopback names, which guards against DNS rebinding. Cross-origin POSTs are refused, and the brief's JSON body is type-checked.
 - The page loads no remote fonts, scripts or libraries. The content security policy allows only the server itself, so there are no inline scripts or inline styles.
 - Every piece of text from the server is escaped before it is put on the page.
-- Nothing is sent to any outside service.
+- Will It Burn? sends nothing to any outside service. Its evidence is committed data in `data/`.
+- The web server's only outside call is the research view's optional AI brief. It goes through `src/agents/provider.mjs`, which refuses with `OFFLINE=1` or without a key and never caches (ADR-013).
+- Outside the web server, the MCP tool `get_provenance` fetches the NTRS citation through `safe.mjs`, which falls back to the committed fixture offline.
 
 ## 11. Tests
 
-Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check that:
+Run `node --test` (with `OFFLINE=1`, and with any OpenAI key unset: `env -u OPENAI_API_KEY`). No test calls a real model.
 
-- The evidence envelope is derived from the rows.
+`test/applicability.test.mjs` checks the matching policy (ADR-012):
+
+- The two audit cases that used to answer Burned (1 mm at 16.8% O₂ and 21 cm/s; SIBAL at 21% O₂ and 53 cm/s) now answer No data, with the closest tests.
+- Supported combinations still answer, and acrylic oxygen and airflow are never tied within one test.
+- Airflow between two set values, and pressure, follow the policy. SIBAL's flow ramps count their end outcome.
+- The nearest-evidence button reaches matching tests for each kind of gap tested, through the page's own request logic.
+
+`test/question.test.mjs` checks the reader:
+
+- Units are normalised, and a velocity is never read as a thickness.
+- Explicit values, places and materials outside the data are kept, never replaced by a default.
+- Malformed, contradictory or unreadable conditions, and numbers the reader can't place, answer Unclear.
+- An airflow or pressure it can't convert never comes back as a thickness or an oxygen share.
+- Unrecorded conditions block an affirmative answer, and a safety question never gets a yes or no.
+
+`test/frontend-home.test.mjs` runs `web/state.js` against real answers: fast taps keep the newest intent, stale replies are dropped, a tap after Unclear re-sends the question, and only matched evidence gets a confident flame.
+
+The Will It Burn? tests in `test/scenario.test.mjs` check that:
+
+- The acrylic bounds are derived from the rows.
 - Each suggested question is read the way the concept doc promises.
 - Units, synonyms and ambiguous questions are handled as documented.
 - Taps beat the question, and the question beats defaults.
@@ -374,9 +500,11 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 - The routes serve the page, redirect the old `/burn` address to `/`, and answer `/api/ask`.
 - The cited claims on the gap cards and the "why it matters" line match the sources checked on 2026-09-24.
 
+`test/api-security.test.mjs` checks the Host and Origin allowlists, the brief body's types, and the AI path with a mocked provider (errors, timeouts, malformed replies, offline refusal). `test/mcp.test.mjs` spawns the real MCP server and checks bad lines, schema checks and protocol negotiation. `test/acquire.test.mjs` checks that a corrupt cache file falls back to the fixture.
+
 `test/findings.test.mjs` checks the ranked findings:
 
-- The order, tiers and counts follow the documented rule.
+- The order, tiers and counts follow the documented rule, and each finding reports its distinct tests and says that pairs reuse readings.
 - Every compared pair is two real table readings.
 - The caveats are computed from the rows.
 - Untracked spreads never count.
@@ -421,15 +549,16 @@ Run `node --test`. The Will It Burn? tests in `test/scenario.test.mjs` check tha
 
 ## 12. Extending it
 
-- **Add a mission.** Add an entry to `MISSIONS` in `src/compute/scenario.mjs` with its gravity, default air and wording, plus a word pattern in `PATTERNS.mission`.
-- **Add a material with real data.** Add its rows to the data layer with their own source, mark it `supported`, and make the checks use each material's own envelope instead of the single acrylic one.
+- **Add a mission.** Add an entry to `MISSIONS` in `src/compute/catalog.mjs` with its gravity, default air and wording, plus a word pattern in `PATTERNS.mission` in `src/compute/question.mjs`.
+- **Add a material with real data.** Add its rows to the data layer with their own source, mark it `supported` in `catalog.mjs`, and give it an evidence set in `applicability.mjs` (`SETS`, and its per-test rules in `PER_TEST`) that says how each condition is recorded for it.
 - **Add reduced-pressure, raised-oxygen data.** Transcribing the Saffire IV–VI results would give real evidence for cabins near 8–10 psi and 26–31% oxygen. Keep it a separate set, because its flow ran with the flame, not against it. A 34% oxygen cabin would still need SoFIE results or new tests. See [planning/datasets.md](planning/datasets.md).
 - **Add an AI reader.** Let a model fill only the parser's fields, validate them, and fall back to the rules. See the section on why the reader isn't AI.
 
 ## 13. Known limits
 
-- One NASA table, one material and one investigation. The 20 rows are not 20 independent studies.
-- Pressure is not in the table. The 14.7 psi used for the check comes from where BASS-II ran, and the page says so.
-- Oxygen values are the start and end of each test, not a constant level.
-- The reader recognises the listed words and patterns. Other phrasings fall back to defaults with a notice.
-- Findings describe the data. They are not causal claims or safety ratings.
+- One NASA report and one investigation. The 20 acrylic rows are not 20 independent studies.
+- Pressure is not in any table. Only the station's 14.7 psi is consistent with how BASS-II ran, and it is shown as "Not recorded", never as a match.
+- Oxygen values are the start and end of each test, not a constant level. So acrylic oxygen and airflow can never be matched together.
+- Matching is exact, with no tolerance. An airflow between two set values, or an oxygen share just outside a test's span, answers No data. Any tolerance would need its own ADR and a stated measurement basis.
+- The reader recognises the listed words and patterns. A number or unit it can't read makes the answer Unclear. A place or material named in words it doesn't know (for example "Soyuz") can still fall back to the default, shown as a dashed chip.
+- Findings describe the data. The tiers are the app's display rule, not a statistical test, and they are not causal claims or safety ratings.

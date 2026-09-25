@@ -15,6 +15,7 @@ In both cases, what reaches the user is compute output rendered from `data/`. If
 flowchart TB
   U["User (browser)"] --> API["/api/brief"]
   API -->|"ai:true + key + not OFFLINE"| SEL["Evidence selector<br/>one LLM call"]
+  SEL <-->|"only path to the model"| PRV["provider.mjs<br/>refuses offline or without a key · no cache · timeout"]
   SEL -->|"{ids[], abstain}"| VAL{"validateSelection"}
   VAL -->|valid| MB["makeBrief(question, items, ids)<br/>src/compute"]
   VAL -->|invalid or timeout| FB["Deterministic brief<br/>+ visible notice"]
@@ -28,13 +29,13 @@ flowchart TB
 
 | Aspect | Design |
 |---|---|
-| Trigger | The user ticks "AI" on a brief, a key is set, and `OFFLINE` is not `1` |
+| Trigger | The user ticks "AI" on a brief (the body's `ai` must be the boolean `true`), a key is set, and `OFFLINE` is not `1`. The route checks this, and `provider.mjs` refuses on its own as well (ADR-013). |
 | Input | The question (treated as **untrusted data**) and `claimsFor(items)`, which is already-verified text |
 | Action space | JSON schema `{ ids: enum[offered IDs] (≤5), abstain: bool }`, strict |
 | Output guard | `validateSelection` re-checks the type, the count and membership in the offered set, and dedupes |
-| Failure | Any error or timeout (20 s) gives the deterministic brief plus the notice "AI selection unavailable…" |
+| Failure | Any error, timeout (20 s), non-JSON or malformed reply gives the deterministic brief plus the notice "AI selection unavailable…". Tests replace the provider's transport, so none of them calls a real model. |
 | Labelling | Mode is shown as "AI-selected evidence · verified wording" |
-| Eval | `data/evaluation.json` replay. Target ≥ 18/20 with zero unsupported safety claims ([reviewer-protocol](../reviewer-protocol.md)) |
+| Eval | `data/evaluation.json` replay. Target ≥ 18/20 with zero unsupported safety claims ([reviewer-protocol](../reviewer-protocol.md)). Today `scripts/evaluate.mjs` runs only the offline, deterministic path (20/20). No live-model run has been done. |
 
 ### 2. MCP server (external agents)
 
@@ -61,7 +62,7 @@ Guardrails for the orchestrator:
 
 ### 4. The question reader is deliberately *not* an agent
 
-`parseQuestion` is a rule set, which makes it predictable, testable and offline. If an LLM reader is added later, it may only fill the same fields, validated against the same schema, and it falls back to the rules. See [decisions.md](decisions.md) ADR-003.
+`parseQuestion` is a rule set, which makes it predictable, testable and offline. It never answers for a value it didn't read: a condition it can't read, or a number it can't place, makes the answer Unclear (ADR-012). If an LLM reader is added later, it may only fill the same fields, validated against the same schema, and it falls back to the rules. See [decisions.md](decisions.md) ADR-003.
 
 ## Threats and mitigations
 
@@ -71,5 +72,6 @@ Guardrails for the orchestrator:
 | Hallucinated test ID | Enum-bound schema plus `validateSelection` |
 | Hallucinated number or safety claim | The model never writes text that reaches the user |
 | Provider outage during the demo | `OFFLINE=1` or no key gives the deterministic path, with the visible notice |
-| Key leakage | The key stays on the server. `/api/data` exposes only a boolean. `.env` is gitignored. |
-| Agent misuse of MCP tools | Read-only tools, schema-validated input, and an `isError` result instead of a crash |
+| Key leakage | The key stays on the server, in `provider.mjs`'s Authorization header only. It never enters an error message or a cache file. `/api/data` exposes only a boolean. `.env` is gitignored. |
+| A web page driving the local server (DNS rebinding, cross-site POST) | The Host header must be one of the server's own loopback names, cross-origin POSTs are refused, and the brief body is type-checked |
+| Agent misuse of MCP tools | Read-only tools. Arguments are checked against each tool's schema before it runs (JSON-RPC `-32602`), a refused value returns `isError`, and a bad line never stops the server. |

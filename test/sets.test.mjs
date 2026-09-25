@@ -40,7 +40,10 @@ test('SIBAL fabric gets a mixed answer, with the reasons computed from the rows'
   assert.equal(r.verdict.sub, 'The 3 that didn’t ignite were at 16.4–16.8% oxygen. 6 went out as the airflow was turned down, and 1 blew out as it was turned up.');
   assert.equal(r.evidence.kind, 'outcomes'); assert.equal(r.findings, null); assert.equal(r.why, null);
   assert.ok(r.evidence.ids.every(id => !fabricTests.find(t => t.id === id).comment?.startsWith('Reused')), 'reused samples stay out');
-  assert.equal(ask({ q: 'SIBAL fabric on the ISS at 19 cm/s' }).verdict.count, '4 of 4 tests');
+  // At 19 cm/s: one test held there, three passed through it while the flow was changed, and each was still burning.
+  const at19 = ask({ q: 'SIBAL fabric on the ISS at 19 cm/s' });
+  assert.equal(at19.verdict.count, '4 of 4 matching tests');
+  assert.deepEqual(at19.evidence.ids, ['GMT45-T15', 'GMT178-T17', 'GMT190-T21', 'GMT222-T11']);
 });
 
 test('Nomex gets “No flame held”, which never reads as a safety rating', () => {

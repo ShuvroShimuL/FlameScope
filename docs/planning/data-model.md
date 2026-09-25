@@ -59,9 +59,15 @@ type Record = {
 
 `title`, `investigation`, `version`, `accessed` (YYYY-MM-DD), `source`, `pdf`, `location`, `dataset`, `doi`, `method`, `verification`, `limitations[]`. The provenance drawer and `get_provenance` both serve this file verbatim.
 
-## Derived: `ENVELOPE` (in `scenario.mjs`)
+## Derived: `ENVELOPE` and `SETS` (in `applicability.mjs`)
 
-Computed from the records at load time, never typed in. It covers O₂ 16.8–22.2 %, pO₂ 17–22.5 kPa, airflow 2–21 cm/s, thicknesses {1,2,3,4,5} mm, microgravity, and about 14.7 psi. The pressure is **not in the table**. It is stated from where BASS-II ran, and the UI says so.
+These are computed from the records at load time, never typed in. For acrylic, they cover:
+- O₂ 16.8–22.2 % and pO₂ 17–22.5 kPa;
+- airflow set values of {2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15, 20, 21} cm/s;
+- thicknesses of {1, 2, 3, 4, 5} mm and widths of {12, 22} mm;
+- microgravity.
+
+These bounds are context for headlines, **never a match**: an answer counts a test only if its own row records every condition given (ADR-012). Pressure is **not in any table**. The station's nominal 14.7 psi (1 atm) is the only pressure consistent with how BASS-II ran, and it is shown as "Not recorded", never as a match.
 
 ## Fetched: `cache/` and `demo_fixtures/`
 
@@ -75,7 +81,19 @@ Computed from the records at load time, never typed in. It covers O₂ 16.8–22
 
 ## `/api/ask` response (summary)
 
-`canonical`, `notices[]`, `understood[]` (field, value, from), `scenario`, `missions[]`, `checks[]` (key, yours, tested, ok), `verdict` (state `burned` | `no-data`), `evidence` (ids, stats, finding) or `null`, `findings` (tests, method, rule, caveat, `ranked[]` with tier, counts, caveat, ids and pairs) or `null`, `gaps[]` (topic, text, source), `nearest` or `null`. The full contract is in [will-it-burn-technical.md](../will-it-burn-technical.md) §8.
+- `question`, and `canonical`: the question the screen answers. When the answer is Unclear, this is the question as asked, never a rewrite.
+- `notices[]`, and `understood[]`: `field`, `value`, and `from` (`question` · `picked` · `default` · `unresolved`).
+- `unresolved[]`: `key`, `label` and `reason` for each condition that couldn't be read. The key `number` means a number the reader couldn't place.
+- `scenario`: `mission`, `air`, `material`, `thickness`, `width` and `airflow`. Also `missions[]`.
+- `checks[]`: `key`, `label`, `yours`, `tested`, `ok`, `note`, and `status` with its `statusLabel`. The status is one of `match` · `context` (the station's own air) · `unrecorded` · `separately` (each condition is recorded somewhere, but no single test has them all) · `mismatch`.
+- `applicability`: `policy` (plain text), `matched` (the IDs of tests whose own rows record every condition given) and `given` (the condition keys checked per test).
+- `verdict`: `state` (`burned` · `mixed` · `no-burn` · `no-data` · `unresolved`), `stamp`, `count`, `headline` and `sub`.
+- `evidence` or `null`: `kind`, `ids`, `readings`, `stats`, `finding` and `caveat`. Only matching tests are included.
+- `closest` or `null`: `set`, and `tests[]` with each test's recorded value for every condition given and whether it matched.
+- `findings` or `null`: `tests`, `method`, `rule`, `caveat` and `ranked[]`. Each ranked item has `tier`, `comparisons` (reading pairs), `agree`, `tests` (distinct tests), `matchedOn`, `notMatched`, `busiest`, `caveat`, `ids` and `pairs`.
+- `gaps[]` (`topic`, `text`, `source`), `nearest` (`label`, `changes`, `params`) or `null`, and `related` (the Saffire-II line) or `null`.
+
+The full contract is in [will-it-burn-technical.md](../will-it-burn-technical.md) §8.
 
 ## `data/fire-response.json`
 
@@ -100,7 +118,7 @@ These are transcribed from NASA/TM-20210011385 and checked against the PDF page 
 | `bass-nomex.csv` | §3.1.1, p. 46, and Table A.2, p. 105 | `test_number`, `date`, `sample_number`, `material`, `igniter`, `flow_configuration`, `fan_display`, `air_display`, `o2_initial_vol_pct`, `o2_final_vol_pct`, `notes` (verbatim) | Every row is "no ignition" (§3.1.1). Display readings are never used as cm/s. F3's missing final O₂ stays `null`. |
 | `bass-extinction.csv` | Table 2.1, p. 28: extinction velocity for thin PMMA at 1 atm | `o2_percent`, `experiment_mm_s`, `experiment_uncertainty_mm_s`, `computation_mm_s`, `theory_mm_s` | Used on the still-air gap card and on the fire-response card |
 
-`ask()` picks the evidence set for the material (`SETS` in `scenario.mjs`), and each set's envelope is derived from its own rows. Evidence for fabric and Nomex has `kind: 'outcomes'`, with `tests[]`, `counts` and a `finding`. Verdict states are `burned` · `mixed` · `no-burn` · `no-data`.
+`ask()` picks the evidence set for the material (`SETS` in `applicability.mjs`), and each set's bounds are derived from its own rows. A fabric test's flow ramp ("10 to 5") counts as passed through, with its outcome at the ramp's end, and its single O₂ value must match exactly (ADR-012). Evidence for fabric and Nomex has `kind: 'outcomes'`, with `tests[]`, `counts` (`tests`, `ignited`, `burned`, `quenched`, `blowoff`, `noIgnition`) and a `finding`. Verdict states are `burned` · `mixed` · `no-burn` · `no-data` · `unresolved`.
 
 ## `data/psi-99-saffire-2.csv`: NASA's Saffire-II table, unchanged
 

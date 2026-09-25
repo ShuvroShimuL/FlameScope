@@ -6,8 +6,8 @@ Which NASA and partner datasets should Will It Burn? use next? This map scores e
 
 ## 1. What a dataset has to do for us
 
-- **The product.** Will It Burn? checks a cabin against an evidence envelope derived from data. It answers **Burned** or **No data**, and every number traces to a source row (ADR-005, ADR-009).
-- **Today's envelope.** One set: 20 BASS-II PMMA sheets (PSI-25), in microgravity, at O₂ 16.8–22.2 % and about 14.7 psi, with *opposed* flow at 2–21 cm/s and sheets 1–5 mm thick.
+- **The product.** Will It Burn? checks every condition of a cabin question against each test's own row, all together (ADR-012). It answers **Burned**, **Mixed**, **No flame held**, **No data** or **Unclear**, and every number traces to a source row (ADR-009, ADR-011).
+- **Today's evidence.** Three sets from one report. The main one is 20 BASS-II PMMA sheets (PSI-25), in microgravity, at O₂ 16.8–22.2 %, with *opposed* flow at set values from 2 to 21 cm/s and sheets 1–5 mm thick. SIBAL fabric and Nomex outcomes come from Tables 7.1 and A.2. No table records pressure; only the station's nominal 14.7 psi is consistent with how the tests ran. These ranges are context: a question matches only a test whose own row records every condition it gives.
 - **The challenge.** The published summary asks for a dashboard that "summarizes, ranks, and interprets those findings to deliver fire safety insights for human space exploration" ✔. Its resources tab is still empty, and the full statement arrives on 28 Oct.
 
 | Lens | A dataset passes when | What it protects |

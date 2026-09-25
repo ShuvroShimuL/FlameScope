@@ -23,21 +23,22 @@ There are three ways in. All three end up at the same answer.
 
 | You can mention | Words it recognises | Becomes |
 |---|---|---|
-| A place | ISS, space station, orbit, microgravity · Moon, lunar, Artemis · Mars transit, on the way to Mars, deep space · Mars, Martian | One of four missions |
+| A place | ISS, space station, orbit, microgravity · Moon, lunar, Artemis · Mars transit, on the way to Mars, deep space · Mars, Martian · Earth, 1 g · another named place or gravity | One of four missions. Earth and other places stay what you asked, and answer No data. |
 | Cabin air | exploration, high oxygen, low pressure · Earth-normal, sea level, normal air | Earth-normal or Exploration air |
-| Oxygen | `34% oxygen`, `30% O2`, `oxygen at 25%` | A custom oxygen share |
-| Pressure | `8.2 psi`, `56.5 kPa`, `1 atm` | A custom cabin pressure |
-| Material | acrylic, PMMA, plexiglass · Nomex, cotton, fabric, wire insulation, Kapton, Teflon and more | The material to check |
-| Sheet thickness | `1 mm`, `5 mm`, thin, thick | One thickness, or all of them when you compare two |
-| Airflow | `10 cm/s`, still air, no ventilation, fans off | An airflow to check |
+| Oxygen | `34% oxygen`, `30% O2`, `oxygen at 25%`, or a bare `25%` | A custom oxygen share. A bare percentage gets a notice saying it was read as oxygen. |
+| Pressure | `8.2 psi`, `56.5 kPa`, `1 atm`, `1 bar`, `760 mmHg` | A custom cabin pressure, converted to psi |
+| Material | acrylic, PMMA, plexiglass · Nomex · SIBAL · cotton, fabric, wire insulation, Kapton, Teflon and more | The material to check. A material it doesn't list, such as steel, is kept by name and answers No data. |
+| Sheet thickness and width | `1 mm`, `5-mm`, `0.5 inch`, thin, thick · `2.2 cm wide` | One thickness, or all of them when you compare two |
+| Airflow | `10 cm/s`, `20 mm/s`, `1 m/s`, `2 ft/s`, `3 mph`, still air, no ventilation, fans off | An airflow in cm/s |
 
-Anything it can't place falls back to a default. The **Read as** row shows every field, so you can see exactly what it understood:
+Each condition ends up in one of four states, and the **Read as** row shows every one of them:
 
 - **Blue chip:** taken from your question.
 - **Dark chip:** set by a tap.
-- **Dashed chip:** a default you can change.
+- **Dashed chip:** you didn't mention it, so a default applies. You can change it.
+- **Red chip:** it couldn't be read: an unknown unit, two different values, or a number with no unit. The answer is **Unclear**, and it never swaps in a default. Any number the reader can't place makes the answer Unclear, so no number you type is silently dropped. A tap answers again only if it replaces the part that couldn't be read.
 
-It also adds a short notice when it has to make a call. That covers two places in one question, "thin" read as 1 mm, and a safety word like "safe" that it can't certify.
+A condition no table records, such as temperature or humidity, is listed as not recorded, and it blocks a yes or no answer. The reader also adds a short notice when it has to make a call. That covers two places in one question, "thin" read as 1 mm, a bare percentage read as oxygen, a comparison like "3 times faster" that isn't a condition, and a safety word like "safe" that it can't certify.
 
 ### Suggested questions and what each one shows
 
@@ -60,9 +61,9 @@ The keyword chips open under the Ask field while you type, and add words to it w
 
 ## What comes back
 
-- **The verdict.** A large coloured word with the test count under it. "Burned" means NASA watched it burn under matching conditions. "Mixed" means some matching tests burned and some didn't; it's used for SIBAL fabric. "No flame held" means no flame held in NASA's tries, as with Nomex, and it is never a safety rating. "No data" means no test in the set matches your cabin.
+- **The verdict.** A large coloured word with the test count under it. "Burned" means NASA watched it burn under matching conditions. "Mixed" means some matching tests burned and some didn't; it's used for SIBAL fabric. "No flame held" means no flame held in NASA's tries, as with Nomex, and it is never a safety rating. "No data" means no single test recorded all of your conditions. "Unclear" means part of the question couldn't be read, so nothing is answered yet.
 - **A plain headline.** For example, "Yes. NASA watched it burn." or "Unknown. None of these tests felt lunar gravity."
-- **Evidence match.** Your cabin next to what the tests covered, row by row: material, gravity, oxygen, pressure, and airflow or thickness when you gave them.
+- **Evidence match.** Your cabin next to what the tests recorded, row by row: material, gravity, oxygen, pressure, and airflow, thickness or width when you gave them. A test counts only if its own row records every condition you gave. When each condition is recorded somewhere but no single test has them all, a "together" row says so, and the closest tests are listed with each value and each miss. Pressure is never shown as a match, because NASA's table doesn't record it.
 - **Chamber view.** An animated illustration. In orbit the flame is a blue sphere. At Moon or Mars gravity it is a dashed outline, because that shape isn't in the data.
 - **Key numbers and evidence.** Four tappable key numbers under the verdict, then a chart of every test with your selection highlighted, and one plain finding. Fabric and Nomex show an outcome bar and the report's own rows instead.
 - **Gaps.** When the answer is No data, cards explain what is missing, where that data may exist, and a button jumps to the nearest evidence we do have.
@@ -76,7 +77,7 @@ This section replaces the old "Why this design?" pop-up.
 
 - **Question first.** The Ask field sits in the toolbar, and the Overview opens on an answer to the question an engineer or astronaut would actually ask. The sidebar has only four sections, so there is nothing to learn.
 - **An app, not a web page.** It is laid out like an Apple app: a toolbar, a sidebar that becomes a tab bar on phones, and cards that each answer one thing. It uses the system font and Apple's light and dark colours, and needs nothing from the internet.
-- **Evidence match before the answer.** Before saying anything, it checks whether NASA's tests share your cabin's gravity, pressure and oxygen. Most dashboards skip this step and quietly apply ISS data to Moon and Mars cabins.
+- **Evidence match before the answer.** Before saying anything, it checks whether a single NASA test recorded all of your cabin's conditions together: material, gravity, oxygen, airflow, thickness and width. Without this step, ISS results would quietly stand in for Moon and Mars cabins, and a test at one oxygen level could stand in for another.
 - **A gap is an answer.** For the Moon and Mars the honest answer is "no data." The page treats that as a result: it names what is missing and where it may exist. That tells NASA what its own tests haven't covered, which the team briefing calls the strongest possible closing point.
 - **Nothing is generated.** Every number comes from the NASA table or a cited source, and every number opens the row it came from. The app never invents a safety number.
 - **Labels are honest.** The flame animation says "Illustration." Findings say "Descriptive, not a safety rating." Safety questions get a notice that the tool can't certify materials.
@@ -99,7 +100,7 @@ The challenge asks for a dashboard that **summarizes, ranks and interprets** NAS
 | Challenge verb | Where it happens | Honest status |
 |---|---|---|
 | Summarizes | The verdict, key numbers and one-line finding | Done for the BASS-II report's acrylic, fabric and Nomex tables |
-| Ranks | Five findings from the 20 acrylic tests, ranked by how consistently matched comparisons agree, each with its count, a caveat and its rows. They are in the Ranked findings section and on the Overview. The mission tiles also show which destinations the evidence covers. | Done for the acrylic table. Ranking materials against each other needs comparable tests; the fabric and Nomex tests ran in a different flow. |
+| Ranks | Five findings from the 20 acrylic tests, ranked by how consistently pairs of readings agree. Each shows its pair count beside the number of distinct tests, says what is and isn't matched, and opens its rows. The tiers are the app's display rule, not a statistical test. They are in the Ranked findings section and on the Overview. The mission tiles also show which destinations the evidence covers. | Done for the acrylic table. Ranking materials against each other needs comparable tests; the fabric and Nomex tests ran in a different flow. |
 | Interprets | The evidence match and gap cards turn test conditions into design meaning | Done, with every claim sourced |
 
 ## A 30-second demo
