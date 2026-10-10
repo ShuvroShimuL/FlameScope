@@ -174,6 +174,18 @@ The reader also swapped explicit but unsupported conditions for defaults: steel 
 
 ---
 
+## ADR-016 · A browser-local library of requests, with freshly computed answers
+
+**Status:** Accepted for the user-requested feature · 2026-10-10.
+
+**Context.** Users want previous questions under **MY LIBRARY**, alongside a collapsible sidebar in both themes. A restored answer must still honour joint applicability and unresolved conditions (ADR-012); storing rendered answers could present stale claims or lose explicit request conditions.
+
+**Decision.** Keep the latest 50 distinct answered user requests in browser local storage. Store only the displayed question, exact whitelisted request parameters, an ID and a timestamp. Exclude the automatic starting question and failed requests. Reopen through the existing `/api/ask` controller so the server revalidates the request and computes a fresh answer. Keep the existing stale-reply and queued-tap guards. Validate stored entries and escape their text before rendering. Provide search, removal and one-step undo. Use an in-memory library with a visible notice if storage is denied or full. Remember the desktop sidebar preference separately and use a native modal dialog for the phone drawer.
+
+**Consequences.** Questions remain on this device without an account or a new dependency. Scientific results never cross into persistent browser state. Clearing browser data removes the library, and separate browsers do not synchronise it. Reopening requires the app's server, including the local offline server; it cannot serve a saved answer if that server is unavailable.
+
+---
+
 ## Open questions
 
 - **Q1.** What is the Bangladesh framing: the method only ("evidence envelope"), or also a FIRMS fire layer? Decide at M1. See [roadmap](roadmap.md) R3.

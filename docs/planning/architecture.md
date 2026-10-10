@@ -67,6 +67,12 @@ flowchart LR
 5. The answer is built: verdict `no-data`, gap cards (each with a source), the closest tests when some conditions match, and `nearest` params that reach matching tests.
 6. The browser draws the stamp, the checks table, the gap cards and the dashed flame (labelled "illustration").
 
+## Browser workspace
+
+`web/navigation.js` applies the remembered desktop sidebar preference before paint and uses a native dialog for the phone drawer. `web/theme.js` applies the shared light or dark palette before paint. Both preferences are local to this browser.
+
+My library (`web/library.js`, ADR-016) stores at most 50 question texts, exact API request parameters and timestamps in local storage. It never persists verdicts, evidence or scientific claims. Reopening calls `/api/ask` through the existing controller in `web/state.js`, including its stale-reply and queued-tap guards. Storage is treated as untrusted data: entries are validated, text is escaped and the server validates reopened requests. With storage denied, the UI keeps a library for the current visit and shows that limitation. No account, backend storage or dependency is added.
+
 ## Offline design
 
 - No remote fonts, scripts or tiles. Chart and flame are drawn locally with SVG and canvas.

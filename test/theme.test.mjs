@@ -55,7 +55,25 @@ test('both pages load theme.js before their stylesheet and carry one toggle', ()
     const html = readFileSync(new URL(file, import.meta.url), 'utf8');
     assert.ok(html.indexOf('<script src="/theme.js"></script>') < html.indexOf('rel="stylesheet"'), file);
     assert.equal(html.match(/data-theme-toggle/g).length, 1, file);
+    assert.ok(html.indexOf('href="/workspace.css"') > html.indexOf('href="' + (file.includes('/research/') ? '/research/style.css' : '/style.css') + '"'), 'shared dark workspace loads after the page styles');
     assert.match(html, /data-theme-toggle aria-pressed="false" aria-label="Dark mode"[^>]*hidden>/, file);
+  }
+});
+
+test('both effective workspace palettes keep controls, evidence and status text readable on both pages', () => {
+  const shared = readFileSync(new URL('../web/workspace.css', import.meta.url), 'utf8');
+  for (const theme of ['light', 'dark']) for (const file of ['../web/style.css', '../web/research/style.css']) {
+    const css = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const base = theme === 'dark' ? css.match(/:root\[data-theme="dark"\]\{([^}]*)\}/)[1] : css.match(/^:root\{([^}]*)\}/m)[1];
+    const palette = { ...tokens(base), ...tokens(shared.match(new RegExp(':root\\[data-theme="' + theme + '"\\]\\{([^}]*)\\}'))[1]) };
+    const pairs = file.includes('/research/')
+      ? [['text', 'bg'], ['muted', 'panel'], ['body-text', 'panel'], ['accent', 'panel'], ['on-accent', 'accent'], ['on-accent', 'accent-hover'],
+        ['tag-text', 'tag-bg'], ['warn-text', 'warn-bg'], ['status-text', 'status-bg'], ['green', 'panel'], ['text', 'field']]
+      : [['label', 'bg'], ['label-2', 'bg'], ['label-2', 'card'], ['label-2', 'inset'], ['label-2', 'thumb'], ['link', 'card'],
+        ['link', 'tint-wash'], ['burn', 'card'], ['gap', 'gap-wash'], ['ok', 'ok-wash'], ['held', 'card']];
+    for (const [fg, bg] of pairs) assert.ok(ratio(palette[fg], palette[bg]) >= 4.5, `${theme} ${file}: ${fg} on ${bg} is ${ratio(palette[fg], palette[bg]).toFixed(2)}:1`);
+    if (!file.includes('/research/')) for (const bg of ['tint', 'tint-hover'])
+      assert.ok(ratio('#fff', palette[bg]) >= 4.5, `${theme} Ask and source buttons: white on ${bg}`);
   }
 });
 
