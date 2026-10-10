@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createController, paramsFrom, applyPatch, baseFrom, askedFor, verdictView } from '../web/state.js';
 import { ask } from '../src/compute/scenario.mjs';
 import { createServer } from '../src/api/server.mjs';
+import { runInNewContext } from 'node:vm';
 
 // The home page's request logic, run against real /api/ask answers with a network we control.
 function harness() {
@@ -133,4 +134,18 @@ test('the page opens in a neutral state, not with a verdict', async () => {
     const res = await fetch(`http://127.0.0.1:${server.address().port}/state.js`);
     assert.equal(res.status, 200); assert.match(res.headers.get('content-type'), /javascript/);
   } finally { await new Promise(r => server.close(r)); }
+});
+
+test('FR-22: slow table loading never overwrites a question reopened from the library', async () => {
+  const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  const boot = app.slice(app.lastIndexOf('// ---------- Boot:'));
+  let resolveData; const questions = [], renders = [], input = { value: 'Will Nomex burn on the Moon?' };
+  const context = { api: () => new Promise(resolve => { resolveData = resolve; }), records: [], userInteraction: false, result: null,
+    controller: { ask: q => questions.push(q) }, input, QUESTIONS: ['Will acrylic burn on the ISS?'],
+    renderFireResponse() {}, renderFindings() {}, render: animate => renders.push(animate) };
+  const pending = runInNewContext(boot, context);
+  context.userInteraction = true; context.result = { alreadyAnswered: true };
+  resolveData({ records: [], fireResponse: [] }); await pending;
+  assert.deepEqual(questions, []); assert.equal(input.value, 'Will Nomex burn on the Moon?');
+  assert.deepEqual(renders, [false], 'the active answer can redraw with the newly loaded source rows');
 });

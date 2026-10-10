@@ -44,12 +44,13 @@ export function createController({ request, onAnswer, onError, onBusy = () => {}
   let version = 0, answered = null, intended = null, reading = false, queued = null;
 
   async function send(params, meta) {
+    meta = { ...meta, params: { ...params } };
     const v = ++version;
     onBusy(true, meta);
     try {
       const data = await request(params);
       if (v !== version) return;
-      if (meta.kind === 'question') reading = false;
+      if (meta.kind !== 'tap') reading = false;
       answered = data;
       // Once a tap has answered an Unclear question, later taps build on what was answered, as they do everywhere else.
       if (meta.kind === 'tap' && intended?.q !== undefined && data.verdict?.state !== 'unresolved') intended = paramsFrom(data.scenario);
@@ -57,7 +58,7 @@ export function createController({ request, onAnswer, onError, onBusy = () => {}
       onAnswer(data, meta);
     } catch (error) {
       if (v !== version) return;
-      if (meta.kind === 'question') { reading = false; queued = null; }
+      if (meta.kind !== 'tap') { reading = false; queued = null; }
       onError(error, meta);
     } finally {
       if (v === version) onBusy(false, meta);
@@ -69,6 +70,12 @@ export function createController({ request, onAnswer, onError, onBusy = () => {}
     return send({ q: question }, { kind: 'question', question });
   }
 
+  // Saved requests are untrusted input: the server validates them and computes a fresh answer.
+  function restore(params, question) {
+    intended = null; queued = null; reading = true;
+    return send({ ...params }, { kind: 'restore', question });
+  }
+
   function change(patch) {
     if (reading) { queued = { ...queued, ...patch }; return Promise.resolve(); }
     const base = intended ?? baseFrom(answered);
@@ -77,7 +84,7 @@ export function createController({ request, onAnswer, onError, onBusy = () => {}
     return send(intended, { kind: 'tap', params: intended });
   }
 
-  return { ask, change, get answered() { return answered; }, get intended() { return intended; } };
+  return { ask, change, restore, get answered() { return answered; }, get intended() { return intended; } };
 }
 
 const ONE_SIXTH = 0.166;

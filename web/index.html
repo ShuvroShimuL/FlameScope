@@ -7,7 +7,9 @@
 <title>Will it burn?</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23FF7A00'/%3E%3Cpath fill='white' d='M12.4 4.4c.2 2-.8 3.3-1.9 4.5-1.2 1.3-2.5 2.6-2.5 4.9a4 4 0 0 0 8 0c0-1.6-.6-2.8-1.4-3.8-.1 1.1-.6 2-1.5 2.3.5-2.8-.2-5.9-.7-7.9Z'/%3E%3C/svg%3E">
 <script src="/theme.js"></script>
+<script src="/navigation.js"></script>
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/workspace.css">
 <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -34,11 +36,17 @@
     </div>
   </header>
 
-  <nav class="sidebar" aria-label="Sections">
+  <nav class="sidebar" id="workspace-sidebar" aria-label="Sections">
+    <div class="workspace-header" id="workspace-header"><p class="workspace-label">Workspace</p><button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-controls="workspace-sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button></div>
     <a class="nav" href="#overview" id="tab-overview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span>Overview</span></a>
     <a class="nav" href="#findings" id="tab-findings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14M5 12h9.5M5 17.5h5"/></svg><span>Ranked findings</span></a>
     <a class="nav" href="#response" id="tab-response"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a5.5 5.5 0 0 0-5.5 5.5v3.8L5 15.6c-.3.6.1 1.4.9 1.4h12.2c.8 0 1.2-.8.9-1.4l-1.5-2.8V9A5.5 5.5 0 0 0 12 3.5ZM9.8 19.5a2.3 2.3 0 0 0 4.4 0"/></svg><span>Fire response</span></a>
     <a class="nav" href="#sources" id="tab-sources"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5l4.5 4.5v12a.5.5 0 0 1-.5.5H7a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1ZM13.5 3.5V8H18M9 12.5h6M9 16h6"/></svg><span>Sources</span></a>
+    <div class="sidebar-library">
+      <p class="workspace-label">My library</p>
+      <a class="nav" href="#library" id="tab-library" aria-label="My library" title="My library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v15H4zM10 5h4v15h-4zM17 4l4 15-4 1-4-15"/></svg><span>Saved questions</span><span class="library-count" id="library-count">0</span></a>
+      <div id="library-recent" class="library-recent"></div>
+    </div>
     <div class="side-foot">
       <p>Every number comes from a NASA table or a cited paper. Answers are computed from those tables by fixed rules. No AI writes one.</p>
     </div>
@@ -49,7 +57,8 @@
 
     <section class="panel" id="panel-overview" aria-labelledby="h-overview">
       <div class="panel-head">
-        <h1 id="h-overview" tabindex="-1">Overview</h1>
+        <p class="workspace-label">NASA’s microgravity evidence</p>
+        <h1 id="h-overview" tabindex="-1"><span class="overview-title">Overview</span><span class="workspace-title">Will it <em>burn</em>?</span></h1>
         <p class="lede">Ask about a fire in a spacecraft cabin, or pick a mission. The answer is what NASA’s microgravity tests saw, or what they never covered.</p>
       </div>
 
@@ -58,6 +67,7 @@
         <div class="chips-row" id="questions" role="group" aria-labelledby="sug-label"></div>
       </div>
 
+      <p class="workspace-label mission-label">Choose a mission</p>
       <div class="tiles" id="tiles" role="group" aria-label="Mission"></div>
 
       <div class="read-row">
@@ -189,6 +199,19 @@
       </div>
     </section>
 
+    <section class="panel" id="panel-library" aria-labelledby="h-library" hidden>
+      <div class="panel-head">
+        <p class="workspace-label">Your questions</p>
+        <h1 id="h-library" tabindex="-1">My library</h1>
+        <p class="lede" id="library-note">Your last 50 questions, saved on this device. Open one to check it against NASA’s current source rows.</p>
+      </div>
+      <label class="library-search" for="library-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span class="sr-only">Search saved questions</span><input id="library-search" type="search" maxlength="500" placeholder="Search your questions"></label>
+      <div class="library-summary"><p id="library-summary" aria-live="polite"></p><span>Most recent first</span></div>
+      <ol id="library-list" class="library-list"></ol>
+      <p id="library-empty" class="library-empty"></p>
+      <div class="library-undo-row" id="library-undo-row" hidden><p role="status">Question removed.</p><button class="btn alt" id="library-undo" type="button">Undo</button></div>
+    </section>
+
     <footer class="main-foot">Built for the NASA Space Apps 2026 challenge “Flame in Freefall: AI-Powered Fire Safety Insights from Microgravity Combustion Data”</footer>
   </main>
 
@@ -197,6 +220,7 @@
     <a class="tab" href="#findings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14M5 12h9.5M5 17.5h5"/></svg><span>Findings</span></a>
     <a class="tab" href="#response"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a5.5 5.5 0 0 0-5.5 5.5v3.8L5 15.6c-.3.6.1 1.4.9 1.4h12.2c.8 0 1.2-.8.9-1.4l-1.5-2.8V9A5.5 5.5 0 0 0 12 3.5ZM9.8 19.5a2.3 2.3 0 0 0 4.4 0"/></svg><span>Response</span></a>
     <a class="tab" href="#sources"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5l4.5 4.5v12a.5.5 0 0 1-.5.5H7a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1ZM13.5 3.5V8H18M9 12.5h6M9 16h6"/></svg><span>Sources</span></a>
+    <a class="tab" href="#library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h4v15H4zM10 5h4v15h-4zM17 4l4 15-4 1-4-15"/></svg><span>Library</span></a>
   </nav>
 </div>
 
@@ -206,5 +230,6 @@
     <div class="dlg-body" id="proof-body"></div>
   </div>
 </dialog>
+<dialog id="sidebar-drawer" aria-labelledby="sidebar-title"><div class="drawer-head"><h2 id="sidebar-title">Workspace</h2><button class="x" id="sidebar-close" type="button" aria-label="Close sidebar">✕</button></div></dialog>
 </body>
 </html>

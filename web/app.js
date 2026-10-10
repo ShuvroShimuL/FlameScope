@@ -2,6 +2,7 @@
 // it sends the question or tapped controls to GET /api/ask and renders the JSON.
 // Request ordering and tap handling live in state.js, which the Node tests run directly.
 import { createController, verdictView, askedFor } from './state.js';
+import { createQuestionLibrary, LIBRARY_KEY } from './library.js';
 
 const QUESTIONS = [
   'Will acrylic burn on the ISS?',
@@ -13,7 +14,14 @@ const QUESTIONS = [
 ];
 const KEYWORDS = ['ISS', 'Moon base', 'Mars transit', 'Mars base', '34% oxygen', '8.2 psi', '1 mm', '5 mm', 'still air', '10 cm/s', 'acrylic', 'Nomex'];
 const THICKNESSES = [1, 2, 3, 4, 5];
-const TABS = ['overview', 'findings', 'response', 'sources'];
+const TABS = ['overview', 'findings', 'response', 'sources', 'library'];
+// Decorative mission icons; all labels and evidence still come from the server.
+const MISSION_ICONS = {
+  iss: '<path d="M9 9h6v6H9zM9 12H3m12 0h6M3 8v8m3-8v8m12-8v8m3-8v8M12 9V5m-2 0h4M12 15v4"/>',
+  moon: '<path d="M19 14.8A8 8 0 0 1 9.2 5 8 8 0 1 0 19 14.8Z"/><path d="M17 4v4m-2-2h4"/>',
+  transit: '<path d="M8 15c-2-5 3-10 10-11 1 7-4 12-9 10M8 10l-4 2v4l4-1m5 0-1 5H8v-5M5 19l-1 1"/><circle cx="14" cy="9" r="2"/>',
+  mars: '<circle cx="12" cy="12" r="8"/><path d="m5 8 4 2 1 4 4 1 2 4M15 5l-1 4 3 2 3-1"/>'
+};
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -21,6 +29,10 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const input = $('#q');
 let records = [], result = null, asked = '', firstAnswer = true;
+let userInteraction = false, libraryStorage = null;
+try { libraryStorage = localStorage; } catch {}
+const library = createQuestionLibrary(libraryStorage);
+const savedDate = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 async function api(path) {
   const response = await fetch(path);
@@ -50,21 +62,59 @@ const controller = createController({
   onAnswer: (data, meta) => {
     result = data;
     asked = askedFor(data, meta);
-    if (meta.kind === 'tap') input.value = data.canonical;
+    if (meta.kind !== 'question') input.value = data.canonical;
     showError('');
     render(!firstAnswer);
     firstAnswer = false;
+    if (userInteraction) { library.record(meta.kind === 'restore' ? meta.question : asked, meta.params); renderLibrary(); }
   },
   onError: (error, meta) => showUnanswered(unreachable(error), meta.kind === 'question' ? meta.question : input.value)
 });
-const change = patch => controller.change(patch);
+const change = patch => { userInteraction = true; return controller.change(patch); };
+const askQuestion = question => { userInteraction = true; return controller.ask(question); };
+
+// ---------- My library: local question history, never stored scientific answers ----------
+const questionIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v12H9l-4 4V4Z"/><path d="M8 8h8M8 12h5"/></svg>';
+function renderLibrary() {
+  const all = library.list(), entries = library.list($('#library-search').value);
+  $('#library-count').textContent = all.length;
+  $('#library-recent').innerHTML = all.slice(0, 5).map(e => `<button class="recent-question" type="button" data-open-question="${esc(e.id)}" title="${esc(e.question)}">${questionIcon}<span>${esc(e.question)}</span></button>`).join('');
+  $('#library-summary').textContent = `${entries.length} saved question${entries.length === 1 ? '' : 's'}${entries.length !== all.length ? ` of ${all.length}` : ''}`;
+  $('#library-note').textContent = library.durable
+    ? 'Your last 50 questions, saved on this device. Open one to check it against NASA’s current source rows.'
+    : 'Browser storage is unavailable. Questions are kept for this visit. Open one to check NASA’s current source rows.';
+  $('#library-list').innerHTML = entries.map(e => `<li class="library-item"><button class="library-open" type="button" data-open-question="${esc(e.id)}">
+    <span class="library-icon">${questionIcon}</span><span class="library-entry"><span class="library-question">${esc(e.question)}</span><time datetime="${new Date(e.savedAt).toISOString()}">${esc(savedDate.format(e.savedAt))}</time></span><span class="library-arrow" aria-hidden="true">→</span></button>
+    <button class="library-remove" type="button" data-remove-question="${esc(e.id)}" aria-label="Remove question: ${esc(e.question)}" title="Remove question"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v6m4-6v6"/></svg></button></li>`).join('');
+  $('#library-empty').hidden = !!entries.length;
+  $('#library-empty').textContent = all.length ? 'No questions match your search. Try another word.' : 'No saved questions yet. Ask a question or choose a mission to start your library.';
+  $('#library-undo-row').hidden = !library.canUndo;
+}
+$('#library-search').addEventListener('input', renderLibrary);
+$('#library-undo').addEventListener('click', () => {
+  library.undo(); renderLibrary(); $('#library-search').focus();
+});
+document.addEventListener('click', event => {
+  const open = event.target.closest('[data-open-question]'), remove = event.target.closest('[data-remove-question]');
+  if (open) {
+    const entry = library.list().find(e => e.id === open.dataset.openQuestion); if (!entry) return;
+    userInteraction = true; input.value = entry.question;
+    location.hash = '#overview'; showTab(true); controller.restore(entry.params, entry.question);
+  } else if (remove && library.remove(remove.dataset.removeQuestion)) {
+    renderLibrary(); $('#library-undo').focus();
+  }
+});
+addEventListener('storage', event => {
+  if (event.key === LIBRARY_KEY || event.key === null) { library.reload(); renderLibrary(); }
+});
+renderLibrary();
 
 // ---------- Asking: the field, suggested questions and words to add ----------
 $('#questions').innerHTML = QUESTIONS.map(q => `<button type="button" class="sug" data-q="${esc(q)}">${esc(q)}</button>`).join('');
 $('#keywords').innerHTML = KEYWORDS.map(k => `<button type="button" class="kw" data-k="${esc(k)}">${esc(k)}</button>`).join('');
 $('#questions').addEventListener('click', e => {
   const b = e.target.closest('[data-q]'); if (!b) return;
-  input.value = b.dataset.q; controller.ask(b.dataset.q);
+  input.value = b.dataset.q; askQuestion(b.dataset.q);
 });
 // The word list shows while the field has focus. Pressing a word keeps the caret in the field.
 $('.ask-pop').addEventListener('pointerdown', e => e.preventDefault());
@@ -81,7 +131,7 @@ $('#ask-form').addEventListener('submit', e => {
   if (!q) { showError('Type a question, or tap one of the suggestions below.'); return; }
   document.activeElement?.blur();
   if (location.hash && location.hash !== '#overview') location.hash = '#overview';
-  controller.ask(q);
+  askQuestion(q);
 });
 
 function renderRead() {
@@ -90,7 +140,7 @@ function renderRead() {
 }
 function renderTiles() {
   $('#tiles').innerHTML = result.missions.map(m => `<button type="button" class="tile" data-m="${esc(m.id)}" aria-pressed="${m.selected}">
-      <span class="tile-top"><span class="tile-name">${esc(m.name)}</span><span class="tile-g">${esc(m.gText)}</span></span>
+      <span class="tile-top"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${MISSION_ICONS[m.id] ?? ''}</svg></span><span class="tile-name">${esc(m.name)}</span><span class="tile-g">${esc(m.gText)}</span></span>
       <span class="tile-sub">${esc(m.sub)}</span>
       <span class="tile-home">${esc(m.home)}</span>
       <span class="badge ${m.matches ? 'ok' : 'miss'}">${m.matches ? m.matches + ' tests match' : 'No tests match'}</span>
@@ -528,6 +578,7 @@ function render(animate) { renderRead(); renderTiles(); renderVerdict(animate); 
     $('#open-proof').hidden = true;
     return;
   }
+  if (userInteraction) { if (result) render(false); return; }
   input.value = QUESTIONS[0];
   await controller.ask(QUESTIONS[0]);
 })();
