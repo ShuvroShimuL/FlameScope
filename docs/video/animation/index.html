@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self'">
+  <title>Polaris — 240-second concept film</title>
+  <link rel="stylesheet" href="player.css">
+  <script src="story.js" defer></script>
+  <script src="evidence.js" defer></script>
+  <script src="film.js" defer></script>
+  <script src="player.js" defer></script>
+</head>
+<body>
+  <main class="slide">
+    <div class="slide-content">
+      <header><span class="wordmark">✦ POLARIS</span><span>240-second concept film · voiceover recording edition</span></header>
+      <div class="screen"><canvas id="film" width="1920" height="1080" aria-label="Animated concept film for Team Polaris. The scene title and narration appear below."></canvas></div>
+      <nav aria-label="Video controls">
+        <button id="play" aria-label="Play animation">Play</button>
+        <button id="back" aria-label="Previous scene">Previous</button>
+        <button id="next" aria-label="Next scene">Next</button>
+        <input id="seek" aria-label="Film position in seconds" type="range" min="0" max="240" step="0.1" value="0">
+        <output id="time">0:00 / 4:00</output>
+        <button id="fullscreen">Fullscreen</button>
+      </nav>
+      <section class="recording" aria-label="Recording guide"><h1 id="scene-title">The question</h1><p id="narration"></p></section>
+      <footer><span>Space: play/pause · ← →: scenes · drag the timeline to rehearse</span><span>No audio track · Record using timed-narration.md</span></footer>
+    </div>
+  </main>
+</body>
+</html>

@@ -174,6 +174,18 @@ The reader also swapped explicit but unsupported conditions for defaults: steel 
 
 ---
 
+## ADR-015 · Isolated Remotion workspace for video authoring
+
+**Status:** Accepted for the user-requested setup · 2026-09-29.
+
+**Context.** The user requested `npx create-video@latest` while preparing the 240-second prescreening concept video. The application has zero npm dependencies; a React video authoring tool has a different toolchain.
+
+**Decision.** Scaffold the generated React/TypeScript Remotion template under `docs/video/remotion/`, with its own package manifest, lockfile and local dependency installation. These dependencies are video-authoring tools only. The root app manifest, deterministic compute boundary and offline application runtime retain their existing dependency rules. Preserve the existing PowerPoint, Canvas animation and exported MP4. Do not import authoring packages into `src/` or `web/`.
+
+**Consequences.** The team can use Remotion's editor and renderer for the concept film. Installing or updating this separate toolchain requires package-registry access. Its generated source and lockfile should be reviewed alongside any later film migration; scaffolding alone does not migrate the existing animation.
+
+---
+
 ## ADR-016 · A browser-local library of requests, with freshly computed answers
 
 **Status:** Accepted for the user-requested feature · 2026-10-10.

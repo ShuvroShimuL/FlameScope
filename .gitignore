@@ -3,3 +3,4 @@ node_modules/
 *.log
 # Downloaded NASA data — regenerate with `node src/acquire/<source>.mjs`.
 cache/
+/docs/video/Polaris-240s-concept.mp4

@@ -1,0 +1,12 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "frames": 7200,
+  "duration": 240,
+  "bytes": 67642689,
+  "codec": "H.264/AVC",
+  "audioTracks": 0,
+  "safeFrameWarnings": [],
+  "browserErrors": []
+}

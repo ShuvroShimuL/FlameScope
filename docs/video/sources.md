@@ -85,3 +85,21 @@ Slides 8 to 12, 17 and 18 show captures of the prototype. They were taken on 28 
 
 - No person has checked these rows. The checks above were made by Claude Code.
 - The provenance file for Table 5.1 (`data/provenance.json`) says an independent check of the columns other than oxygen is still pending.
+
+## 6. Animated prescreening concept (29 September 2026)
+
+`Polaris-240s-concept.mp4` and the editable `animation/` source use a subset of the deck's evidence. `animation/prepare.mjs` obtains the examples directly from the existing deterministic compute engine; `animation/evidence.js` is its generated snapshot. A regression test checks that the exported evidence agrees with current compute output.
+
+| On screen | Source and check |
+|---|---|
+| `20 / 20` acrylic sheets burned; `Burned` | BASS-II Table 5.1, printed p. 57; `ask({q:'Will acrylic burn on the Space Station?'})`, its verdict, matched IDs, and evidence stats |
+| `No data`; lunar gravity not recorded in this BASS-II test set | Same table and `ask({q:'Will acrylic burn on a Moon base?'})`; the gap refers to this evidence set, not all NASA research |
+| Test row `M16`: `1 mm`, `5 cm/s`, `0.144 mm/s` | Table 5.1, row M16; that row's 5 cm/s reading in compute output |
+| `NASA/TM-20210011385`, `Table 5.1`, `p. 57` | Report/table/page identifiers, not extra measurements |
+| `NASA Space Apps 2026` and full challenge title | Supplied deck slide 6 and project planning documents; current challenge website fetch failed during production |
+| All six team names and roles | Supplied deck slide 2, extracted directly from the PPTX |
+| Scene counts, timecodes, and `240` seconds | Editorial production timing; not scientific data |
+
+Source URL: https://ntrs.nasa.gov/citations/20210011385. Graphics are original vector shapes and interface mockups. Orbital motion is decorative and is not a physical flame model. Planned features are labelled PLANNED. The video contains no third-party footage, music, artificial voice, or unfilled photo placeholders.
+
+The YouTube reference page loaded, but video playback failed. Its motion, visual pacing, and audio could not be reviewed. The animation follows the user's requested SaaS direction rather than claiming fidelity to unseen footage. Narration is supplied for the team to record; caption times are estimates until that recording exists. Human review is pending.
