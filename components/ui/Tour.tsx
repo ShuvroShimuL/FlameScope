@@ -1,6 +1,7 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
+import { useModalFocus } from "./useModalFocus";
 
 const KEY = BRAND.storage.tour;
 /** A visitor who finished the tour under the app's earlier name has still seen it. */
@@ -23,6 +24,9 @@ interface Box {
 export function Tour() {
   const [step, setStep] = useState<number | null>(null);
   const [box, setBox] = useState<Box | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // The tour scrolls the page to each stop itself, so the page stays scrollable; only focus is held.
+  useModalFocus(dialogRef, step != null, { lockScroll: false });
 
   useEffect(() => {
     let seen = false;
@@ -51,7 +55,8 @@ export function Tour() {
     const measure = () => {
       const el = document.getElementById(STEPS[step].target);
       if (!el) return setBox(null);
-      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
       const r = el.getBoundingClientRect();
       setBox({ top: r.top, left: r.left, width: r.width, height: r.height });
     };
@@ -77,7 +82,7 @@ export function Tour() {
   const left = Math.min(Math.max(16, box ? box.left : vw / 2 - cardW / 2), vw - cardW - 16);
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${BRAND.name} tour`}>
+    <div ref={dialogRef} className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${BRAND.name} tour`}>
       <div className="absolute inset-0 bg-black/55" onClick={finish} aria-hidden />
       {box && (
         <div

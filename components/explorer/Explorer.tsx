@@ -208,7 +208,7 @@ export function Explorer() {
                   tabIndex={0}
                   onClick={() => openTest(r.test_id)}
                   onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), openTest(r.test_id))}
-                  className={`cursor-pointer border-b border-line/60 transition hover:bg-raised focus:bg-raised focus:outline-none ${highlight.includes(r.test_id) ? "bg-ember/10" : ""}`}
+                  className={`cursor-pointer border-b border-line/60 transition hover:bg-raised focus:bg-raised focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ember ${highlight.includes(r.test_id) ? "bg-ember/10" : ""}`}
                 >
                   <td className="px-3 py-1.5 font-mono text-xs">{r.test_id}</td>
                   <td className="px-3 py-1.5">

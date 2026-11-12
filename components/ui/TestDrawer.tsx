@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import type { TestRecord } from "@/lib/types";
 import { IconClose } from "./Icons";
+import { useModalFocus } from "./useModalFocus";
 
 interface Detail {
   test: TestRecord;
@@ -36,6 +37,9 @@ export function TestDrawer() {
   const [data, setData] = useState<Detail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Keeps Tab inside the drawer and returns focus to the row, chip or map point that opened it.
+  useModalFocus(dialogRef, !!id);
 
   useEffect(() => {
     if (id) setTimeout(() => closeRef.current?.focus(), 30);
@@ -60,7 +64,7 @@ export function TestDrawer() {
   if (!id) return null;
   const t = data?.test;
   return (
-    <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label={`Test ${id}`}>
+    <div ref={dialogRef} className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label={`Test ${id}`}>
       <button type="button" className="absolute inset-0 bg-black/50" aria-label="Close details" onClick={() => openTest(null)} />
       <div className="relative h-full w-full max-w-md animate-slideIn overflow-y-auto border-l border-line bg-panel p-5 shadow-2xl">
         <div className="mb-4 flex items-start justify-between gap-3">

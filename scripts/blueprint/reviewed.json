@@ -1,9 +1,9 @@
 {
-  "app/api/vesta/route.ts": "4fc7b9307290afff",
+  "app/api/vesta/route.ts": "f59d7ca5cbf9dbf2",
   "components/layout/AppShell.tsx": "57a65cdc8cb3dcdb",
   "components/vesta/useVesta.ts": "980c67c6c0c15985",
   "lib/analysis.ts": "a5c2952201ba3536",
-  "lib/api.ts": "0b73d3624f01c92c",
+  "lib/api.ts": "ee06390799e2c91c",
   "lib/data.ts": "7fc35cb71b3d5869",
   "lib/physics.ts": "96f731d4128e5fdc",
   "lib/safety.ts": "e0ac047a7b50b573",
@@ -21,7 +21,7 @@
   "lib/vesta/system-prompt.md": "c0597fc2857b7a6c",
   "lib/vesta/tools/index.ts": "3b420c328ab1bff3",
   "lib/vesta/tools/schemas.ts": "bc0f8bfcc9230e4d",
-  "next.config.mjs": "1a064111612e2a9a",
+  "next.config.mjs": "61ec9db27cb8036a",
   "package.json": "946c1da8081ee02d",
   "scripts/ingest/describe_sources.py": "d6126e06d3c98651",
   "scripts/ingest/ingest.py": "4c9c274bc6694df6"

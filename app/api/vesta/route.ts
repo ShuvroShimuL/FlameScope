@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiError } from "@/lib/api";
+import { apiError, crossSite, sameSecret } from "@/lib/api";
 import { sse, type VestaEvent } from "@/lib/vesta/events";
 import { runVesta } from "@/lib/vesta/router";
 import { vestaLimiter } from "@/lib/ratelimit";
@@ -30,6 +30,8 @@ function visitorId(req: Request): string {
 }
 
 export async function POST(req: Request) {
+  // A page on another site must not be able to spend this server’s model keys through a visitor’s browser.
+  if (crossSite(req)) return apiError("cross-site request refused", 403);
   let body: unknown;
   try {
     body = await req.json();
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
   if (busy.has(visitor)) return apiError("VESTA is still answering your previous question.", 429);
   // Local eval runs only: a matching x-eval-token (set via VESTA_EVAL_TOKEN on that server) skips the limit and cache.
   const evalToken = process.env.VESTA_EVAL_TOKEN;
-  const evalMode = !!evalToken && evalToken.length >= 16 && req.headers.get("x-eval-token") === evalToken;
+  const evalMode = !!evalToken && evalToken.length >= 16 && sameSecret(evalToken, req.headers.get("x-eval-token"));
   const wait = evalMode ? 0 : vestaLimiter.check(visitor);
   if (wait) return apiError(`You've asked VESTA a lot of questions in a short time. Please wait about ${wait} seconds and try again.`, 429);
   busy.add(visitor);

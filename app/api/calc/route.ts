@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiError, json } from "@/lib/api";
+import { apiError, crossSite, json } from "@/lib/api";
 import { compact, filterTests } from "@/lib/data";
 import { envelopeCheck, flowRegime, hazardIndex, nearestTests, o2VsEarth, pO2Calc, ratioToISS } from "@/lib/physics";
 
@@ -13,6 +13,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  if (crossSite(req)) return apiError("cross-site request refused", 403);
   let body: unknown;
   try {
     body = await req.json();
