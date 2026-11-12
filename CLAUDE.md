@@ -13,7 +13,7 @@ It is guided by VESTA (Virtual Engineer for Space-fire Threat Assessment), an AI
 - Hosting: the EXISTING Vercel project connected to this repo. Every push to `main` deploys. Never create a second Vercel project; link to the existing one.
 - Raw NASA data (READ-ONLY, never edit), committed in the GitHub repo and pulled with git: `Pseudo_DataKeep/{ACME,CFI,SPICE}/` each with `<INV>_Engineering_Doc.pdf`, `<INV>_Experimental_Table.csv`, `<INV>_Report.pdf`.
 - Clean data made by our script: `data/processed/` (committed, the app reads it).
-- Secrets: `.env.local` locally (git-ignored) and Vercel Environment Variables online. Possible keys: `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, plus `ANTHROPIC_MODEL`, `OPENROUTER_MODEL`, `GROQ_MODEL`, `GEMINI_MODEL`. Every key is OPTIONAL; an empty value or a value containing `PASTE` counts as missing. NEVER print, log or commit a key.
+- Secrets: `.env.local` locally (git-ignored) and Vercel Environment Variables online. Possible keys: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `FREELLMAPI_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, plus `ANTHROPIC_MODEL`, `OPENAI_MODEL`, `FREELLMAPI_MODEL`, `FREELLMAPI_BASE_URL`, `FREELLMAPI_BUDGET`, `OPENROUTER_MODEL`, `GROQ_MODEL`, `GEMINI_MODEL`. Every key is OPTIONAL; an empty value or a value containing `PASTE` counts as missing. NEVER print, log or commit a key.
 
 ## About the data
 - ACME: gaseous-fuel flames in the Combustion Integrated Rack (CIR). Includes BRE (still-air material flammability), CFI-G (oxidizer up to 85% O2), E-FIELD Flames (electric field mimics partial gravity).
@@ -55,7 +55,7 @@ O2 partial pressure: pO2 = (O2% / 100) × P. ISS reference = 3.087 psi.
 - `app/` pages: `/` overview, `/explorer`, `/compare`, `/safety`, `/lab`, `/simulator`, `/about`; `app/api/*` route handlers
 - `components/` layout/, charts/, vesta/, ui/, fx/ (decorative canvas effects, never data), map3d/ (3D map scene; its scales are in `lib/map3d.ts`)
 - `lib/data.ts` (load + query processed data), `lib/physics.ts`, `lib/flame.ts`, `lib/missions.ts`, `lib/safety.ts`, `lib/search.ts`, `lib/types.ts`, `lib/store.ts`
-- `lib/vesta/` `agent.ts` (tool loop, provider-agnostic), `router.ts` (engine chain + fallback), `offline.ts` (Offline mode), `providers/` (`anthropic.ts`, `openai-compat.ts` (shared helper), `openrouter.ts`, `groq.ts`, `gemini.ts`, one shared interface), `system-prompt.md`, `tools/` (one file per tool), `grounding.ts`
+- `lib/vesta/` `agent.ts` (tool loop, provider-agnostic), `router.ts` (engine chain + fallback), `offline.ts` (Offline mode), `providers/` (`anthropic.ts`, `openai-compat.ts` (shared helper), `openai.ts`, `freellmapi.ts`, `openrouter.ts`, `groq.ts`, `gemini.ts`, one shared interface), `freellmapi-status.ts`, `burn.ts`, `system-prompt.md`, `tools/` (one file per tool), `grounding.ts`
 - `scripts/blueprint/` the live system map: `scan.ts` reads the project, `stories.ts` holds the plain-language text, `render.ts` + `build.ts` write `public/blueprint.html`
 - `scripts/ingest/` Python data prep · `data/processed/` clean data · `docs/` notes · `evals/` VESTA test questions · `tests/` vitest
 
@@ -76,27 +76,32 @@ Unknown value → `null`. Units converted on ingest; original units recorded in 
 - `gap_finder` untested O2 × pressure cells and missing fuel types
 - `make_chart` validated ECharts option (line, bar, scatter, radar, heatmap only)
 - `ui_action` tell the dashboard to go to a view, set mission, highlight tests, open a test
-Tool schemas are written once in zod and converted for each provider. SSE events from `/api/vesta`: `engine` (which engine is answering), `step`, `text`, `chart`, `ui`, `sources`, `confidence`, `done`, `error`.
+Tool schemas are written once in zod and converted for each provider. SSE events from `/api/vesta`: `engine` (which engine is answering), `step`, `usage` (tokens one model call used, as the provider reported them; none for Offline or cached answers), `text`, `chart`, `ui`, `sources`, `confidence`, `done`, `error`.
 
 ## VESTA engines (the backup chain)
 | Engine | Used when | Notes |
 |---|---|---|
 | 1. Claude | `ANTHROPIC_API_KEY` is set | Best quality |
-| 2. OpenRouter (free) | `OPENROUTER_API_KEY` is set | Default `OPENROUTER_MODEL=nvidia/nemotron-3.5-super-vl:free` |
-| 3. Groq (free) | `GROQ_API_KEY` is set | Default `GROQ_MODEL=openai/gpt-oss-120b` |
-| 4. Gemini (free) | `GEMINI_API_KEY` is set | Default `GEMINI_MODEL=gemini-2.5-flash` |
-| 5. Offline | always available | Rule-based, no AI, never fails |
-- Auto mode (default): try the engines in order 1 → 2 → 3 → 4 → 5 and use the first one that works. Move to the next on: missing key, 401/403, 429 (rate or free limit), 5xx, timeout (20 s), a model that cannot do tool calling, or invalid tool-call output. Never show raw provider errors to users.
+| 2. ChatGPT (paid) | `OPENAI_API_KEY` is set | `openai` SDK on api.openai.com. Default `OPENAI_MODEL=gpt-5-mini`. No key yet: slot kept ready |
+| 3. FreeLLMAPI (local, free) | `FREELLMAPI_API_KEY` is set | The team's FreeLLMAPI desktop app on the same PC (`FREELLMAPI_BASE_URL`, default `http://127.0.0.1:31415/v1`), `FREELLMAPI_MODEL=auto` lets it pick a tool-capable model. Local only: never set on Vercel |
+| 4. OpenRouter (free) | `OPENROUTER_API_KEY` is set | Default `OPENROUTER_MODEL=nvidia/nemotron-3.5-super-vl:free` |
+| 5. Groq (free) | `GROQ_API_KEY` is set | Default `GROQ_MODEL=openai/gpt-oss-120b` |
+| 6. Gemini (free) | `GEMINI_API_KEY` is set | Default `GEMINI_MODEL=gemini-2.5-flash` |
+| 7. Offline | always available | Rule-based, no AI, never fails |
+- Auto mode (default): try the engines in order 1 → 7 and use the first one that works. Move to the next on: missing key, 401/403, 429 (rate or free limit), 5xx, timeout (20 s), a model that cannot do tool calling, or invalid tool-call output. Never show raw provider errors to users.
 - Every engine uses the same system prompt, the same tools and the same grounding check, and must emit the same SSE events.
 - Offline mode (`lib/vesta/offline.ts`): a deterministic router detects the intent (assess conditions, compare, gaps, rank, safety audit, explain a test or a topic, help), pulls numbers like "34%" or "8.2 psi" from the message, calls the same tools and builds a templated answer with sources and a confidence tag. Unknown questions get a short list of what it can do.
-- `GET /api/vesta/engines` returns only `{id, label, available}` for each engine (never keys or key fragments). The frontend uses it for the model menu.
+- `GET /api/vesta/engines` returns only `{id, label, available}` for each engine (never keys or key fragments). The frontend uses it for the Engine room.
+- `GET /api/vesta/meter` returns engine cooldowns and, when a FreeLLMAPI key is set, its provider health and monthly token budget (`lib/vesta/freellmapi-status.ts`; the budget is read through the desktop app's local sign-in, only when it runs on this PC; `FREELLMAPI_BUDGET=off` turns that off). Never keys, session tokens or provider error text.
 - Cost and limits: max 6 tool rounds, short answers, cache identical questions for 10 minutes, one request at a time per visitor.
 
-## VESTA model menu (in the VESTA panel header)
-- Dropdown with: Auto (recommended) · Claude · OpenRouter · Groq · Gemini · Offline. Engines without a key are shown greyed out with "no key" and cannot be picked.
+## VESTA Engine room (in the VESTA panel header)
+- A strip under the level picker shows the picked engine, the engine answering right now, tokens burned this session and the FreeLLMAPI budget left; clicking it opens the Engine room (`components/vesta/EngineRoom.tsx`).
+- Engine tiles: Auto (recommended) · Claude · ChatGPT · FreeLLMAPI · OpenRouter · Groq · Gemini · Offline. Engines without a key are greyed out with "no key" and cannot be picked; engines resting after a failure show a countdown. The fallback chain lights up while VESTA works.
+- Cards: Now running (engine, model, model FreeLLMAPI routed to, calls, tokens, time), Token burn (session total, per engine, average per answer; counts come only from provider `usage` reports, `lib/vesta/burn.ts`), FreeLLMAPI fuel tank (its own budget estimate, per-model bar, provider health).
 - The choice is saved in the zustand store and in localStorage, and sent with every message.
 - If the picked engine fails, VESTA falls back down the chain and shows a small note in that message, e.g. "Groq limit reached, answered with Gemini".
-- Every VESTA message shows a small badge with the engine that answered (e.g. "via Groq · gpt-oss-120b", "Offline mode").
+- Every VESTA message shows a small badge with the engine that answered (e.g. "via Groq · gpt-oss-120b", "Offline mode"), the model FreeLLMAPI routed to, and the tokens the answer burned.
 
 ## VESTA personality
 Calm, precise, a little dry humour. Speaks first when it sees a hazard. Three explanation levels: student, researcher, engineer. Never bluffs. Original character; never mention film characters.
@@ -122,6 +127,6 @@ Calm, precise, a little dry humour. Speaks first when it sees a hazard. Three ex
 5. If a data column is unclear: check the PDFs, write the answer in `docs/DATA_NOTES.md`; still unclear → ask the user.
 6. Ask before adding big new dependencies or changing the architecture.
 7. When the user must act (log in, approve in a browser), STOP and give short numbered steps, then wait.
-8. Keys: add every key that is set in `.env.local` to Vercel (Production and Preview) by piping the value into `npx vercel env add`, never showing it. When the user adds a new key later, do the same and redeploy.
+8. Keys: add every key that is set in `.env.local` to Vercel (Production and Preview) by piping the value into `npx vercel env add`, never showing it. Exception: `FREELLMAPI_*` stays local (the app runs on the team's PC, which Vercel cannot reach). When the user adds a new key later, do the same and redeploy.
 9. Blueprint (`public/blueprint.html`, generated; never edit it by hand): when you add or remove a page, API route, VESTA tool, engine, lib module, shell component or dependency, or change how the pipeline works, update `scripts/blueprint/stories.ts` and run `npm run blueprint`. Never type a number into a story: use `{{factName}}` from `scan.ts`. This applies until the project is finished. When a file in `scripts/blueprint/pipeline-watch.ts` changes, re-read the matching section of `stories.ts`, correct it if the behaviour changed, then run `npm run blueprint:reviewed`; never run that command without checking. New pipeline files go on the watch list. `tests/blueprint.test.ts` fails if any of this is out of step.
 10. End of every phase: update `PROGRESS.md` (Done · Decisions · Problems · Next), then `git add -A`, `git commit -m "Phase N: <summary>"`, `git push origin main`, and report the Vercel URL.

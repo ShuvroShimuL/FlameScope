@@ -1,39 +1,53 @@
 /** Engine configuration from environment variables. Never exposes key values. */
 
-export type EngineId = "claude" | "openrouter" | "groq" | "gemini" | "offline";
+export type EngineId = "claude" | "openai" | "freellmapi" | "openrouter" | "groq" | "gemini" | "offline";
 export type EngineChoice = EngineId | "auto";
+export type AiEngineId = Exclude<EngineId, "offline">;
 
-export const ENGINE_ORDER: EngineId[] = ["claude", "openrouter", "groq", "gemini", "offline"];
+/** Paid engines first (best quality), then the free pools, Offline always last. */
+export const ENGINE_ORDER: EngineId[] = ["claude", "openai", "freellmapi", "openrouter", "groq", "gemini", "offline"];
 
 export const ENGINE_LABELS: Record<EngineChoice, string> = {
   auto: "Auto (recommended)",
   claude: "Claude",
+  openai: "ChatGPT",
+  freellmapi: "FreeLLMAPI",
   openrouter: "OpenRouter",
   groq: "Groq",
   gemini: "Gemini",
   offline: "Offline",
 };
 
-const DEFAULT_MODELS: Record<Exclude<EngineId, "offline">, string> = {
+const DEFAULT_MODELS: Record<AiEngineId, string> = {
   claude: "claude-opus-5-5",
+  openai: "gpt-5-mini",
+  // "auto" lets FreeLLMAPI pick the model from its own pool (only tool-capable models when tools are sent)
+  freellmapi: "auto",
   openrouter: "nvidia/nemotron-3.5-super-vl:free",
   groq: "openai/gpt-oss-120b",
   gemini: "gemini-2.5-flash",
 };
 
-const KEY_VARS: Record<Exclude<EngineId, "offline">, string> = {
+const KEY_VARS: Record<AiEngineId, string> = {
   claude: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  freellmapi: "FREELLMAPI_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
   groq: "GROQ_API_KEY",
   gemini: "GEMINI_API_KEY",
 };
 
-const MODEL_VARS: Record<Exclude<EngineId, "offline">, string> = {
+const MODEL_VARS: Record<AiEngineId, string> = {
   claude: "ANTHROPIC_MODEL",
+  openai: "OPENAI_MODEL",
+  freellmapi: "FREELLMAPI_MODEL",
   openrouter: "OPENROUTER_MODEL",
   groq: "GROQ_MODEL",
   gemini: "GEMINI_MODEL",
 };
+
+/** The FreeLLMAPI desktop app listens here unless its port was changed. */
+export const FREELLMAPI_DEFAULT_URL = "http://127.0.0.1:31415/v1";
 
 /** A key counts as missing when empty or when it still contains a "PASTE" placeholder. */
 export function isRealKey(v: string | undefined | null): v is string {
@@ -44,6 +58,12 @@ export function isRealKey(v: string | undefined | null): v is string {
 export function cleanModel(v: string | undefined | null): string | undefined {
   const m = (v ?? "").trim().split(/[\s#]/)[0];
   return m && !m.includes("PASTE") ? m : undefined;
+}
+
+/** FREELLMAPI_BASE_URL (http or https, trailing slash removed), else the desktop app's default address. */
+export function freellmapiBaseURL(env: NodeJS.ProcessEnv = process.env): string {
+  const v = (env.FREELLMAPI_BASE_URL ?? "").trim().split(/[\s#]/)[0].replace(/\/+$/, "");
+  return /^https?:\/\/[^/]+/i.test(v) ? v : FREELLMAPI_DEFAULT_URL;
 }
 
 export function engineKey(id: EngineId, env: NodeJS.ProcessEnv = process.env): string | undefined {

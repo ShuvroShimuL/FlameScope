@@ -1,4 +1,5 @@
 /** One shared interface for every AI engine. Each session keeps its provider-native history. */
+import type { AiEngineId } from "../engines";
 
 export interface ToolSpec {
   name: string;
@@ -14,10 +15,19 @@ export interface ToolCall {
   args: unknown;
 }
 
+/** Tokens one model call used, as the provider reported them. Null when the provider did not say. */
+export interface TokenUsage {
+  input: number | null;
+  output: number | null;
+}
+
 export interface ProviderReply {
   text: string;
   toolCalls: ToolCall[];
   stop: "tool_use" | "end" | "max_tokens" | "refusal";
+  usage?: TokenUsage;
+  /** The model that really answered, when a router (FreeLLMAPI) picked it. */
+  servedModel?: string;
 }
 
 export interface ToolResultMessage {
@@ -39,7 +49,7 @@ export interface HistoryMessage {
 }
 
 export interface Provider {
-  id: "claude" | "openrouter" | "groq" | "gemini";
+  id: AiEngineId;
   model: string;
   startSession(input: { system: string; history: HistoryMessage[]; tools: ToolSpec[] }): ChatSession;
 }

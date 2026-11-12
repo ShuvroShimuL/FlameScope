@@ -42,8 +42,12 @@ export function useVesta() {
       const id = newId();
       st.addMessage({ id, role: "vesta", text: "", steps: [], charts: [], sources: [], pending: true });
       const upd = useHearth.getState().updateMessage;
+      const { startLive, updateLive, recordUsage } = useHearth.getState();
       const controller = new AbortController();
       active = controller;
+      startLive();
+      let answerTokens = 0;
+      let answerComplete = true;
       try {
         const stream = streamVesta(
           { messages: [...history, { role: "user", content: text }], mission: st.missionId, level: st.level, engine: st.engine },
@@ -52,8 +56,26 @@ export function useVesta() {
         for await (const ev of stream) {
           switch (ev.type) {
             case "engine":
-              upd(id, (m) => ({ ...m, badge: ev.badge, note: ev.note }));
+              upd(id, (m) => ({ ...m, badge: ev.badge, note: ev.note, engineId: ev.id }));
+              updateLive((l) => ({ ...l, engine: ev.id, model: ev.model, served: undefined, fallbacks: ev.fallback_from ?? [] }));
               break;
+            case "usage": {
+              const tokens = (ev.input ?? 0) + (ev.output ?? 0);
+              const known = ev.input !== null || ev.output !== null;
+              answerTokens += tokens;
+              if (!known) answerComplete = false;
+              recordUsage({ engine: ev.engine, input: ev.input, output: ev.output });
+              updateLive((l) => ({ ...l, calls: l.calls + 1, tokens: l.tokens + tokens, served: ev.served ?? l.served }));
+              upd(id, (m) => {
+                const u = m.usage ?? { input: 0, output: 0, calls: 0, unreported: 0 };
+                return {
+                  ...m,
+                  served: ev.served ?? m.served,
+                  usage: { input: u.input + (ev.input ?? 0), output: u.output + (ev.output ?? 0), calls: u.calls + 1, unreported: u.unreported + (known ? 0 : 1) },
+                };
+              });
+              break;
+            }
             case "step":
               upd(id, (m) => {
                 const steps = [...m.steps];
@@ -91,6 +113,8 @@ export function useVesta() {
         else upd(id, (m) => ({ ...m, error: "Connection to VESTA was lost. Please try again." }));
       } finally {
         upd(id, (m) => ({ ...m, pending: false }));
+        // only fully reported answers feed the "average per answer" figure
+        useHearth.getState().endLive(answerComplete && !controller.signal.aborted ? answerTokens : null);
         useHearth.getState().setBusy(false);
       }
     },

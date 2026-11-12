@@ -26,6 +26,8 @@ export const WATCHED: { file: string; section: string }[] = [
   { file: "lib/vesta/agent.ts", section: "vesta" },
   { file: "lib/vesta/offline.ts", section: "vesta" },
   { file: "lib/vesta/engines.ts", section: "vesta" },
+  { file: "lib/vesta/freellmapi-status.ts", section: "vesta" },
+  { file: "lib/vesta/burn.ts", section: "vesta" },
   { file: "lib/vesta/events.ts", section: "vesta" },
   { file: "lib/vesta/alert.ts", section: "vesta" },
   { file: "lib/vesta/system-prompt.md", section: "vesta" },

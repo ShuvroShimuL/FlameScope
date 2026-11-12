@@ -3,10 +3,14 @@ import type { EngineId } from "./engines";
 import type { ChartPayload } from "./tools/make_chart";
 import type { UiEvent } from "./tools/ui_action";
 
-/** The SSE events every engine emits, in this order: engine → step* → (chart|ui)* → text* → sources → confidence → done. */
+/**
+ * The SSE events every engine emits, in this order: engine → (step|usage)* → (chart|ui)* → text* → sources → confidence → done.
+ * `usage` comes once per AI model call with the tokens the provider reported; Offline and cached answers use none.
+ */
 export type VestaEvent =
   | { type: "engine"; id: EngineId; label: string; model: string; badge: string; note?: string; fallback_from?: { id: EngineId; reason: string }[] }
   | { type: "step"; tool: string; status: "running" | "done" | "error"; summary: string }
+  | { type: "usage"; engine: EngineId; model: string; served?: string; input: number | null; output: number | null }
   | { type: "text"; delta: string }
   | { type: "chart"; chart: ChartPayload }
   | { type: "ui"; ui: UiEvent }

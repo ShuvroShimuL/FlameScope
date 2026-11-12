@@ -24,16 +24,18 @@ Every number shown comes from the NASA data or a tested formula, every VESTA cla
 | **Dataset** (`/dataset`) | Everything about the data: how it is stored, an interactive split explorer, every field with its fill rate and origin, investigation profiles, distributions, raw row vs clean record, quality flags and limits, a repeatable train/test split builder, downloads (CSV, JSON, dictionary) and NASA references with checksums. |
 | **Flame simulator** (`/simulator`) | **DEMO** replays of real tests in microgravity and on Earth. The moving flame is artwork steered by NASA results, not a combustion model; its numbers come from the test rows it cites, and settings with no nearby test show the data gap instead of a flame. |
 | **About** (`/about`) | Investigations, hardware, files, reference atmospheres, credits, limits and how VESTA works. |
-| **VESTA panel** (every page) | Streaming answers with live tool steps, inline charts (pin to dashboard), source chips, confidence tag, engine badge, model menu, Student / Researcher / Engineer levels, proactive alert when the mission changes. |
+| **VESTA panel** (every page) | Streaming answers with live tool steps, inline charts (pin to dashboard), source chips, confidence tag, engine badge with tokens per answer, Engine room (pick an engine, see which one is answering, tokens burned, FreeLLMAPI fuel tank), Student / Researcher / Engineer levels, proactive alert when the mission changes. |
 
 ## VESTA engine chain
 | Engine | Used when | Notes |
 |---|---|---|
 | 1. Claude | `ANTHROPIC_API_KEY` is set | `@anthropic-ai/sdk`, model `ANTHROPIC_MODEL` |
-| 2. OpenRouter (free) | `OPENROUTER_API_KEY` is set | `openai` SDK on OpenRouter's API, default `nvidia/nemotron-3.5-super-vl:free` |
-| 3. Groq (free) | `GROQ_API_KEY` is set | `openai` SDK on Groq's API, default `openai/gpt-oss-120b` |
-| 4. Gemini (free) | `GEMINI_API_KEY` is set | `@google/genai`, `GEMINI_MODEL` (e.g. `gemini-flash-latest`) |
-| 5. Offline mode | always | Rule-based: intent router + number extraction → same tools → templated answer. No AI, never fails. |
+| 2. ChatGPT (paid) | `OPENAI_API_KEY` is set | `openai` SDK on OpenAI's API, default `gpt-5-mini` |
+| 3. FreeLLMAPI (local, free) | `FREELLMAPI_API_KEY` is set | Your own [FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) desktop app on the same PC (`http://127.0.0.1:31415/v1`), model `auto`. Only when HEARTH runs locally |
+| 4. OpenRouter (free) | `OPENROUTER_API_KEY` is set | `openai` SDK on OpenRouter's API, default `nvidia/nemotron-3.5-super-vl:free` |
+| 5. Groq (free) | `GROQ_API_KEY` is set | `openai` SDK on Groq's API, default `openai/gpt-oss-120b` |
+| 6. Gemini (free) | `GEMINI_API_KEY` is set | `@google/genai`, `GEMINI_MODEL` (e.g. `gemini-flash-latest`) |
+| 7. Offline mode | always | Rule-based: intent router + number extraction → same tools → templated answer. No AI, never fails. |
 
 **Auto** tries the engines in order and uses the first that works. VESTA moves to the next engine on a missing key, 401/403, 404 model, 429 limit, 5xx, a 20 s timeout, a model that cannot call tools or invalid tool calls; an engine that just failed is skipped for a minute, and after 40 s VESTA answers with Offline mode so a reply always arrives. A small note says what happened ("Groq limit reached, answered with Gemini"). Raw provider errors are never shown and keys never leave the server.
 
@@ -48,7 +50,7 @@ Pseudo_DataKeep/ (raw NASA files, read-only)
 Next.js 14 App Router (TypeScript strict, Tailwind) on Vercel
    ├─ lib/data.ts · physics.ts · analysis.ts · safety.ts · search.ts (MiniSearch) · missions.ts
    ├─ lib/vesta/ agent.ts (tool loop) · router.ts (engine chain) · offline.ts · grounding.ts · providers/ · tools/
-   ├─ app/api/  missions · tests · tests/[id] · map · rank · gaps · compare · search · calc · safety · vesta (SSE) · vesta/engines · vesta/alert
+   ├─ app/api/  missions · tests · tests/[id] · map · rank · gaps · compare · search · calc · safety · vesta (SSE) · vesta/engines · vesta/meter · vesta/alert
    └─ app/ pages + components/ (ECharts, three.js 3D map, WebGL flame, zustand)
 ```
 Data decisions (column mapping, unit conversions, the shifted ACME inverse-flame layout, SPICE documented conditions, duplicates) are in [`docs/DATA_NOTES.md`](docs/DATA_NOTES.md); API examples in [`docs/API.md`](docs/API.md).

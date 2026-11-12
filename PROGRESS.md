@@ -3,11 +3,34 @@
 ## Status
 - Current phase: 6, in progress (partial commit made; "Phase 6: launch" and tag v1.0 still to come). The user wants a report + "go" after every phase.
 - Live URL: https://project-hearth-five.vercel.app
-- AI engines with keys: OpenRouter, Groq and Gemini on Vercel (Production + Preview, added after the user's permission). Claude key empty. The current machine's `.env.local` only has OpenRouter, so locally the chain goes OpenRouter → Offline.
+- AI engines with keys: OpenRouter, Groq and Gemini on Vercel (Production + Preview, added after the user's permission). Claude and ChatGPT keys empty. This PC's `.env.local` (2026-11-12) has Groq and Gemini; FreeLLMAPI runs here as a desktop app (port 31415) but its key is not in `.env.local` yet.
+- For the 2-day hackathon the team runs HEARTH on its own PC (`npm run dev`), with FreeLLMAPI as the main free engine.
 
 ## Log
 
-### FreeLLMAPI plan (agreed 2026-11-12, not started)
+### FreeLLMAPI + ChatGPT engines and the Engine room (2026-11-12, at the user's request)
+**Done**
+- New engines: ChatGPT (`OPENAI_API_KEY`, `openai` SDK, default `gpt-5-mini`; no key yet, slot ready) and FreeLLMAPI (`FREELLMAPI_API_KEY`, local desktop app at `http://127.0.0.1:31415/v1`, model `auto`). Chain: Claude → ChatGPT → FreeLLMAPI → OpenRouter → Groq → Gemini → Offline. No new dependencies.
+- Token counting: every provider now reports tokens per model call; a new SSE event `usage` carries them (not replayed for cached answers, none for Offline). FreeLLMAPI's `X-Routed-Via` header shows which model it really used.
+- `/api/vesta/meter`: engine cooldowns plus FreeLLMAPI provider health (`/v1/providers` with the key) and its monthly token budget (desktop app's local sign-in → `/api/fallback/token-usage`, the numbers on its Models page). Never returns keys or session tokens.
+- Engine room in the VESTA panel (replaces the model dropdown): a strip with the engine, live model, tokens burned and FreeLLMAPI % left; opens to engine tiles (no key / resting countdown / answering now), the fallback chain lighting up, a Now running card (calls, tokens, time, tokens/s), Token burn (session total with ember burst, per engine, average per answer, reset) and the FreeLLMAPI fuel tank (gauge, per-model bar with hover details, ≈ answers left at the session average, provider health). Each answer's badge shows its tokens and the routed model.
+- `lib/vesta/burn.ts` holds the maths; 19 new tests (185 in total). Blueprint updated (new engines, route, stories; chain presets now fit any engine count).
+- Checked in headless Chrome: 1440×900, 1366×768, 1920×1080 and 400 px, a real Groq answer (6,891 tokens over 2 calls counted), keyboard picking, reduced motion, no console errors, question box stays visible with the room open.
+
+**Decisions**
+- FreeLLMAPI is in Auto (3rd), unlike the earlier plan below: the team now runs VESTA on its own PC and wants these tokens used. Without a key (Vercel) it is skipped. `FREELLMAPI_MODEL` can pin one model instead of `auto`.
+- FreeLLMAPI keys stay out of Vercel (CLAUDE.md rule 8 exception): Vercel cannot reach the PC.
+- The budget is FreeLLMAPI's own estimate from published free-tier quotas and is labelled so; % left rounds down so a used budget never reads 100%. "Answers left" = floor(remaining ÷ session average), shown only after a fully reported answer.
+- Reading the budget uses the desktop app's local sign-in, only when the address is this PC; `FREELLMAPI_BUDGET=off` turns it off.
+
+**Problems**
+- Not yet tested against FreeLLMAPI with a real key: the key is not in `.env.local`. The budget path was checked live against the running app; the chat path with mocks.
+- The Blueprint grew from 211 KB to 313 KB: the fallback demo now records 3^6 = 729 engine mixes.
+
+**Next**
+- User adds `FREELLMAPI_API_KEY` to `.env.local`; then a live FreeLLMAPI question, and the evals through it (q03/q12 fixes), then "Phase 6: launch" + v1.0.
+
+### FreeLLMAPI plan (agreed 2026-11-12, superseded by the entry above)
 - The user runs the FreeLLMAPI app (github.com/tashfeenahmed/freellmapi, one OpenAI-compatible endpoint over 4–5 free providers, ~140M tokens) on ANOTHER PC. The PC used on 2026-11-12 has no FreeLLMAPI, Node, Docker or WSL.
 - Work it on that PC: (1) start FreeLLMAPI, find its local address, key in `.env.local` as `FREELLMAPI_API_KEY` (+ `FREELLMAPI_BASE_URL`, `FREELLMAPI_MODEL`), never shown; (2) user approved in principle adding a local-only `freellmapi` engine on `providers/openai-compat.ts`, not in Auto, shows "no key" on Vercel; (3) pick one pinned tool-calling model; (4) run the evals through it one question at a time, then the other engines spaced out; (5) fix q03/q12-type failures, reach ≥ 90%, then "Phase 6: launch" + v1.0.
 - Live-site use only if it is hosted publicly and its terms allow it: decide later.

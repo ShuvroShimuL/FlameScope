@@ -48,10 +48,13 @@ export function geminiProvider(apiKey: string, model: string): Provider {
               if (!fc.name) throw new EngineError("bad_tool_output", "function call without a name");
               return { id: fc.id ?? `gemini-call-${++callCounter}`, name: fc.name, args: fc.args ?? {} };
             });
+          const u = res.usageMetadata;
           return {
             text,
             toolCalls,
             stop: toolCalls.length ? "tool_use" : cand.finishReason === "MAX_TOKENS" ? "max_tokens" : "end",
+            // thinking tokens are spent like output tokens
+            usage: u ? { input: u.promptTokenCount ?? null, output: u.candidatesTokenCount == null && u.thoughtsTokenCount == null ? null : (u.candidatesTokenCount ?? 0) + (u.thoughtsTokenCount ?? 0) } : undefined,
           };
         },
         addToolResults(results: ToolResultMessage[]) {

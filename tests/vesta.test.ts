@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GET as enginesGET } from "@/app/api/vesta/engines/route";
-import { cleanModel, engineChain, isRealKey, listEngines } from "@/lib/vesta/engines";
+import { cleanModel, engineChain, isRealKey, listEngines, type EngineChoice } from "@/lib/vesta/engines";
 import { extractConfidenceTag, type VestaEvent } from "@/lib/vesta/events";
 import { checkGrounding, collectNumbers, extractNumbers, matches } from "@/lib/vesta/grounding";
 import { detectIntent, parseMessage, runOffline } from "@/lib/vesta/offline";
@@ -46,7 +46,7 @@ const text = (t: string): ProviderReply => ({ text: t, toolCalls: [], stop: "end
 const tool = (name: string, args: unknown, id = `c-${name}`): ProviderReply => ({ text: "", toolCalls: [{ id, name, args }], stop: "tool_use" });
 const httpError = (status: number) => Object.assign(new Error(`status ${status}`), { status });
 
-async function run(deps: RouterDeps, message = "What is pO2 at 34% O2 and 8.2 psi?", engine: "auto" | "claude" | "openrouter" | "groq" | "gemini" | "offline" = "auto") {
+async function run(deps: RouterDeps, message = "What is pO2 at 34% O2 and 8.2 psi?", engine: EngineChoice = "auto") {
   const events: VestaEvent[] = [];
   await runVesta({ messages: [{ role: "user", content: message }], missionId: "lunar-rover", level: "researcher", engine }, (e) => events.push(e), {
     chunkDelayMs: 0,
@@ -83,7 +83,8 @@ describe("agent tool loop", () => {
   it("emits events in order: engine → step → text → sources → confidence → done", async () => {
     const { provider } = mockProvider("groq", GOOD_PO2);
     const r = await run({ providers: { groq: provider } });
-    const order = r.events.map((e) => e.type).filter((t, i, a) => t !== a[i - 1]);
+    // usage (tokens per model call) is live progress like step; its order is tested in engine-room.test.ts
+    const order = r.events.map((e) => e.type).filter((t) => t !== "usage").filter((t, i, a) => t !== a[i - 1]);
     expect(order).toEqual(["engine", "step", "text", "sources", "confidence", "done"]);
   });
 
@@ -249,7 +250,7 @@ describe("backup chain", () => {
   });
 
   it("a chosen engine is tried first, then the chain continues", async () => {
-    expect(engineChain("gemini")).toEqual(["gemini", "claude", "openrouter", "groq", "offline"]);
+    expect(engineChain("gemini")).toEqual(["gemini", "claude", "openai", "freellmapi", "openrouter", "groq", "offline"]);
     expect(engineChain("offline")).toEqual(["offline"]);
     const r = await run({ providers: {} }, "What is pO2 at 34% O2 and 8.2 psi?", "groq");
     expect(r.last.id).toBe("offline");
@@ -305,7 +306,7 @@ describe("engines endpoint", () => {
     expect(body).not.toContain("gsk_");
     expect(body).not.toContain("sk-or-");
     const list = JSON.parse(body) as Record<string, unknown>[];
-    expect(list.map((e) => Object.keys(e).sort().join(","))).toEqual(Array(6).fill("available,id,label"));
+    expect(list.map((e) => Object.keys(e).sort().join(","))).toEqual(Array(8).fill("available,id,label"));
     expect(list.find((e) => e.id === "claude")?.available).toBe(true);
     expect(list.find((e) => e.id === "openrouter")?.available).toBe(true);
     expect(list.find((e) => e.id === "gemini")?.available).toBe(false);

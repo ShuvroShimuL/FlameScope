@@ -19,7 +19,7 @@ export interface AgentInput {
   missionId?: string;
   level: Level;
   signal?: AbortSignal;
-  /** Live progress (tool steps). Final content is returned, not emitted. */
+  /** Live progress (tool steps, tokens per model call). Final content is returned, not emitted. */
   emit: Emit;
   timeoutMs?: number;
 }
@@ -102,6 +102,7 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
   for (;;) {
     if (++calls > MAX_TOOL_ROUNDS + 3) throw new EngineError("other", "too many model calls");
     const reply: ProviderReply = await withTimeout((s) => session.send(s), timeout, input.signal);
+    emit({ type: "usage", engine: provider.id, model: provider.model, served: reply.servedModel, input: reply.usage?.input ?? null, output: reply.usage?.output ?? null });
 
     if (reply.toolCalls.length) {
       rounds++;

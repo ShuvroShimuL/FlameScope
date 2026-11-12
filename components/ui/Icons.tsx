@@ -52,3 +52,18 @@ export const IconCopy = (p: P) => (
 export const IconPin = (p: P) => (
   <svg {...base} className={p.className}><path d="M12 17v4M8 3h8l-1 6 3 3H6l3-3z" /></svg>
 );
+export const IconFlame = (p: P) => (
+  <svg {...base} className={p.className}><path d="M12 3c.5 3.5 4.5 5.5 4.5 10a4.5 4.5 0 01-9 0c0-2.2 1.2-3.6 2.2-4.6.2 1.6 1 2.6 1.8 3 .2-3.3-.6-5.8.5-8.4z" /></svg>
+);
+export const IconGauge = (p: P) => (
+  <svg {...base} className={p.className}><path d="M4 17a8 8 0 1116 0" /><path d="M12 17l4-5" /><path d="M7 17h10" /></svg>
+);
+export const IconRefresh = (p: P) => (
+  <svg {...base} className={p.className}><path d="M20 11a8 8 0 10-2.3 5.7" /><path d="M20 4v7h-7" /></svg>
+);
+export const IconChevron = (p: P) => (
+  <svg {...base} className={p.className}><path d="M6 9l6 6 6-6" /></svg>
+);
+export const IconBolt = (p: P) => (
+  <svg {...base} className={p.className}><path d="M13 3L5 14h6l-1 7 8-11h-6z" /></svg>
+);

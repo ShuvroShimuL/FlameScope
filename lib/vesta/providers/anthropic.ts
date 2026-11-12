@@ -43,10 +43,13 @@ export function anthropicProvider(apiKey: string, model: string): Provider {
             if (block.type === "text") text += block.text;
             else if (block.type === "tool_use") toolCalls.push({ id: block.id, name: block.name, args: block.input });
           }
+          const u = res.usage;
           return {
             text,
             toolCalls,
             stop: toolCalls.length ? "tool_use" : res.stop_reason === "max_tokens" ? "max_tokens" : "end",
+            // cached prompt tokens still count as input read by the model
+            usage: u ? { input: (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0), output: u.output_tokens ?? null } : undefined,
           };
         },
         addToolResults(results: ToolResultMessage[]) {

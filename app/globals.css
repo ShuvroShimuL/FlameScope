@@ -288,3 +288,77 @@ h1, h2, h3, h4 {
 @media (prefers-reduced-motion: reduce) {
   .data-flow { animation: none; }
 }
+
+/* VESTA Engine room: decoration that reacts to real events (a model call, a running engine). Never carries a number. */
+.ember-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff4e8, #ff7a2f 70%);
+  box-shadow: 0 0 6px rgba(255, 122, 47, 0.9);
+  animation: emberSpark 0.95s ease-out both;
+}
+@keyframes emberSpark {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+.burn-flare {
+  animation: burnFlare 0.8s ease-out;
+}
+@keyframes burnFlare {
+  0% { box-shadow: 0 0 0 0 rgba(255, 122, 47, 0.7); transform: scale(1); }
+  30% { transform: scale(1.12); }
+  100% { box-shadow: 0 0 0 14px rgba(255, 122, 47, 0); transform: scale(1); }
+}
+.tile-running {
+  animation: tileHeat 1.4s ease-in-out infinite;
+}
+@keyframes tileHeat {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 122, 47, 0.5), 0 0 10px rgba(255, 122, 47, 0.25); }
+  50% { box-shadow: 0 0 0 1px rgba(255, 185, 138, 0.9), 0 0 22px rgba(255, 122, 47, 0.55); }
+}
+.engine-tile:has(input:focus-visible) {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.chain-wire {
+  background: linear-gradient(90deg, transparent, var(--ember), #ffe2cc, var(--ember), transparent);
+  background-size: 35% 100%;
+  background-repeat: no-repeat;
+  height: 2px;
+  animation: conduit 1.1s linear infinite;
+}
+.chain-node-live {
+  box-shadow: 0 0 10px rgba(255, 122, 47, 0.9);
+  animation: pulseRingSoft 1.2s ease-in-out infinite;
+}
+@keyframes pulseRingSoft {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 122, 47, 0.7); }
+  50% { box-shadow: 0 0 14px rgba(255, 122, 47, 1); }
+}
+.gauge-needle {
+  transform-origin: 60px 60px;
+  transform-box: view-box;
+  transition: transform 1.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.live-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 185, 138, 0.12) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: heatFlow 2.6s linear infinite;
+}
+.engine-room {
+  animation: fadeUp 0.3s ease-out both;
+  scrollbar-width: thin;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ember-spark, .live-card::before, .chain-wire, .tile-running, .chain-node-live { animation: none; }
+  .gauge-needle { transition: none; }
+}

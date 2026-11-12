@@ -3,6 +3,7 @@ import { useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { IconCheck, IconCopy, IconPin } from "@/components/ui/Icons";
 import { useHearth, type Step, type VestaMessage } from "@/lib/store";
+import { formatTokens } from "@/lib/vesta/burn";
 import { ConfidenceTag, SourceChips } from "./Bits";
 import { RichText } from "./RichText";
 import { toolLabel } from "./suggest";
@@ -130,6 +131,12 @@ export function VestaMessageView({ m }: { m: VestaMessage }) {
         <span className="font-head text-xs font-semibold tracking-wider text-ember-soft">VESTA</span>
         {alert && <span className="font-mono text-[10px] font-semibold uppercase tracking-wider">{alert.label}</span>}
         {m.badge && <span className="rounded bg-raised px-1.5 py-0.5 font-mono text-[10px] text-muted">{m.badge}</span>}
+        {m.served && <span className="font-mono text-[10px] text-ember-soft" title="The model FreeLLMAPI picked">→ {m.served}</span>}
+        {m.usage && (
+          <span className="font-mono text-[10px] text-muted" title={`${m.usage.input} read + ${m.usage.output} written, ${m.usage.calls} model calls${m.usage.unreported ? `, ${m.usage.unreported} without a count` : ""}`}>
+            · {formatTokens(m.usage.input + m.usage.output)} tokens
+          </span>
+        )}
         {m.cached && <span className="font-mono text-[10px] text-muted">cached</span>}
       </div>
       {m.note && <p className="mb-1 text-[11px] text-warn">{m.note}</p>}

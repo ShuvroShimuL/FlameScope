@@ -6,7 +6,7 @@ const KEY = "hearth.tour.v1";
 const STEPS = [
   { target: "tour-missions", title: "1 · Pick a mission", text: "Switch between the ISS, a Moon base, a pressurized lunar rover (demo scenario) and a spacesuit. Every page and VESTA follow the mission you pick." },
   { target: "tour-map", title: "2 · The habitat relevance map", text: "Every NASA test by pressure and oxygen. The gold line has the same O2 partial pressure as the ISS, and your mission is marked on the map. Click a point for its details." },
-  { target: "tour-vesta", title: "3 · Ask VESTA", text: "VESTA answers with numbers from the NASA data or tested formulas, cites sources and adds a confidence tag. The model menu picks the AI engine; Auto falls back to the next engine, down to Offline mode." },
+  { target: "tour-vesta", title: "3 · Ask VESTA", text: "VESTA answers with numbers from the NASA data or tested formulas, cites sources and adds a confidence tag. The Engine room picks the AI engine and shows the tokens it burns; Auto falls back to the next engine, down to Offline mode." },
 ];
 
 interface Box {

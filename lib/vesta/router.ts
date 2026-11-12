@@ -41,11 +41,18 @@ export interface RouterDeps {
 }
 
 const cache = new Map<string, { at: number; events: VestaEvent[] }>();
-const cooldown = new Map<EngineId, { until: number; reason: string }>();
+const cooldown = new Map<EngineId, { until: number; reason: string; total: number }>();
 
 export function clearVestaCache() {
   cache.clear();
   cooldown.clear();
+}
+
+/** Engines resting after a failure, for the Engine room. Reasons are the friendly ones, never provider text. */
+export function cooldownStatus(now: number = Date.now()): { id: EngineId; seconds_left: number; total_seconds: number; reason: string }[] {
+  return [...cooldown.entries()]
+    .filter(([, c]) => c.until > now)
+    .map(([id, c]) => ({ id, seconds_left: Math.ceil((c.until - now) / 1000), total_seconds: Math.round(c.total / 1000), reason: c.reason }));
 }
 
 function cacheKey(r: VestaRequest): string {
@@ -75,7 +82,8 @@ export async function runVesta(req: VestaRequest, emit: Emit, deps: RouterDeps =
 
   const recorded: VestaEvent[] = [];
   const out: Emit = (e) => {
-    if (e.type !== "step") recorded.push(e);
+    // live progress is not replayed from the cache: a cached answer calls no model and burns no tokens
+    if (e.type !== "step" && e.type !== "usage") recorded.push(e);
     emit(e);
   };
 
@@ -120,7 +128,7 @@ export async function runVesta(req: VestaRequest, emit: Emit, deps: RouterDeps =
       log(`[vesta] engine ${id} failed: ${err.kind}`);
       failures.push({ id, reason: FRIENDLY_REASON[err.kind] });
       const cdMs = COOLDOWN_MS[err.kind];
-      if (cdMs && id !== "offline") cooldown.set(id, { until: now() + cdMs, reason: FRIENDLY_REASON[err.kind] });
+      if (cdMs && id !== "offline") cooldown.set(id, { until: now() + cdMs, reason: FRIENDLY_REASON[err.kind], total: cdMs });
       emit({ type: "step", tool: "engine", status: "error", summary: `${ENGINE_LABELS[id]} ${FRIENDLY_REASON[err.kind]}, switching engine` });
       if (id === "offline" || (deps.strict && chain.length === 1)) {
         out({ type: "error", message: "VESTA could not answer right now. Please try again." });

@@ -324,7 +324,7 @@ export const STORIES = {
     "components/layout/TopBar.tsx": { title: "Top bar & mission chips", story: same("The mission you pick here steers every page and VESTA at once. Shared state lives in one small store.") },
     "components/layout/SideNav.tsx": { title: "Side navigation", story: same("The list of pages. On small screens it moves to a sliding row at the top.") },
     "components/layout/SiteFooter.tsx": { title: "Footer", story: same("Credits at the bottom of every page, plus the link that opens this Blueprint.") },
-    "components/vesta/VestaPanel.tsx": { title: "VESTA panel", story: same("The chat on every page, with the engine menu and level picker. It moves below the page on small screens.") },
+    "components/vesta/VestaPanel.tsx": { title: "VESTA panel", story: same("The chat on every page, with the level picker and the Engine room: pick an engine, watch which one is answering, the tokens it burns and the FreeLLMAPI fuel tank. It moves below the page on small screens.") },
     "components/ui/TestDrawer.tsx": { title: "Test details drawer", story: same("Opens one test with its derived values, source row and related PDF passages. VESTA can open it too.") },
     "components/ui/Tour.tsx": { title: "First-visit tour", story: same("A short guided tour for newcomers. Skip it once and it stays away.") },
     "components/fx/SpaceBackdrop.tsx": { title: "Space backdrop", story: same("Decoration only. It never carries data, and it calms down if you prefer reduced motion.") },
@@ -345,7 +345,8 @@ export const STORIES = {
     "/api/tests/[id]": same("One test with derived values and related PDF passages."),
     "/api/vesta": same("The chat itself. Checks the request, then streams VESTA's answer as live events."),
     "/api/vesta/alert": same("VESTA's proactive mission warning. Uses tested formulas only, no AI."),
-    "/api/vesta/engines": same("Tells the model menu which engines are available. Only yes or no, never a key."),
+    "/api/vesta/engines": same("Tells the Engine room which engines are available. Only yes or no, never a key."),
+    "/api/vesta/meter": same("Engine room readings: which engines are resting after a failure, and the local FreeLLMAPI app's health and monthly token budget. Never a key or a session token."),
   } as Record<string, Story>,
 
   libs: {
@@ -364,7 +365,7 @@ export const STORIES = {
     "lib/ratelimit.ts": same("Limits requests per visitor and remembers finished calculations."),
     "lib/safety.ts": same("The rules behind prevention, detection and suppression findings."),
     "lib/search.ts": same("Full-text search over the PDF passages."),
-    "lib/store.ts": same("The browser's shared memory: mission, engine, messages, level."),
+    "lib/store.ts": same("The browser's shared memory: mission, engine, messages, level, and the tokens burned this session."),
     "lib/vesta": same("VESTA's router, agent, tools, grounding check and Offline mode."),
   } as Record<string, Story>,
 
@@ -384,7 +385,12 @@ export const STORIES = {
 
   engines: {
     claude: same("Used first when a key is set."),
-    openrouter: same("Free tier, second in line."),
+    openai: same("ChatGPT through a paid OpenAI key. Waits in line until a key is added."),
+    freellmapi: {
+      s: "A free pool the team runs on its own PC. It picks a model from many free services, so it only works when HEARTH runs on that PC too.",
+      e: "The FreeLLMAPI desktop app's OpenAI-compatible endpoint with model `auto`; it routes to a tool-capable model and reports which one in `X-Routed-Via`. No key on Vercel, so it is skipped there.",
+    },
+    openrouter: same("Free tier, next in line."),
     groq: same("Free tier, very fast."),
     gemini: same("Free tier, last of the AI engines."),
     offline: same("No AI and no key. Rule-based, and it never fails."),
@@ -397,7 +403,7 @@ export const STORIES = {
     "echarts-for-react": "Connects charts to React",
     minisearch: "Searches the PDF passages",
     next: "The website framework",
-    openai: "Talks to OpenRouter and Groq",
+    openai: "Talks to ChatGPT, FreeLLMAPI, OpenRouter and Groq",
     react: "Builds the interface",
     "react-dom": "Puts it in the browser",
     three: "The 3D habitat map",
@@ -414,7 +420,7 @@ export const STORIES = {
     { id: "think", label: "Decide", story: { s: "An AI model decides which tools it needs. In Offline mode, simple rules recognise the kind of question instead.", e: "AI: tool loop, at most {{maxToolRounds}} rounds. Offline: `detectIntent` and `parseMessage` choose a template, calling the same tools." } },
     { id: "tools", label: "Use tools", story: { s: "The tools read the real data and return numbers with their sources. This is where the facts come from.", e: "`runTool` validates with zod and returns `{ok, data, sources, confidence, summary}`. Results are capped at {{toolResultMax}} characters for the model." } },
     { id: "check", label: "Check numbers", story: { s: "Every number in the answer must match a tool result or your own message. Offline templates can only fill in tool numbers to begin with.", e: "`checkGrounding` extracts numbers, allowing rounding and % ↔ fraction, and skips small integers up to {{smallIntMax}}. One rewrite is requested; if it still fails, the answer is marked as unverified." } },
-    { id: "stream", label: "Stream back", story: { s: "The answer arrives bit by bit, with its sources and a confidence tag, plus a badge naming the engine that answered.", e: "SSE order: `engine → step* → (chart|ui)* → text* → sources → confidence → done`." } },
+    { id: "stream", label: "Stream back", story: { s: "The answer arrives bit by bit, with its sources and a confidence tag, plus a badge naming the engine that answered and the tokens it burned.", e: "SSE order: `engine → (step|usage)* → (chart|ui)* → text* → sources → confidence → done`. `usage` carries each model call's reported tokens; cached answers and Offline send none." } },
     { id: "move", label: "Move the view", story: { s: "VESTA can change the dashboard: open a page, switch the mission or highlight tests.", e: "`ui` events are applied by `applyUi`. `AUTO_VIEW` guarantees compare, audit and gap tools move the view even if the model forgets to." } },
   ] as { id: string; label: string; story: Story }[],
 
@@ -502,7 +508,7 @@ export const STORIES = {
 
   vault: {
     title: "Where the secret keys live",
-    story: same("AI keys are optional, and they never reach your browser. VESTA's menu only learns whether an engine is available."),
+    story: same("AI keys are optional, and they never reach your browser. VESTA's Engine room only learns whether an engine is available."),
     steps: [
       { label: "On a laptop", detail: "`.env.local`, ignored by git" },
       { label: "Online", detail: "Vercel environment variables" },

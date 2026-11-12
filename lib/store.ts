@@ -1,7 +1,8 @@
 "use client";
 import { create } from "zustand";
 import type { Confidence, Source } from "./types";
-import type { EngineChoice } from "./vesta/engines";
+import { addAnswer, addUsage, emptyTally, type BurnTally, type UsageLike } from "./vesta/burn";
+import type { EngineChoice, EngineId } from "./vesta/engines";
 import type { ChartPayload } from "./vesta/tools/make_chart";
 
 export type Level = "student" | "researcher" | "engineer";
@@ -36,6 +37,24 @@ export interface VestaMessage {
   error?: string;
   alert?: "ok" | "warn" | "bad";
   cached?: boolean;
+  /** Tokens this answer burned, from the providers' usage reports. */
+  usage?: { input: number; output: number; calls: number; unreported: number };
+  /** The model a router (FreeLLMAPI) really used, when it differs from the badge. */
+  served?: string;
+  /** The engine that answered. */
+  engineId?: EngineId;
+}
+
+/** The answer in flight, for the Engine room's "now running" card. */
+export interface LiveRun {
+  engine?: EngineId;
+  model?: string;
+  served?: string;
+  startedAt: number;
+  calls: number;
+  tokens: number;
+  /** Engines that failed before this one, with friendly reasons. */
+  fallbacks: { id: EngineId; reason: string }[];
 }
 
 interface HearthState {
@@ -49,6 +68,18 @@ interface HearthState {
   busy: boolean;
   draft: string;
   labRows: LabRow[];
+  /** Tokens burned in this browser session (resets on reload). */
+  burn: BurnTally;
+  live: LiveRun | null;
+  /** Bumped on every usage report so the Engine room can flare. */
+  burnPulse: number;
+  roomOpen: boolean;
+  setRoomOpen: (open: boolean) => void;
+  startLive: () => void;
+  updateLive: (fn: (l: LiveRun) => LiveRun) => void;
+  endLive: (answerTokens: number | null) => void;
+  recordUsage: (u: UsageLike) => void;
+  resetBurn: () => void;
   setLabRows: (rows: LabRow[]) => void;
   setMission: (id: string) => void;
   setEngine: (e: EngineChoice) => void;
@@ -75,6 +106,16 @@ export const useHearth = create<HearthState>((set) => ({
   busy: false,
   draft: "",
   labRows: [],
+  burn: emptyTally(),
+  live: null,
+  burnPulse: 0,
+  roomOpen: false,
+  setRoomOpen: (roomOpen) => set({ roomOpen }),
+  startLive: () => set({ live: { startedAt: Date.now(), calls: 0, tokens: 0, fallbacks: [] } }),
+  updateLive: (fn) => set((s) => (s.live ? { live: fn(s.live) } : s)),
+  endLive: (answerTokens) => set((s) => ({ live: null, burn: answerTokens ? addAnswer(s.burn, answerTokens) : s.burn })),
+  recordUsage: (u) => set((s) => ({ burn: addUsage(s.burn, u), burnPulse: s.burnPulse + 1 })),
+  resetBurn: () => set({ burn: emptyTally() }),
   setLabRows: (labRows) => set({ labRows }),
   setMission: (missionId) => set({ missionId }),
   setEngine: (engine) => set({ engine }),

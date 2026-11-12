@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconAudit, IconCheck, IconGap, IconRank, IconSend, IconStop, IconTrash } from "@/components/ui/Icons";
 import { getMission } from "@/lib/missions";
 import { useHearth, type Level } from "@/lib/store";
-import { ModelMenu } from "./ModelMenu";
+import { EngineRoom } from "./EngineRoom";
 import { Orb } from "./Orb";
 import { followUps, starters, toolLabel, type StarterIcon } from "./suggest";
 import { useVesta } from "./useVesta";
@@ -102,14 +102,11 @@ export function VestaPanel() {
               {busy ? (running ? `${toolLabel(running.tool)}…` : "Thinking…") : "Standing by"}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <ModelMenu />
-            {messages.length > 0 && (
-              <button type="button" disabled={busy} onClick={clearMessages} className="flex items-center gap-1 rounded px-1 text-[11px] text-muted transition hover:text-text disabled:opacity-40">
-                <IconTrash className="h-3 w-3" /> Clear chat
-              </button>
-            )}
-          </div>
+          {messages.length > 0 && (
+            <button type="button" disabled={busy} onClick={clearMessages} className="flex items-center gap-1 self-start rounded px-1 text-[11px] text-muted transition hover:text-text disabled:opacity-40">
+              <IconTrash className="h-3 w-3" /> Clear chat
+            </button>
+          )}
           <div role="radiogroup" aria-label="Explanation level" className="relative flex w-full rounded-md border border-line bg-bg/60 text-[11px]">
             <span
               aria-hidden
@@ -129,10 +126,11 @@ export function VestaPanel() {
               </button>
             ))}
           </div>
+          <EngineRoom />
         </div>
         <div className={busy ? "vesta-conduit" : "h-0.5"} aria-hidden />
 
-        <ul ref={listRef} className="flex max-h-[60vh] min-h-[240px] flex-1 flex-col gap-2 overflow-y-auto px-3 py-3 vesta:max-h-none" aria-live="polite">
+        <ul ref={listRef} className="flex max-h-[60vh] min-h-[240px] flex-1 flex-col gap-2 overflow-y-auto px-3 py-3 vesta:max-h-none vesta:min-h-[96px]" aria-live="polite">
           <li className="shrink-0 animate-fadeUp px-1 text-[13px] leading-relaxed text-muted">
             I&apos;m <b className="font-semibold text-ember-soft">VESTA</b>. Every number I give comes from NASA test data or a tested formula, with its source and a confidence tag. If the data can&apos;t answer, I&apos;ll say so.
           </li>
