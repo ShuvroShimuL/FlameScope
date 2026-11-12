@@ -177,3 +177,14 @@ test('tapped values are validated with their types, and 0% oxygen is a valid exp
   assert.equal(ask({ mission: 'earth' }).scenario.mission.name, 'Earth');
   assert.equal(ask({ material: 'other', materialName: 'steel <b>' }).scenario.material.name, 'Steel b', 'names are reduced to plain words');
 });
+
+test('the pressure hint’s own example is read as station pressure', () => {
+  // 101 kPa is 14.6 psi, which no test is documented at. The hint must not suggest a value that then finds no data.
+  const hint = ask({ q: 'Will acrylic burn at pressure 5?' }).unresolved[0].reason;
+  const [, psi, kpa] = hint.match(/like ([\d.]+ psi) or ([\d.]+ kPa)/);
+  for (const example of [psi, kpa]) {
+    const r = ask({ q: `Will acrylic burn at ${example}?` });
+    assert.equal(r.scenario.air.psi, 14.7, example); assert.equal(r.verdict.state, 'burned', example);
+  }
+  assert.equal(ask({ q: 'Will acrylic burn at 101 kPa?' }).scenario.air.psi, 14.6, 'a stated value is never rounded up to the station’s pressure');
+});

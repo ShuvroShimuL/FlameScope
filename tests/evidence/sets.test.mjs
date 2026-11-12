@@ -67,3 +67,18 @@ test('still air shows Table 2.1’s extinction speeds for acrylic', () => {
   const r = ask({ q: 'Will a 1 mm acrylic sheet burn in still air?' });
   assert.ok(r.gaps.some(g => /below 1 ± 0.5 cm\/s at 21% O₂, and 3 ± 0.5 cm\/s at 16%/.test(g.text) && /Table 2\.1/.test(g.source.name)));
 });
+
+test('a fabric answer says which of its rows come from the earlier BASS investigation', () => {
+  // Table 7.1 lists four BASS tests beside the BASS-II ones. At 21% oxygen they are the only rows that match.
+  const r = ask({ q: 'Will SIBAL fabric burn at 21% oxygen?' });
+  assert.equal(r.verdict.state, 'burned');
+  assert.deepEqual(r.evidence.tests.map(t => t.study), ['BASS', 'BASS', 'BASS', 'BASS']);
+  assert.deepEqual(r.evidence.studies, { 'BASS-II': 0, BASS: 4 });
+  assert.match(r.evidence.caveat, /All 4 of these tests are from the earlier BASS investigation/);
+  const all = ask({ material: 'sibal' });
+  assert.deepEqual(all.evidence.studies, { 'BASS-II': 19, BASS: 4 });
+  assert.equal(all.evidence.studies['BASS-II'] + all.evidence.studies.BASS, all.evidence.counts.tests);
+  assert.match(all.evidence.caveat, / 4 of these tests are from the earlier BASS investigation/);
+  // Acrylic and Nomex rows are all BASS-II, so they carry no study split.
+  assert.equal(ask({ material: 'nomex' }).evidence.studies, null);
+});
