@@ -31,7 +31,7 @@ test('the Nomex rows match NASA’s own PSI-25 table, and a missing reading stay
     assert.match(row['Fuel Sample Material'], /nomex/i, n.id);
   }
   assert.equal(nomexTests.find(n => n.id === 'F3').oxygenFinal, null);
-  assert.match(tablesProvenance.tables['data/bass-nomex.csv'].location, /Table A\.2, Ferkul test matrix, printed p\. 105/);
+  assert.match(tablesProvenance.tables['data/evidence/bass-nomex.csv'].location, /Table A\.2, Ferkul test matrix, printed p\. 105/);
 });
 
 test('SIBAL fabric gets a mixed answer, with the reasons computed from the rows', () => {

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { BRAND, exportName, pageTitle, readStored, writeStored } from "@/lib/brand";
-import { LIBRARY_KEY } from "@/lib/evidence/client/library.mjs";
+import { LIBRARY_KEY } from "@/lib/evidence/client";
 
 const ROOT = process.cwd();
 const read = (f: string) => fs.readFileSync(path.join(ROOT, f), "utf8");

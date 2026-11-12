@@ -19,7 +19,7 @@ export function useVesta() {
     (ui: UiEvent) => {
       const s = useAppStore.getState();
       if (ui.action === "go_view" && ui.path) {
-        const q = ui.view === "compare" && ui.compare?.length ? `?inv=${ui.compare.join(",")}` : "";
+        const q = ui.view === "compare" && ui.compare?.length ? `?inv=${ui.compare.join(",")}` : ui.view === "burn" && ui.question ? `?q=${encodeURIComponent(ui.question.slice(0, 500))}` : "";
         router.push(`${ui.path}${q}`);
       } else if (ui.action === "set_mission" && ui.mission) s.setMission(ui.mission);
       else if (ui.action === "highlight_tests" && ui.test_ids) s.setHighlight(ui.test_ids);

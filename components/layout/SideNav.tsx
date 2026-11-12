@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconAudit, IconCompare, IconDatabase, IconInfo, IconLab, IconOverview, IconShield, IconTable } from "@/components/ui/Icons";
+import { IconAudit, IconCompare, IconDatabase, IconFlame, IconInfo, IconLab, IconOverview, IconShield, IconTable } from "@/components/ui/Icons";
 import { PolarisMark } from "@/components/ui/Polaris";
 
 export const NAV = [
@@ -9,6 +9,7 @@ export const NAV = [
   { href: "/explorer", label: "Test explorer", Icon: IconTable },
   { href: "/compare", label: "Compare", Icon: IconCompare },
   { href: "/safety", label: "Safety & gaps", Icon: IconShield },
+  { href: "/burn", label: "Will it burn?", Icon: IconFlame },
   { href: "/lab", label: "My data lab", Icon: IconLab },
   { href: "/dataset", label: "Dataset", Icon: IconDatabase },
   { href: "/simulator", label: "Flame simulator", Icon: IconAudit },

@@ -112,8 +112,14 @@ export default function AboutPage() {
           </p>
           <h2 className="mb-2 mt-4 font-head text-sm font-semibold uppercase tracking-wider text-muted">Limits</h2>
           <ul className="list-disc space-y-1 pl-5 text-muted">
-            <li>All tests ran in microgravity. Lunar and Martian gravity are untested; microgravity and 1g only bound them.</li>
-            <li>No solid materials (fabrics, foams, wiring) are in the data, so cabin-material flammability is a gap.</li>
+            <li>All tests ran in microgravity. Lunar and Martian gravity are untested, and nothing here bounds them: there are no tests at Earth gravity either.</li>
+            <li>
+              ACME, CFI and SPICE contain no solid materials. The only solid-material evidence is NASA&apos;s BASS-II tests of acrylic sheets, SIBAL fabric and Nomex in station air, kept as a separate set on the{" "}
+              <Link href="/burn" className="text-ember-soft underline underline-offset-2 hover:text-ember">
+                Will it burn?
+              </Link>{" "}
+              page. Foams, wiring and every material at enriched oxygen remain a gap.
+            </li>
             <li>SPICE oxygen and pressure are documented conditions, not per-row measurements.</li>
             <li>Ranking scores, severity and the hazard index are FlameScope heuristics with published formulas, not NASA ratings.</li>
             <li>Safety guidelines describe evidence (“evidence suggests…”), never official NASA rules.</li>

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { INV_COLORS } from "@/components/charts/HabitatMap";
@@ -227,7 +228,17 @@ export function Explorer() {
               {data && data.rows.length === 0 && (
                 <tr>
                   <td colSpan={COLS.length} className="px-3 py-6 text-center text-sm text-muted">
-                    No tests match these filters.{phase === "solid" ? " The NASA data in FlameScope has no solid-fuel tests: this is a known data gap." : ""}
+                    No tests match these filters.
+                    {phase === "solid" && (
+                      <>
+                        {" "}
+                        This table (ACME, CFI and SPICE) has no solid-fuel tests. NASA&apos;s BASS-II solid-material tests are on the{" "}
+                        <Link href="/burn" className="text-ember-soft underline underline-offset-2 hover:text-ember">
+                          Will it burn?
+                        </Link>{" "}
+                        page.
+                      </>
+                    )}
                   </td>
                 </tr>
               )}

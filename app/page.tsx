@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HabitatMap } from "@/components/charts/HabitatMap";
 import { RankBars } from "@/components/charts/RankBars";
 import { HeroBand } from "@/components/layout/HeroBand";
@@ -43,7 +44,12 @@ function InvestigationKey() {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-muted">All tests ran in microgravity. No solid-material or partial-gravity tests are in this dataset.</p>
+      <p className="mt-2 text-[11px] text-muted">
+        All tests ran in microgravity. This table has no solid-material or partial-gravity tests. For solid materials, see{" "}
+        <Link href="/burn" className="text-ember-soft underline underline-offset-2 hover:text-ember">
+          Will it burn?
+        </Link>
+      </p>
     </section>
   );
 }

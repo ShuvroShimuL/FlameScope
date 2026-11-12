@@ -9,7 +9,7 @@
   "license": "CC0-1.0",
   "sha256": "3c24390b9ef86f3d1ebaab911a1a3cc95a8759aebf42062371370e6d4b31b8ac",
   "method": "Downloaded from the PSI API and saved unchanged (1,973 bytes of UTF-8, SHA-256 above). The loader reads a burn length of '~ 0' as no spread, and a length in cm, or 'Complete', as burned. A blank material cell repeats the row above, as the table is laid out. NASA's microgravity column headers read '?-g': the µ was lost in NASA's own file.",
-  "verification": "Sample counts and published cells are checked by test/saffire.test.mjs. Second-person check pending.",
+  "verification": "Sample counts and published cells are checked by tests/evidence/saffire.test.mjs. Second-person check pending.",
   "limitations": [
     "A separate, larger experiment inside an uncrewed Cygnus, with 29 cm samples and the airflow running with the flame. It is shown beside answers and never pooled into a verdict.",
     "Oxygen is 'Derived from measured CO2 production and referenced to initial O2 concentration reported by ISS' (Note 1), not measured directly. The cabin pressure isn't in the table.",

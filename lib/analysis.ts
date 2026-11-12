@@ -161,7 +161,7 @@ export interface GapCell {
 export const EXPLORATION_REGION = { o2_min: 21, o2_max: 50, p_max: 14 };
 
 const EXPERIMENT_SUGGESTIONS = {
-  solid: "Solid materials (fabrics, foams, wiring insulation) at elevated O2: BASS / Saffire-type material flammability tests.",
+  solid: "Solid materials (fabrics, foams, wiring insulation) at elevated O2: BASS / Saffire-type material flammability tests. The only solid-material tests in FlameScope are BASS-II acrylic, SIBAL fabric and Nomex in station air (the Will it burn? page).",
   partial_gravity: "Partial (lunar / Martian) gravity: LUCI or FM2-type combustion experiments at lunar gravity.",
   cell: (c: GapCell) => `No tests at ${c.o2_bin} O2 and ${c.p_bin}: a CIR/ACME-type campaign at these conditions would fill this cell.`,
 };
@@ -202,7 +202,7 @@ function findGapsImpl(missionId?: string) {
   const focusCell = focus ? grid.find((c) => c.missions.includes(focus.id)) : undefined;
   const recommendations = [
     ...missionGaps.map((c) => ({ gap: `${c.o2_bin} × ${c.p_bin} (${c.missions.join(", ")})`, suggestion: EXPERIMENT_SUGGESTIONS.cell(c) })),
-    ...(missing_fuel_phases.includes("solid") ? [{ gap: "No solid-fuel / fabric tests", suggestion: EXPERIMENT_SUGGESTIONS.solid }] : []),
+    ...(missing_fuel_phases.includes("solid") ? [{ gap: "No solid-fuel / fabric tests in ACME, CFI or SPICE", suggestion: EXPERIMENT_SUGGESTIONS.solid }] : []),
     ...([...gravities].every((g) => g === "ug") ? [{ gap: "Only microgravity data", suggestion: EXPERIMENT_SUGGESTIONS.partial_gravity }] : []),
   ];
   return {

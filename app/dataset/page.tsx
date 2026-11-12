@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { BRAND, exportName } from "@/lib/brand";
 import { AskVesta, CopyButton, OpenTestButton } from "@/components/dataset/DatasetActions";
 import { Distributions } from "@/components/dataset/Distributions";
@@ -214,7 +215,14 @@ export default function DatasetPage() {
               <b className="font-semibold">No partial gravity.</b> <span className="text-muted">All {t.rows} rows are microgravity. Moon and Mars gravity are untested in this data.</span>
             </li>
             <li className="rounded-lg border border-bad/30 bg-bad/5 p-2.5">
-              <b className="font-semibold">No solid materials.</b> <span className="text-muted">No fabrics, foams or wiring. Every row is a gas or liquid fuel.</span>
+              <b className="font-semibold">No solid materials in this table.</b>{" "}
+              <span className="text-muted">
+                No fabrics, foams or wiring: every row is a gas or liquid fuel. NASA&apos;s BASS-II solid-material tests are a separate evidence set, on the{" "}
+                <Link href="/burn" className="text-ember-soft underline underline-offset-2 hover:text-ember">
+                  Will it burn?
+                </Link>{" "}
+                page, and are never mixed into these rows.
+              </span>
             </li>
             <li className="rounded-lg border border-warn/30 bg-warn/5 p-2.5">
               <b className="font-semibold">Few recorded results.</b> <span className="text-muted">{t.withOutcome} of {t.counted} tests record an outcome, all from ACME.</span>

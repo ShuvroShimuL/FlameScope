@@ -313,6 +313,7 @@ export const STORIES = {
     "/explorer": { story: { s: "Every NASA test in one searchable table. Open any row to see its details and exactly where it came from.", e: "Server-side filter, sort and paging through `/api/tests`. `TestDrawer` loads `/api/tests/[id]` with derived values and related PDF passages." }, try: "Filter by fuel, then open a row." },
     "/compare": { story: { s: "Put experiments side by side: what they share, how they differ, and how much of the habitat range each one covers.", e: "`/api/compare` returns shared and unique attributes, condition stats and the coverage radar. `/api/map` supplies the overlay." }, try: "Pick two experiments and read the radar." },
     "/safety": { story: { s: "What the evidence suggests for prevention, detection and suppression, plus the conditions nobody has tested yet.", e: "`lib/safety.ts` rules run real queries and return severity, confidence and sources. `findGaps` builds the O2 × pressure coverage grid. Severity is a FlameScope heuristic, not a NASA rating." }, try: "Find the empty cells in the gap grid." },
+    "/burn": { story: { s: "Ask whether a solid material burns in a cabin and see what NASA actually recorded: the matching test rows, or the gap that stops an answer. It never predicts and never rates safety.", e: "`BurnView` sends the question or tapped conditions to `/api/burn/ask` and lays out the JSON. `lib/burn.ts` fronts the rule-based evidence engine in `lib/evidence`, which counts a test only when its own row records every given condition. `/api/burn/data` serves the acrylic rows, the ranked findings and the fire-response steps quoted from NASA. No model is involved, and these rows are never pooled with the gas and droplet table." }, try: "Ask about a Moon base, then read the gaps." },
     "/lab": { story: { s: "Enter your own conditions or upload your own data and compare it with NASA's. Your file stays in your browser, and the live telemetry is clearly marked as a demo.", e: "`lib/csv.ts` parses and maps uploads client-side into memory only, never mixed with NASA rows. `/api/calc` returns pO2, the envelope, a heuristic hazard index and nearest tests. `DemoTelemetry` is labelled DEMO." }, try: "Upload the sample CSV." },
     "/dataset": { story: { s: "The full story of the data: where it came from, how it's organised, its limits, and how to download it.", e: "A server component using `lib/dataset.ts` for computed statistics. `/api/dataset/[file]` serves force-static exports, and `lib/dataset-split.ts` builds leak-safe train/test splits for other people's modelling." }, try: "Compare a raw row with its clean record." },
     "/simulator": { story: { s: "Change the oxygen, pressure and fuel, then press Ignite. The result follows real NASA tests near your settings. The moving flame itself is artwork, and it's labelled DEMO.", e: "`/api/flame` serves compact rows so sliders respond instantly, and `lib/flame.ts` turns them into evidence and animation settings. Plain WebGL shader, not a combustion model." }, try: "Try Surprise me, then compare with Earth." },
@@ -331,6 +332,8 @@ export const STORIES = {
   } as Record<string, { title: string; story: Story }>,
 
   routes: {
+    "/api/burn/ask": same("Checks one cabin scenario against the solid-material tests in the BASS-II report. A test counts only if its own row records every condition given. Returns the verdict, each condition check, the matching rows or the closest tests, and the gaps with their sources."),
+    "/api/burn/data": same("The tables behind the Will it burn? page: every acrylic row with its source location, the ranked findings, and the fire-response steps quoted from NASA with the evidence for each."),
     "/api/calc": same("Takes oxygen, pressure and airflow. Returns pO2, the data envelope, a heuristic hazard index and the nearest tests."),
     "/api/compare": same("Shared and different attributes for chosen experiments, plus condition statistics."),
     "/api/dataset/[file]": same("Serves the downloadable data files, built once at deploy time."),
@@ -351,6 +354,7 @@ export const STORIES = {
 
   libs: {
     "lib/analysis.ts": same("Compares experiments, scores relevance and finds gaps."),
+    "lib/burn.ts": same("The front door to the solid-material evidence engine: same-row matching over the BASS-II tests, kept apart from the gas and droplet table."),
     "lib/bins.ts": same("Defines the oxygen and pressure buckets for the gap grid."),
     "lib/csv.ts": same("Reads CSV files, including uploads in My data lab."),
     "lib/data.ts": same("Loads, validates and filters the clean data."),
@@ -371,6 +375,7 @@ export const STORIES = {
 
   tools: {
     query_data: same("Looks up and counts tests, returning rows and their sources."),
+    will_it_burn: same("Checks a solid material against the BASS-II tests and returns what was observed in the matching rows, or the named gap. Never a prediction and never a safety rating."),
     search_docs: same("Finds passages in the NASA PDFs, with file and page."),
     physics_calc: same("Does the maths with tested formulas and shows the formula used."),
     nearest_tests: same("Finds the NASA tests closest to given conditions."),
@@ -442,7 +447,7 @@ export const STORIES = {
     offline: {
       title: "Offline mode",
       points: [
-        same("Simple rules recognise the question type and pull out numbers like `34%`."),
+        same("Simple rules recognise the question type and pull out numbers like `34%`. A question about a solid material goes to the evidence engine, which reads it with its own rules."),
         same("It calls the very same tools as the AI does."),
         same("It fills in a template. Unknown questions get a list of what it can do."),
       ],
@@ -479,7 +484,7 @@ export const STORIES = {
   confidence: {
     title: "Every finding wears a tag",
     items: [
-      { id: "supported", story: same("At least {{envMin}} NASA tests are near this, or the fact is quoted from a document.") },
+      { id: "supported", story: same("At least {{envMin}} NASA tests are near this, the fact is quoted from a document, or, for a solid material, the matching rows of the report record that outcome.") },
       { id: "extrapolated", story: same("Only sparse or indirect evidence, such as microgravity results used to reason about the Moon.") },
       { id: "no_data", story: same("Nothing covers it. VESTA won't predict. It names the gap and the experiment that would fill it.") },
     ],
@@ -493,6 +498,8 @@ export const STORIES = {
     { title: "Every finding has a confidence tag", story: same("Supported, extrapolated or no data, always the lowest the evidence allows."), code: ["lib/vesta/events.ts", "lib/physics.ts"], test: ["tests/vesta.test.ts"] },
     { title: "No predictions outside the data", story: same("VESTA names the gap and the experiment that would fill it, rather than guessing."), code: ["lib/vesta/tools/gap_finder.ts", "lib/vesta/system-prompt.md"], test: ["tests/safety.test.ts"] },
     { title: "Evidence, not official rules", story: same("Safety advice says “evidence suggests”. It's never presented as a NASA rule."), code: ["lib/safety.ts", "lib/vesta/system-prompt.md"], test: ["tests/safety.test.ts"] },
+    { title: "Solid answers need one matching row", story: same("A solid-material test counts only when its own row records every condition you gave, together. Nothing is filled in between rows or stretched beyond them, and no match means the answer is No data."), code: ["lib/evidence/applicability.mjs", "lib/evidence/scenario.mjs"], test: ["tests/evidence/applicability.test.mjs", "tests/burn-api.test.ts"] },
+    { title: "Observations, never safety ratings", story: same("Will it burn? reports what NASA saw in the matching tests. It never calls a material safe, and its engine has no way to reach an AI model, the network or chance."), code: ["lib/evidence/question.mjs", "lib/vesta/tools/will_it_burn.ts"], test: ["tests/evidence/boundary.test.mjs", "tests/will-it-burn.test.ts"] },
     { title: "Simulations are labelled DEMO", story: same("The flame animation and live telemetry are marked clearly and never mixed with NASA data."), code: ["components/lab/DemoTelemetry.tsx", "lib/flame.ts"], test: ["tests/flame.test.ts"] },
     { title: "It never breaks over a key", story: same("Missing keys, used-up limits and outages all end in a working answer, in the worst case from Offline mode."), code: ["lib/vesta/router.ts", "lib/vesta/offline.ts"], test: ["tests/hardening.test.ts", "tests/vesta.test.ts"] },
   ] as { title: string; story: Story; code: string[]; test: string[] }[],

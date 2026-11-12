@@ -10,7 +10,7 @@
     "intro": "For a fire on ISS, the following actions will be taken sequentially by the crew until the fire is extinguished:",
     "caveat": "NASA marks the brief “for reference only”: it does not supersede or waive existing requirements."
   },
-  "method": "NASA's steps are quoted word for word from the brief, in NASA's order. The NASA-STD-3001 requirement references that follow each step are left out. Evidence lines quote or summarise the source they cite. Three lines are computed when the app starts: from data/bass-table.csv, from the report's Table 2.1 in data/bass-extinction.csv, and from NASA's FLEX table in data/psi-69-flex.csv.",
+  "method": "NASA's steps are quoted word for word from the brief, in NASA's order. The NASA-STD-3001 requirement references that follow each step are left out. Evidence lines quote or summarise the source they cite. Three lines are computed when the app starts: from data/evidence/bass-table.csv, from the report's Table 2.1 in data/evidence/bass-extinction.csv, and from NASA's FLEX table in data/evidence/psi-69-flex.csv.",
   "verification": "Quotes checked against the source PDFs by Claude Code on 2026-09-24. Second-person check pending.",
   "limitations": [
     "This is one NASA brief, from 2023, and NASA sources from other years describe some steps differently.",

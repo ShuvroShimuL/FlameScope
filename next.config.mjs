@@ -8,8 +8,9 @@ const nextConfig = {
     outputFileTracingIncludes: {
       // The VESTA system prompt, and the evidence rows behind VESTA's will_it_burn tool.
       "/api/vesta": ["./lib/vesta/system-prompt.md", ...EVIDENCE_DATA],
-      // The Will it burn? routes: the evidence engine reads its committed source rows (lib/evidence/files.mjs).
-      "/api/burn": EVIDENCE_DATA,
+      // The evidence engine reads its committed source rows (lib/evidence/files.mjs). The Will it burn? routes use
+      // it directly, and the safety audit quotes its counts, so every API route carries the files.
+      "/api": EVIDENCE_DATA,
     },
   },
 };

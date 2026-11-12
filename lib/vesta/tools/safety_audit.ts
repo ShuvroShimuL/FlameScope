@@ -6,7 +6,7 @@ import { defineTool, fail } from "./types";
 export const safetyAuditTool = defineTool({
   name: "safety_audit",
   description:
-    "Fire-safety audit for a mission or condition: Prevention / Detection / Suppression findings (oxygen enrichment, untested cabin materials, cool flames, smoke detection, still air and flow control, partial gravity), each with a heuristic severity 0-100, evidence from the NASA data, sources, its own confidence and an 'evidence suggests' guideline.",
+    "Fire-safety audit for a mission or condition: Prevention / Detection / Suppression findings (oxygen enrichment, barely tested cabin materials, cool flames, smoke detection, still air and flow control, partial gravity), each with a heuristic severity 0-100, evidence from the NASA data, sources, its own confidence and an 'evidence suggests' guideline.",
   input: z.object({
     mission: z.string().optional().describe("Mission id: iss, lunar-base, lunar-rover, spacesuit (also sets the gravity level)"),
     o2_pct: z.number().min(0).max(100).optional(),

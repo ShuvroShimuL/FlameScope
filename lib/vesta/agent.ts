@@ -60,21 +60,24 @@ function truncate(s: string): string {
   return s.length <= TOOL_RESULT_MAX_CHARS ? s : `${s.slice(0, TOOL_RESULT_MAX_CHARS)} …[truncated]`;
 }
 
-const EVIDENCE_TOOLS = new Set(["envelope_check", "nearest_tests"]);
+const EVIDENCE_TOOLS = new Set(["envelope_check", "nearest_tests", "will_it_burn"]);
 
 /** These tools always move the dashboard, in every engine, even if the model forgets ui_action. */
 export const AUTO_VIEW: Record<string, UiEvent> = {
   compare: { action: "go_view", view: "compare", path: "/compare" },
   safety_audit: { action: "go_view", view: "safety", path: "/safety" },
   gap_finder: { action: "go_view", view: "safety", path: "/safety" },
+  will_it_burn: { action: "go_view", view: "burn", path: "/burn" },
 };
 
-export function withAutoView(ui: UiEvent[], toolsUsed: string[], compareArgs?: string[]): UiEvent[] {
+export function withAutoView(ui: UiEvent[], toolsUsed: string[], compareArgs?: string[], burnQuestion?: string): UiEvent[] {
   if (ui.some((u) => u.action === "go_view")) return ui;
   const tool = [...toolsUsed].reverse().find((t) => AUTO_VIEW[t]);
   if (!tool) return ui;
   const ev = { ...AUTO_VIEW[tool] };
   if (tool === "compare" && compareArgs?.length) ev.compare = compareArgs;
+  // The page opens with the question as the engine read it, so it shows the rows behind the same answer.
+  if (tool === "will_it_burn" && burnQuestion) ev.question = burnQuestion;
   return [...ui, ev];
 }
 
@@ -98,6 +101,7 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
   let askedFix = false;
   let calls = 0;
   let compareArgs: string[] | undefined;
+  let burnQuestion: string | undefined;
 
   for (;;) {
     if (++calls > MAX_TOOL_ROUNDS + 3) throw new EngineError("other", "too many model calls");
@@ -122,6 +126,7 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
         if (res.ok) {
           toolsUsed.push(call.name);
           if (call.name === "compare") compareArgs = (call.args as { investigations?: string[] })?.investigations;
+          if (call.name === "will_it_burn") burnQuestion = (res.data as { canonical_question?: string } | null)?.canonical_question;
           collectNumbers(payload, known);
           sources.push(...res.sources);
           if (res.confidence) (EVIDENCE_TOOLS.has(call.name) ? evidence : otherConf).push(res.confidence);
@@ -157,6 +162,6 @@ export async function runAgent(input: AgentInput): Promise<AgentOutput> {
       confidence = lowerConfidence(confidence, "extrapolated");
       note = UNVERIFIED_NOTE;
     }
-    return { text: finalText, confidence, confidenceNote: note, sources: dedupeSources(sources), charts, ui: withAutoView(ui, toolsUsed, compareArgs), toolsUsed };
+    return { text: finalText, confidence, confidenceNote: note, sources: dedupeSources(sources), charts, ui: withAutoView(ui, toolsUsed, compareArgs, burnQuestion), toolsUsed };
   }
 }

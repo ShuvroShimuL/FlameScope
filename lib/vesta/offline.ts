@@ -12,8 +12,13 @@ import type { Level } from "./prompt";
 import { runTool } from "./tools";
 import type { ChartPayload } from "./tools/make_chart";
 import type { UiEvent } from "./tools/ui_action";
+import type { WillItBurnData } from "./tools/will_it_burn";
 
-export type Intent = "help" | "explain_test" | "compare" | "gaps" | "rank" | "safety" | "calc" | "assess" | "explain_topic" | "unknown";
+export type Intent = "help" | "explain_test" | "compare" | "burn" | "gaps" | "rank" | "safety" | "calc" | "assess" | "explain_topic" | "unknown";
+
+/** A named solid material, or the plain question "will it burn": these go to the solid-material evidence engine. */
+const SOLID_MATERIAL = /\b(acrylic|pmma|plexi(?:glass)?|perspex|sibal|nomex|cotton|fabrics?|cloth|textiles?|kapton|polyimide|teflon|ptfe|ultem|mylar|paper|cardboard|foams?|polyurethane|velcro|nylon|silicone|wire insulation)\b/;
+const BURN_QUESTION = /\b(?:will|would|does|did|can|could) (?:it|this|that|they) (?:burn|ignite|catch fire)\b|\bcatch(?:es)? (?:on )?fire\b/;
 
 export interface Parsed {
   o2_pct?: number;
@@ -63,6 +68,7 @@ export function detectIntent(msg: string, p: Parsed = parseMessage(msg)): Intent
   if (p.test_ids.length) return "explain_test";
   const comparing = /\bcompar|\bversus\b|\bvs\.?\b|differen/.test(t);
   if ((comparing && (p.investigations.length >= 1 || /investigation|experiment/.test(t))) || p.investigations.length >= 2) return "compare";
+  if (SOLID_MATERIAL.test(t) || BURN_QUESTION.test(t)) return "burn";
   if (/\bgaps?\b|missing|untested|(not|never) (been )?tested|no data|lack/.test(t)) return "gaps";
   if (/\brank|most relevant|relevan|which investigation|best (investigation|data)/.test(t)) return "rank";
   if (/safety|audit|hazard|fire risk|danger|\brisk/.test(t)) return "safety";
@@ -116,6 +122,7 @@ const HELP =
   "• Gaps: \"What data is missing for the lunar rover?\"\n" +
   "• Rank: \"Which investigation is most relevant for the Moon base?\"\n" +
   "• Safety audit: \"Run a safety audit for the rover\"\n" +
+  "• Solid materials: \"Will acrylic burn on the ISS?\", \"Will SIBAL fabric burn at 21% oxygen?\"\n" +
   "• Explain a test or a topic: \"Explain ACME-CFIG-128\", \"What is a cool flame?\"";
 
 // ------------------------------------------------------------------ intents
@@ -149,7 +156,7 @@ async function assess(c: Ctx, p: Parsed, level: Level, safetyMode: boolean): Pro
   if (level === "student") out.push("pO2 (oxygen partial pressure) is the share of the total pressure that is oxygen; it tells how much oxygen a flame can actually reach.");
   if (phys.flow_regime) out.push(`Airflow ${p.flow_cm_s} cm/s is in the "${phys.flow_regime.regime}" regime (${phys.flow_regime.rule}).`);
   const by = Object.entries(env.by_investigation).map(([k, v]) => `${k} ${v}`).join(", ");
-  out.push(`Data envelope: ${env.status} — ${env.count} NASA tests lie within the window${by ? ` (${by})` : ""}; rule: ${env.rule}.`);
+  out.push(`Data envelope (gas and droplet tests): ${env.status} — ${env.count} NASA tests lie within the window${by ? ` (${by})` : ""}; rule: ${env.rule}.`);
   const first = near.tests[0];
   if (first) {
     out.push(`Nearest test: ${first.test_id} at ${first.o2_pct}% O2 and ${first.pressure_psi} psi, distance ${first.distance} ${cite({ file: first.source_file, row: first.source_row })}.`);
@@ -157,7 +164,7 @@ async function assess(c: Ctx, p: Parsed, level: Level, safetyMode: boolean): Pro
   }
   const phases = [...new Set(near.tests.map((t) => t.fuel_phase).filter(Boolean))];
   if (env.status !== "no_data" && phases.length && !phases.includes("solid")) {
-    out.push(`Evidence suggests caution: the nearby tests are ${phases.join(" and ")} flames only — no cabin materials (fabrics, foams) were tested at these conditions.`);
+    out.push(`Evidence suggests caution: the nearby tests are ${phases.join(" and ")} flames only, so they say nothing about cabin materials. For a solid material, ask me about it by name (for example "Will acrylic burn on the ISS?").`);
     c.conf.push("extrapolated");
   }
   if (env.status === "no_data") {
@@ -305,13 +312,42 @@ async function explainTopic(c: Ctx, msg: string): Promise<string[]> {
   return [`From the NASA documents:`, ...r.passages.map((x) => `“${x.snippet}” ${cite({ file: x.source_file, page: x.page })}`)];
 }
 
+/**
+ * Solid materials. The evidence engine reads the question itself, so the whole message is passed on, and every
+ * line below is the engine's own wording. Nothing here is taken from the active mission: the engine never
+ * swaps a condition the user did not give for one they did not ask about.
+ */
+async function burn(c: Ctx, msg: string): Promise<string[]> {
+  const r = await call(c, "will_it_burn", { question: msg.trim().slice(0, 500) });
+  if (!r.ok) {
+    c.conf.push("no_data");
+    return [`I couldn't check that against the solid-material tests: ${r.summary}.`];
+  }
+  const d = r.data as WillItBurnData;
+  const table = cite(r.sources[0]);
+  const out = [`${d.verdict.stamp} (${d.verdict.count}). ${d.verdict.headline}`, d.verdict.detail, `Read as: ${d.read_as.join("; ")}.`];
+  if (d.evidence) {
+    out.push(d.evidence.finding);
+    out.push(`Matching tests: ${d.matched_tests.join(", ")} ${table}.`);
+    if (d.caveat) out.push(d.caveat);
+  } else if (d.verdict.state === "no-data") {
+    for (const g of d.gaps) out.push(`• ${g.topic}: ${g.text} (${g.source})`);
+    if (d.closest_tests.length) out.push(`Closest tests, none of which matches: ${d.closest_tests.map((t) => t.id).join(", ")} ${table}.`);
+  }
+  out.push("This is what NASA's BASS-II solid-material tests recorded: not a prediction, and not a safety rating. The Will it burn? page shows the source rows.");
+  c.ui.push({ action: "go_view", view: "burn", path: "/burn", question: d.canonical_question });
+  return out.filter(Boolean);
+}
+
 // ------------------------------------------------------------------ entry
 export async function runOffline(input: { message: string; missionId?: string; level: Level; emit: Emit }): Promise<AgentOutput & { intent: Intent; known: Set<number> }> {
   const p = parseMessage(input.message);
   const intent = detectIntent(input.message, p);
   const c: Ctx = { missionId: input.missionId, emit: input.emit, known: new Set(), sources: [], charts: [], ui: [], conf: [], used: [] };
   collectNumbers(input.message, c.known);
-  if (p.mission && p.mission !== input.missionId && MISSIONS.some((m) => m.id === p.mission)) {
+  // A solid-material question keeps its own scenario: the place it names is read by the evidence engine, and the
+  // dashboard's active mission (a gas and droplet reference atmosphere) is left as the user set it.
+  if (intent !== "burn" && p.mission && p.mission !== input.missionId && MISSIONS.some((m) => m.id === p.mission)) {
     await call(c, "ui_action", { action: "set_mission", mission: p.mission });
   }
   let lines: string[];
@@ -325,6 +361,9 @@ export async function runOffline(input: { message: string; missionId?: string; l
       break;
     case "compare":
       lines = await compare(c, p);
+      break;
+    case "burn":
+      lines = await burn(c, input.message);
       break;
     case "gaps":
       lines = await gaps(c, p);

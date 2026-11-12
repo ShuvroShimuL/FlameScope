@@ -30,7 +30,7 @@ export function missionAlert(missionId: string): MissionAlert | null {
   parts.push(
     env.status === "no_data"
       ? `No NASA tests within ±5 points O2 and ±2.5 psi of ${m.o2_pct}% / ${m.pressure_psi} psi: I won't predict here; this is a data gap.`
-      : `Data envelope ${env.status}: ${env.count} tests nearby.`,
+      : `Data envelope (gas and droplet tests) ${env.status}: ${env.count} tests nearby.`,
   );
   if (m.gravity.startsWith("lunar")) parts.push("All data is microgravity; lunar gravity is untested.");
   return {

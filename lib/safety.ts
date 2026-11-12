@@ -4,6 +4,7 @@
  * heuristic, a confidence from the amount of evidence, sources and an "evidence suggests…" guideline.
  * Severity is a FlameScope heuristic for ordering findings, not a NASA rating.
  */
+import { burnCoverage } from "./burn";
 import { countable, sourcesFor, stats } from "./data";
 import { getMission } from "./missions";
 import { envelopeCheck, ISS_PO2_PSI, pO2 } from "./physics";
@@ -90,21 +91,31 @@ export function ruleOxygenEnrichment(t: SafetyTarget, tests = countable()): Find
   };
 }
 
+/**
+ * Solid cabin materials. The ACME, CFI and SPICE table has none. The only solid-material tests in the product are
+ * NASA's BASS-II rows, a separate evidence set (lib/burn.ts) that covers three materials in station air. The rule
+ * says exactly that, with the counts taken from the rows, and never pools the two sets.
+ */
 export function ruleUntestedSolids(t: SafetyTarget, tests = countable()): Finding {
   const solids = tests.filter((x) => x.fuel_phase === "solid");
   const phases = [...new Set(tests.map((x) => x.fuel_phase).filter(Boolean))];
+  const solid = burnCoverage();
+  const beyond = t.o2_pct > solid.o2Max;
   return {
     id: "untested_solids",
     category: "prevention",
-    title: "Cabin materials are untested",
+    title: "Cabin materials are barely tested",
     severity: t.o2_pct > 21 ? 80 : 50,
-    severity_rule: "80 when O2 > 21%, else 50 (no solid-material data at all)",
+    severity_rule: "80 when O2 > 21% (no solid-material test at enriched oxygen), else 50 (solid tests exist for three materials only, in station air)",
     confidence: confidenceFromCount(solids.length),
     evidence: [
-      { text: `${solids.length} solid-fuel tests among ${tests.length} (phases tested: ${phases.join(", ")})`, source: { file: "data/processed/tests.json" } },
+      { text: `${solids.length} solid-fuel tests among ${tests.length} in the ACME, CFI and SPICE table (phases tested: ${phases.join(", ")})`, source: { file: "data/processed/tests.json" } },
+      { text: `Separate evidence set: ${solid.text}. Nothing covers a solid material at enriched oxygen or reduced pressure.`, source: { file: "data/evidence/bass-table.csv", note: "BASS-II report NASA/TM-20210011385; open the Will it burn? page for the rows" } },
     ],
     sources: sourcesFor(tests, 0),
-    guideline: `Evidence is missing: fabrics, foams and wiring insulation have no test in this dataset. BASS / Saffire-type material flammability tests at ${t.o2_pct}% O2 and ${t.pressure_psi} psi would fill this gap.`,
+    guideline: beyond
+      ? `Evidence is missing: no solid material has a test at ${t.o2_pct}% O2 and ${t.pressure_psi} psi. The only solid-material tests (acrylic, SIBAL fabric, Nomex) ran in station air. BASS / Saffire-type material flammability tests at these conditions would fill this gap.`
+      : `Evidence is missing for most cabin materials: only acrylic, SIBAL fabric and Nomex have tests, all in microgravity in station air, and foams and wiring insulation have none. The Will it burn? page shows what those tests recorded. BASS / Saffire-type tests of more materials would fill this gap.`,
   };
 }
 
@@ -163,7 +174,8 @@ export function ruleStillAir(t: SafetyTarget, tests = countable()): Finding {
   const acme = tests.filter((x) => x.investigation === "ACME");
   const se = acme.filter((x) => outcome(x, /self-extinguished/));
   const ft = acme.filter((x) => outcome(x, /flow terminated/));
-  const stillSpice = tests.filter((x) => x.investigation === "SPICE" && x.flow_cm_s != null && x.flow_cm_s < 5);
+  // Near-still means a small flow, not a negative one: a few SPICE rows record a negative coflow, which is not still air.
+  const stillSpice = tests.filter((x) => x.investigation === "SPICE" && x.flow_cm_s != null && x.flow_cm_s >= 0 && x.flow_cm_s < 5);
   const severity = t.gravity === "microgravity" ? 55 : t.gravity === "lunar" ? 45 : 35;
   return {
     id: "still_air",
@@ -175,10 +187,10 @@ export function ruleStillAir(t: SafetyTarget, tests = countable()): Finding {
     evidence: [
       { text: `${ft.length} ACME flames ended when the gas flow was cut`, source: ft[0] ? csvRow(ft[0]) : undefined },
       { text: `${se.length} ACME flames self-extinguished in the quiescent chamber`, source: se[0] ? csvRow(se[0]) : undefined },
-      { text: `${stillSpice.length} SPICE flames ran in still or near-still coflow (< 5 cm/s)`, source: stillSpice[0] ? csvRow(stillSpice[0]) : undefined },
+      { text: `${stillSpice.length} SPICE flames ran in still or near-still coflow (0 to under 5 cm/s)`, source: stillSpice[0] ? csvRow(stillSpice[0]) : undefined },
     ],
     sources: [...sourcesFor(ft, 2), ...sourcesFor(se, 2), ...sourcesFor(stillSpice, 1)],
-    guideline: `Evidence suggests cutting fuel or oxidizer flow ends gas flames (${ft.length} ACME cases), and that quiescent air lets flames self-extinguish; ventilation shutdown is supported by this data for gas flames only.`,
+    guideline: `Evidence suggests cutting fuel or oxidizer flow ends gas flames (${ft.length} ACME cases), and that quiescent air lets these gas flames self-extinguish. That holds for gas flames only. For solid materials it cannot be assumed: NASA's Saffire results, quoted under Fire response on the Will it burn? page, include a fabric flame that kept burning with the fan off.`,
   };
 }
 
@@ -197,7 +209,7 @@ export function rulePartialGravity(t: SafetyTarget, tests = countable()): Findin
     sources: sourcesFor(tests, 0),
     guideline:
       t.gravity === "lunar"
-        ? "Evidence is missing for lunar gravity: microgravity and 1g only bound flame and suppressant behaviour. LUCI or FM2-type experiments at lunar gravity would fill this gap."
+        ? "Evidence is missing for lunar gravity: every test in this data ran in microgravity, with none at Earth gravity or in partial gravity, so nothing here bounds flame or suppressant behaviour on the Moon. LUCI or FM2-type experiments at lunar gravity would fill this gap."
         : "Evidence suggests the microgravity data applies directly to station conditions.",
   };
 }

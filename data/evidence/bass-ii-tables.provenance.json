@@ -10,7 +10,7 @@
   "method": "Transcribed by Claude Code from the report's text layer as NTRS serves it (TM-20210011385.pdf.txt). Printed pages come from the report's page markers and table of contents. Comments and notes are copied word for word; a '-----' comment becomes a blank.",
   "verification": "Claude Code checked every row against the PDF page images (printed pp. 28, 96 and 105) on 2026-09-24. A second-person check is still pending. The Nomex O2 values also match NASA's PSI-25 experimental table.",
   "tables": {
-    "data/bass-fabric.csv": {
+    "data/evidence/bass-fabric.csv": {
       "location": "Table 7.1, printed p. 96: test summary of flat SIBAL fabrics in concurrent flow (BASS and BASS-II)",
       "notes": [
         "SIBAL (Solid Inflammability Boundary at Low Speeds) is the report's 'cotton-fiberglass fabric blend'.",
@@ -21,7 +21,7 @@
         "A blank comment, or 'BASS', is read as a sample that ignited and burned with no event noted. The report's text counts 'six quenching tests, three nonignited tests, and one blowoff test' among the 27 BASS-II tests."
       ]
     },
-    "data/bass-nomex.csv": {
+    "data/evidence/bass-nomex.csv": {
       "location": "Section 3.1.1, printed p. 46 ('The three Nomex samples did not ignite'), and Table A.2, Ferkul test matrix, printed p. 105",
       "notes": [
         "The notes column is Table A.2's comment for each test, word for word.",
@@ -30,7 +30,7 @@
         "Fan and air values are instrument display readings. The report gives no airflow velocity for these tests, so they are never used as cm/s."
       ]
     },
-    "data/bass-extinction.csv": {
+    "data/evidence/bass-extinction.csv": {
       "location": "Table 2.1, printed p. 28: comparison of extinction velocity Vg,cr for thin PMMA at 1 atm",
       "notes": [
         "The values are opposed-flow velocities in mm/s. The experimental values carry the report's ± uncertainty.",

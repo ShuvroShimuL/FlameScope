@@ -11,8 +11,9 @@ import { rankInvestigationsTool } from "./rank_investigations";
 import { safetyAuditTool } from "./safety_audit";
 import { searchDocsTool } from "./search_docs";
 import type { ToolContext, ToolDef } from "./types";
+import { willItBurnTool } from "./will_it_burn";
 
-/** Data tools: read the NASA data, the PDFs or the tested formulas. */
+/** Data tools: read the NASA data, the PDFs, the tested formulas or the solid-material evidence engine. */
 export const DATA_TOOLS: ToolDef[] = [
   queryData,
   searchDocsTool,
@@ -23,6 +24,7 @@ export const DATA_TOOLS: ToolDef[] = [
   rankInvestigationsTool,
   gapFinderTool,
   safetyAuditTool,
+  willItBurnTool,
 ] as unknown as ToolDef[];
 
 /** Everything VESTA can call: data tools + make_chart + ui_action. */

@@ -10,6 +10,7 @@ const TOOL_LABELS: Record<string, string> = {
   rank_investigations: "Ranking investigations",
   safety_audit: "Running the safety audit",
   gap_finder: "Looking for data gaps",
+  will_it_burn: "Checking the solid-material tests",
   make_chart: "Drawing a chart",
   ui_action: "Updating the dashboard",
 };
@@ -41,8 +42,11 @@ const AUDIT = "Run a safety audit for this mission";
 const GAPS = "What data is missing for this mission?";
 const RANK = "Which investigation is most relevant for this mission?";
 const COMPARE = "Compare ACME and SPICE";
+const ACRYLIC = "Will acrylic burn on the ISS?";
+const FABRIC = "Will SIBAL fabric burn on the ISS?";
 
 const NEXT_AFTER: Record<string, string[]> = {
+  will_it_burn: [FABRIC, ACRYLIC, AUDIT],
   safety_audit: [GAPS, RANK],
   gap_finder: [AUDIT, RANK],
   rank_investigations: [COMPARE, AUDIT],
@@ -57,7 +61,7 @@ export function followUps(toolsUsed: string[], firstTestId?: string, max = 3): s
   const out: string[] = [];
   if (firstTestId) out.push(`Explain test ${firstTestId}`);
   // the most specific tools decide first: an audit also runs physics, but "audit" is what happened
-  const order = ["safety_audit", "gap_finder", "rank_investigations", "compare", "envelope_check", "nearest_tests", "physics_calc"];
+  const order = ["will_it_burn", "safety_audit", "gap_finder", "rank_investigations", "compare", "envelope_check", "nearest_tests", "physics_calc"];
   const key = order.find((t) => toolsUsed.includes(t));
   for (const q of key ? NEXT_AFTER[key] : [AUDIT, RANK]) if (!out.includes(q)) out.push(q);
   return out.slice(0, max);

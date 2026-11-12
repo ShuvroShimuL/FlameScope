@@ -137,7 +137,7 @@ export function LabView() {
               <option value="">Any tested fuel</option>
               <option value="gas">Gas (ACME, SPICE)</option>
               <option value="liquid">Liquid droplets (CFI)</option>
-              <option value="solid">Solid materials (no NASA data here)</option>
+              <option value="solid">Solid materials (none in this table)</option>
             </select>
           </label>
           <button

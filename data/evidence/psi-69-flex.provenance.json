@@ -8,8 +8,8 @@
   "doi": "10.60555/mbq8-0451",
   "license": "CC0-1.0",
   "sha256": "37c88ce8ae9391b7544ff630a45ce87543d04d317cdbfbed104fe7d5c27e1b96",
-  "method": "Downloaded through the PSI API with `node src/acquire/psi.mjs PSI-69`, then saved as data/psi-69-flex.csv. NASA's file is Windows-1252 text (24,776 bytes, SHA-256 above). It is saved here as UTF-8 with exactly the same characters. NASA writes an en dash (–) for 'no value', and the loader reads it as missing, never 0. The gas-column headers have lost their subscripts: 'O', 'N' and 'CO' are O2, N2 and CO2, and each row's mole fractions add up to between 0.98 and 1.01.",
-  "verification": "Row count, the gas-fraction sums and two published rows are checked by test/flex.test.mjs. Second-person check pending.",
+  "method": "Downloaded through the PSI API with `node src/acquire/psi.mjs (the original fetcher, retired; in git history at fdce8c5) PSI-69`, then saved as data/evidence/psi-69-flex.csv. NASA's file is Windows-1252 text (24,776 bytes, SHA-256 above). It is saved here as UTF-8 with exactly the same characters. NASA writes an en dash (–) for 'no value', and the loader reads it as missing, never 0. The gas-column headers have lost their subscripts: 'O', 'N' and 'CO' are O2, N2 and CO2, and each row's mole fractions add up to between 0.98 and 1.01.",
+  "verification": "Row count, the gas-fraction sums and two published rows are checked by tests/evidence/flex.test.mjs. Second-person check pending.",
   "limitations": [
     "These are burning fuel droplets, not solid materials, so this set never joins the acrylic evidence envelope.",
     "The CO2 and helium tests also vary oxygen, pressure and droplet size, so their outcomes on their own do not measure a suppressant's effect.",
