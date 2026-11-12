@@ -1,23 +1,23 @@
 ---
 name: offline-demo
-description: Prepare and verify FlameScope's wifi-off demo — pre-fetch into cache/, copy fixtures to demo_fixtures/, run with OFFLINE=1, and walk the pre-flight checklist. Use before any demo, recording, or when an acquire module changes.
+description: Verify that FlameScope works with no API keys and no network — Offline mode for VESTA, the Will it burn? page, and the Offline evals. Use before any demo or recording, or when VESTA's tools or the evidence engine change.
 ---
 
 # Offline demo
 
-Follow `docs/planning/offline-demo.md`. In short:
+The app reads committed data only, so it needs no network at run time. VESTA's Offline mode answers when no key is set. (The build is the one step that needs the network, for the fonts.)
 
-1. **Pre-fetch** every acquire module live:
+1. **Build once, online:** `npm run build`. Stop any dev server first.
+2. **Start with no keys** and a local eval token:
    ```bash
-   node src/acquire/ntrs.mjs          # add each new module here
+   env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY -u FREELLMAPI_API_KEY -u OPENROUTER_API_KEY -u GROQ_API_KEY -u GEMINI_API_KEY \
+     VESTA_EVAL_TOKEN=<16+ random chars> npx next start -p 3000
    ```
-2. **Copy the minimum set** from `cache/` to `demo_fixtures/`, and update `demo_fixtures/README.md`.
-3. **Verify the fallback** with the cache hidden:
-   ```bash
-   mv cache cache.bak && OFFLINE=1 node src/acquire/ntrs.mjs; mv cache.bak cache   # expect source: 'fixture'
-   ```
-4. **Run the app offline:** `OFFLINE=1 node src/api/server.mjs`. Load `/` (Will It Burn?) and `/research/`, and click all six suggested questions. Check that the network tab shows only `127.0.0.1`.
-5. **Tests:** `node --test` (includes the fixture-exists check).
-6. **Report** each fixture with its source label, and anything that failed. Never say "ready" without running steps 3–5.
+3. **Check the engines:** `GET /api/vesta/engines` must show only `auto` and `offline` as available.
+4. **Walk the pages** with the network tab open: every request goes to the local server. On `/burn`, click all six suggested questions and one of each material.
+5. **Ask VESTA** a gas question ("Is 34% O2 at 8.2 psi tested?") and a solid one ("Will acrylic burn on the ISS?"). The badge must say Offline mode, and the solid answer must open `/burn`.
+6. **Run the Offline evals:** `VESTA_EVAL_TOKEN=<same> npx tsx scripts/run-evals.ts --base http://localhost:3000 --engines offline --out evals/report-offline.md`.
+7. **Tests:** `npm test` and `npm run evaluate`.
+8. **Report** what was run and its numbers. Never say "ready" without running steps 3 to 7.
 
-Don't commit `cache/`. Do commit `demo_fixtures/`.
+Never set `VESTA_EVAL_TOKEN` on a public host: it skips the rate limit.

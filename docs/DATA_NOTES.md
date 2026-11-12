@@ -1,4 +1,4 @@
-# HEARTH data notes
+# FlameScope data notes: ACME, CFI and SPICE
 
 How the raw NASA tables in `Pseudo_DataKeep/` map to the clean data model (`data/processed/tests.json`,
 see CLAUDE.md). The raw files are read-only. Full machine inspection: `docs/inspect_output.md`
@@ -131,7 +131,7 @@ within 19–24%" (p19). These rows get the flag `conditions_from_doc`. `measurem
 checksums and row counts). Field and flag explanations are in `lib/dataset-docs.ts` (tests fail if a field or flag
 in the data has no explanation); all counts are computed in `lib/dataset.ts`.
 
-This data has no train/test split, because HEARTH trains no model. `lib/dataset-split.ts` lets modellers make one.
+This data has no train/test split, because FlameScope trains no model. `lib/dataset-split.ts` lets modellers make one.
 Fuel-level splits are decided across the whole dataset, because propane burned in both ACME and SPICE.
 
 PSI record numbers are not stated in the raw files and could not be confirmed, so the page links to a PSI search

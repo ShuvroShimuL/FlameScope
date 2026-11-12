@@ -1,0 +1,49 @@
+FlameScope
+Copyright 2026 Team Polaris
+
+This product was built for the NASA Space Apps Challenge 2026 ("Flame in Freefall: AI-Powered Fire Safety
+Insights from Microgravity Combustion Data"). It is an independent student project and is not endorsed by NASA.
+
+Code
+----
+The application code is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository unifies two Team Polaris projects and keeps both histories:
+  - FlameScope      https://github.com/ShuvroShimuL/FlameScope        (Apache-2.0)
+  - Project HEARTH  https://github.com/mail6heatler/Project-HEARTH    (published without a licence file)
+
+The HEARTH repository carried no licence. Its authors need to confirm that their code is released here under
+Apache-2.0; until they do, treat the files that came from HEARTH as "all rights reserved by their authors".
+See docs/integration/REPOSITORY_AUDIT.md, section 5.
+
+Data
+----
+NASA Physical Sciences Informatics (PSI), https://psi.nasa.gov
+  - PSI-25  BASS-II experimental table       CC0-1.0   DOI 10.60555/4qc4-de67   (data/evidence/fixtures/)
+  - PSI-69  FLEX experimental table          CC0-1.0   DOI 10.60555/mbq8-0451   (data/evidence/psi-69-flex.csv)
+  - PSI-99  Saffire-II experimental table    CC0-1.0   DOI 10.60555/2chp-m469   (data/evidence/psi-99-saffire-2.csv)
+  - ACME, CFI and SPICE experimental tables, engineering documents and reports (Pseudo_DataKeep/).
+    Their PSI identifiers, access dates and licence terms are not yet recorded in this repository.
+
+NASA Technical Reports Server (NTRS), https://ntrs.nasa.gov
+  - NASA/TM-20210011385, "Burning and Suppression of Solids-II (BASS-II) Summary Report". Tables 5.1, 7.1,
+    A.2 and 2.1 are transcribed in data/evidence/, each row with its table and printed page.
+
+Quoted, with source and location, in data/evidence/fire-response.json:
+  - NASA OCHMO-TB-008 Rev A, Fire Protection
+  - NASA papers on the Saffire experiments (ICES-2021-266, ICES-2024-365) and related NTRS records
+
+Cited by title and link, not reproduced:
+  - Scientific Reports (2018), "The Effect of Gravity on Flame Spread over PMMA Cylinders"
+  - Fire Safety Journal (2024), "Partial gravity flammability of cast PMMA rods"
+
+Each provenance file in data/evidence/ records how its rows were obtained and whether an independent check
+has been done.
+
+Fonts
+-----
+Chakra Petch, IBM Plex Sans and IBM Plex Mono, SIL Open Font License 1.1, fetched through next/font at build time.
+
+Third-party software
+--------------------
+See package.json and package-lock.json. Each package carries its own licence.

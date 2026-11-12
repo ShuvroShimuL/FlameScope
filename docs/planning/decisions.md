@@ -198,6 +198,24 @@ The reader also swapped explicit but unsupported conditions for defaults: steel 
 
 ---
 
+## ADR-017 · One app on the HEARTH baseline, with two evidence sets that are never pooled
+
+**Date:** 2026-11-12 · **Status:** accepted on the integration branch; needs team sign-off before `main`
+
+**Context.** Team Polaris built two apps for the same challenge. HEARTH is a Next.js app over NASA's ACME, CFI and SPICE tests with an AI assistant, VESTA. FlameScope v1 is a zero-dependency server over NASA's BASS-II solid-material tables with a rule-based "Will it burn?" engine. The team chose FlameScope as the product name and repository, and HEARTH as the implementation. The two also made different promises: FlameScope answered only from a single row that recorded every condition, with no score and no model in the answer path (ADR-001, ADR-012, ADR-013); HEARTH counted a condition as covered when enough tests lay near it, showed heuristic scores, and let a model write prose whose numbers were then checked.
+
+**Decision.**
+1. HEARTH's app sits at the repository root. HEARTH's history is merged in, not squashed. The v1 server, static pages, Vercel entry, OpenAI selector and runtime fetch layer are removed (they stay in history at `fdce8c5`).
+2. The v1 engine moves, rules unchanged, to `lib/evidence/` as plain ES modules, with one disk reader (`files.mjs`) and typed front doors (`lib/burn.ts`, `lib/evidence/client/index.ts`). It is not rewritten in TypeScript.
+3. There are two evidence sets, and each keeps its own rule. Gas and droplet tests (`data/processed/`) use HEARTH's proximity envelope and heuristics. Solid materials (`data/evidence/`) use same-row matching and carry no score. No row moves between them, and neither answers for the other.
+4. A model may pass a solid-material answer on, through the `will_it_burn` tool, but adds no number to it, and the tool's confidence caps the answer's. On the Will it burn? page and in Offline mode no model is involved at all.
+5. The mission catalogues stay separate for now. HEARTH's "Moon base" is 30% O2 at 10.2 psi; the engine's is 34% at 8.2 psi. Each tile on the Will it burn? page prints its air, the page says the two differ, and neither is mapped onto the other.
+6. Next.js and its dependencies are accepted. This supersedes ADR-001 (zero dependencies) and ADR-014 (the v1 Vercel entry) for the unified app. The strict CSP of v1 cannot hold in the App Router and is replaced by a narrower header set; v1's Origin check on POST is kept.
+
+**Consequences.** One codebase, one test runner, one deployment. The engine keeps the tests that make it trustworthy, at the cost of a plain-JavaScript island inside a TypeScript app. Two rulebooks share a screen, so wording has to keep them apart: "data envelope" is labelled as gas and droplet tests wherever VESTA says it, and "supported" on a solid answer means the matching rows record it. Rule 1 of the v1 rulebook ("an LLM never writes a claim that reaches the user") now holds only for the evidence engine, its page and Offline mode; VESTA's AI engines write prose, as they did in HEARTH. One mission catalogue with sourced atmospheres, and an envelope that reports documented and inverse-layout rows separately, are deferred (see `docs/integration/FEATURE_PARITY.md`).
+
+---
+
 ## Open questions
 
 - **Q1.** What is the Bangladesh framing: the method only ("evidence envelope"), or also a FIRMS fire layer? Decide at M1. See [roadmap](roadmap.md) R3.

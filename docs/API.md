@@ -1,4 +1,4 @@
-# HEARTH API
+# FlameScope API
 
 All routes are Next.js Route Handlers (Node runtime) that read `data/processed/`. GET responses are cached
 for 10 minutes at the edge (`s-maxage=600`). Errors return `{ "error": "<message>" }` with status 400/404.
@@ -24,7 +24,7 @@ Every number comes from the data or from `lib/physics.ts` (tested in `tests/phys
     { "id": "lunar-rover", "name": "Pressurized lunar rover (demo scenario)", "o2_pct": 34, "pressure_psi": 8.2,
       "demo": true, "po2_psi": 2.788, "ratio_to_iss": 0.903, "...": "..." }
   ],
-  "source": { "file": "CLAUDE.md", "note": "HEARTH reference atmospheres" }
+  "source": { "file": "lib/missions.ts", "note": "FlameScope reference atmospheres (project assumptions)" }
 }
 ```
 
@@ -148,3 +148,50 @@ Body: `{ "o2_pct": 34, "pressure_psi": 8.2, "flow_cm_s": 10 }`
   "nearest": [ { "distance": 0.341, "test_id": "ACME-CFIG-128", "...": "..." } ]
 }
 ```
+
+## GET /api/burn/ask
+
+Will it burn? One cabin scenario checked against NASA's BASS-II solid-material tests. The answer is computed by
+fixed rules from committed rows; no model is involved. Send a question, explicit conditions, or both. Explicit
+conditions win over the question.
+
+| Parameter | Meaning |
+|---|---|
+| `q` | plain-English question, at most 500 characters |
+| `mission` | `iss`, `moon`, `transit`, `mars`, `earth` or `other` (with `place`, and `g` in g) |
+| `air` | `earth` (14.7 psi, 21% O2) or `exploration` (8.2 psi, 34% O2) |
+| `o2`, `psi` | oxygen share in percent, cabin pressure in psi |
+| `material` | `pmma`, `sibal`, `nomex` (tested), another catalogue id, or `other` with `materialName` |
+| `thickness`, `width` | millimetres, or `all` |
+| `airflow` | cm/s (0 is still air), or `none` for any tested value |
+
+Unknown parameters, values over 500 characters and out-of-range numbers return 400 with `{ "error": "…" }`.
+A question that cannot be read is not an error: it returns 200 with `verdict.state` `unresolved` and the reason.
+
+```jsonc
+// GET /api/burn/ask?q=Will acrylic burn on the ISS?
+{
+  "canonical": "Will acrylic burn on the ISS in Earth-normal air?",
+  "understood": [{ "field": "Mission", "value": "ISS", "from": "question" }, …],
+  "verdict": { "state": "burned", "stamp": "Burned", "count": "20 of 20 tests", "headline": "Yes. NASA watched it burn.", "sub": "…" },
+  "checks": [{ "key": "material", "label": "Material", "yours": "Acrylic (PMMA)", "tested": "Acrylic (PMMA)", "status": "match", "ok": true, "note": null }, …],
+  "evidence": { "kind": "spread", "ids": ["M1", …], "stats": { "tests": 20, "notTracked": 2, … }, "finding": { … }, "caveat": "…" },
+  "closest": null, "gaps": [], "nearest": null,
+  "applicability": { "policy": "A test counts only if its own row records every condition you gave, all together. …", "matched": ["M1", …] },
+  "sources": [{ "name": "NASA/TM-20210011385, Table 5.1, printed p. 57 (BASS-II)", "url": "https://ntrs.nasa.gov/citations/20210011385" }]
+}
+```
+
+`verdict.state` is one of `burned`, `mixed`, `no-burn` (no flame held), `no-data` or `unresolved`. The full
+shape is typed as `BurnAnswer` in `lib/evidence/types.ts`.
+
+## GET /api/burn/data
+
+The tables behind the page, built once: `records` (the 20 acrylic rows, each with `sourceLocation` and
+`missing`), `findings` (ranked, with the pairs counted and the display rule), `fireResponse` (NASA's quoted steps
+with the evidence found for each), `policy` and `provenance`. Typed as `BurnData`.
+
+## Cross-site requests
+
+`POST /api/vesta` and `POST /api/calc` answer 403 when the `Origin` header names another host. Requests with no
+`Origin` are accepted.

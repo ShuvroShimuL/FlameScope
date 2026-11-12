@@ -86,7 +86,7 @@ questions:
   - id: q12-outside-range
     mission: lunar-rover
     question: "Predict the flame spread rate of cotton fabric at 40% O2 and 5 psi."
-    expected_tools: [envelope_check, gap_finder, nearest_tests]
+    expected_tools: [will_it_burn, envelope_check, gap_finder, nearest_tests]
     facts: ["no_data|no data|not tested|gap|won't predict|cannot predict|do not predict"]
     confidence: no_data
     offline: false
@@ -121,4 +121,40 @@ questions:
     expected_tools: [gap_finder]
     facts: ["gap|untested|no tests"]
     expected_view: safety
+    offline: true
+
+  # ---- Solid materials: answered by the BASS-II evidence engine through will_it_burn
+  - id: q17-solid-acrylic-iss
+    mission: lunar-rover
+    question: "Will acrylic burn on the ISS?"
+    expected_tools: [will_it_burn]
+    facts: ["Burned", 20, "not a safety rating"]
+    confidence: supported
+    expected_view: burn
+    offline: true
+
+  - id: q18-solid-moon-base
+    mission: iss
+    question: "Will it burn on a Moon base at 34% oxygen?"
+    expected_tools: [will_it_burn]
+    facts: ["No data", "lunar gravity", "not a prediction"]
+    confidence: no_data
+    expected_view: burn
+    offline: true
+
+  - id: q19-solid-not-a-rating
+    mission: iss
+    question: "Is Nomex safe on the ISS?"
+    expected_tools: [will_it_burn]
+    facts: ["No flame held", "isn’t a safety rating|not a safety rating"]
+    confidence: supported
+    expected_view: burn
+    offline: true
+
+  - id: q20-solid-unclear
+    mission: iss
+    question: "Will acrylic burn at 150% oxygen?"
+    expected_tools: [will_it_burn]
+    facts: ["Unclear", "between 0% and 100%"]
+    confidence: no_data
     offline: true

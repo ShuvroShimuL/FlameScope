@@ -1,5 +1,11 @@
 # Planning docs
 
+> **2026-11-12.** FlameScope is now one app on the HEARTH Next.js baseline (ADR-017). These documents were written for
+> FlameScope v1 and are kept as its design record. Where they name files, read `src/compute/` as `lib/evidence/`,
+> `data/` as `data/evidence/`, `test/` as `tests/evidence/`, `/api/ask` as `/api/burn/ask` and the home page
+> as `/burn`. The v1 server, `web/`, `src/acquire/` and `src/agents/` no longer exist. What changed and why is in
+> [docs/integration/](../integration/).
+
 The living design record for FlameScope / Will It Burn?, built for **NASA Space Apps 2026: Flame in Freefall**. Read them in this order:
 
 | Doc | What it answers |

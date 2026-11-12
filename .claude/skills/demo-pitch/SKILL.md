@@ -16,7 +16,7 @@ The source of truth is `docs/planning/demo-script.md` and `docs/planning/scoreca
 - **Never say "safe."** Say "burned", "no data", or "the evidence covers / doesn't cover."
 - **Impact numbers** (Bangladesh) only if verified with a link (ADR-007).
 - Show one surprising interaction: the tap that flips the stamp and turns the flame into a dashed "?".
-- Show the Validity argument: the `src/compute` folder, the provenance drawer, and a "cache" badge.
+- Show the Validity argument: the `lib/evidence` folder and its boundary test, the Sources section of Will it burn?, and a source chip under a VESTA answer.
 
 ## Project-page checklist
 

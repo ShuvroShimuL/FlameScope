@@ -111,8 +111,8 @@ export const STORIES = {
       eyebrow: "Step five · Reaching the world",
       title: "From a code change to the live site",
       intro: {
-        s: "One push to GitHub and the site rebuilds itself. If anything goes wrong, the previous version simply stays online.",
-        e: "Vercel deploys `main` through its Git integration. Route handlers run as Node functions, static assets go to the CDN, and keys exist only in server-side environment variables.",
+        s: "The site is built to rebuild itself from GitHub: once the repository is connected to a host, each push to the main branch builds a new version, and a failed build leaves the previous one online.",
+        e: "Designed for Vercel's Git integration on `main`; nothing in the repository deploys by itself. Route handlers run as Node functions, static assets go to the CDN, and keys exist only in server-side environment variables.",
       } as Story,
     },
     growth: {
@@ -233,9 +233,9 @@ export const STORIES = {
       jump: "ship",
       story: {
         s: "The project's home. The code and the clean data live here together, with a full history of every change.",
-        e: "Code, raw data and processed data are all versioned together. Pushing to `main` triggers a production deployment.",
+        e: "Code, raw data and processed data are all versioned together. When the repository is connected to a host, pushing to `main` triggers a production deployment.",
       } as Story,
-      files: ["CLAUDE.md", "PROGRESS.md"],
+      files: ["AGENTS.md", "docs/integration/MIGRATION_PLAN.md"],
     },
     vercel: {
       label: "Vercel",
