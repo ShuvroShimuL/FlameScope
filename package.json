@@ -1,16 +1,52 @@
 {
   "name": "flamescope",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "type": "module",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "node src/api/server.mjs",
-    "start:env": "node --env-file-if-exists=.env src/api/server.mjs",
-    "test": "node --test",
-    "evaluate": "node scripts/evaluate.mjs",
-    "prefetch": "node src/acquire/ntrs.mjs",
-    "mcp": "node src/agents/mcp-server.mjs"
+    "dev": "next dev",
+    "prebuild": "tsx scripts/blueprint/build.ts --safe || exit 0",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "evals": "tsx scripts/run-evals.ts",
+    "blueprint": "tsx scripts/blueprint/build.ts",
+    "blueprint:watch": "tsx scripts/blueprint/watch.ts",
+    "blueprint:reviewed": "tsx scripts/blueprint/reviewed.ts && tsx scripts/blueprint/build.ts",
+    "evaluate": "node scripts/evaluate-evidence.mjs",
+    "mcp": "node scripts/mcp-server.mjs"
   },
-  "engines": { "node": ">=22" }
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@google/genai": "^2.32.0",
+    "echarts": "^6.1.0",
+    "echarts-for-react": "^3.0.6",
+    "minisearch": "^7.2.0",
+    "next": "14.2.35",
+    "openai": "^7.47.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "three": "^0.187.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/three": "^0.187.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^2.1.9",
+    "yaml": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

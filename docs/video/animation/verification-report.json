@@ -1,0 +1,103 @@
+{
+  "metadata": {
+    "duration": 240,
+    "width": 1920,
+    "height": 1080
+  },
+  "seekChecks": [
+    8,
+    40,
+    111,
+    145,
+    164,
+    184,
+    216,
+    238
+  ],
+  "layout": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "scrollWidth": 1920,
+      "scrollHeight": 1080,
+      "canvas": {
+        "x": 244.25,
+        "y": 52.796875,
+        "width": 1431.5,
+        "height": 805.21875,
+        "top": 52.796875,
+        "right": 1675.75,
+        "bottom": 858.015625,
+        "left": 244.25
+      }
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "scrollWidth": 1280,
+      "scrollHeight": 720,
+      "canvas": {
+        "x": 193.890625,
+        "y": 49.1875,
+        "width": 892.21875,
+        "height": 501.859375,
+        "top": 49.1875,
+        "right": 1086.109375,
+        "bottom": 551.046875,
+        "left": 193.890625
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "scrollWidth": 768,
+      "scrollHeight": 1024,
+      "canvas": {
+        "x": 15.359375,
+        "y": 225.90625,
+        "width": 737.28125,
+        "height": 414.71875,
+        "top": 225.90625,
+        "right": 752.640625,
+        "bottom": 640.625,
+        "left": 15.359375
+      }
+    },
+    {
+      "width": 375,
+      "height": 667,
+      "scrollWidth": 375,
+      "scrollHeight": 667,
+      "canvas": {
+        "x": 8,
+        "y": 140.046875,
+        "width": 359,
+        "height": 201.9375,
+        "top": 140.046875,
+        "right": 367,
+        "bottom": 341.984375,
+        "left": 8
+      }
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "scrollWidth": 667,
+      "scrollHeight": 375,
+      "canvas": {
+        "x": 51.765625,
+        "y": 13.328125,
+        "width": 563.46875,
+        "height": 316.9375,
+        "top": 13.328125,
+        "right": 615.234375,
+        "bottom": 330.265625,
+        "left": 51.765625
+      }
+    }
+  ],
+  "playerControls": "pass",
+  "offlineAppLoad": "pass",
+  "externalRequests": [],
+  "pageErrors": []
+}

@@ -1,5 +1,11 @@
 # Planning docs
 
+> **2026-11-12.** FlameScope is now one app on the HEARTH Next.js baseline (ADR-017). These documents were written for
+> FlameScope v1 and are kept as its design record. Where they name files, read `src/compute/` as `lib/evidence/`,
+> `data/` as `data/evidence/`, `test/` as `tests/evidence/`, `/api/ask` as `/api/burn/ask` and the home page
+> as `/burn`. The v1 server, `web/`, `src/acquire/` and `src/agents/` no longer exist. What changed and why is in
+> [docs/integration/](../integration/).
+
 The living design record for FlameScope / Will It Burn?, built for **NASA Space Apps 2026: Flame in Freefall**. Read them in this order:
 
 | Doc | What it answers |
@@ -10,6 +16,7 @@ The living design record for FlameScope / Will It Burn?, built for **NASA Space 
 | [architecture.md](architecture.md) | Layers, boundaries, request flow, offline design |
 | [data-model.md](data-model.md) | Sources and agencies, CSV schema, record type, envelope, fixtures |
 | [datasets.md](datasets.md) | Candidate NASA and partner datasets, scored on data access, scientific validity and novelty. Also a fact-check of the sources shown today. |
+| [psi-ingestion-review.md](psi-ingestion-review.md) | Dated ACME/Saffire-I briefing validation and proposed simple frontend/ingestion plan; not implemented evidence |
 | [agentic-design.md](agentic-design.md) | Where AI is allowed, the evidence selector, the orchestrator plan, threats |
 | [mcp-server.md](mcp-server.md) | The MCP tools, how to run and test them, the demo moment |
 | [decisions.md](decisions.md) | ADR log and open questions |

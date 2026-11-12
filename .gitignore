@@ -1,5 +1,17 @@
-.env
-node_modules/
+node_modules
+.next
+.env*
+!.env.example
+.venv
+__pycache__
+.vercel
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+.pytest_cache
 *.log
-# Downloaded NASA data — regenerate with `node src/acquire/<source>.mjs`.
+# Local scratch and the rendered concept film (too large to commit)
 cache/
+.work/
+.manus/
+/docs/video/Polaris-240s-concept.mp4
