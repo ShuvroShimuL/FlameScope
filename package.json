@@ -1,7 +1,8 @@
 {
-  "name": "hearth",
-  "version": "0.1.0",
+  "name": "flamescope",
+  "version": "2.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "next dev",
     "prebuild": "tsx scripts/blueprint/build.ts --safe || exit 0",
@@ -12,7 +13,9 @@
     "evals": "tsx scripts/run-evals.ts",
     "blueprint": "tsx scripts/blueprint/build.ts",
     "blueprint:watch": "tsx scripts/blueprint/watch.ts",
-    "blueprint:reviewed": "tsx scripts/blueprint/reviewed.ts && tsx scripts/blueprint/build.ts"
+    "blueprint:reviewed": "tsx scripts/blueprint/reviewed.ts && tsx scripts/blueprint/build.ts",
+    "evaluate": "node scripts/evaluate-evidence.mjs",
+    "mcp": "node scripts/mcp-server.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",

@@ -9,3 +9,9 @@ __pycache__
 *.tsbuildinfo
 next-env.d.ts
 .pytest_cache
+*.log
+# Local scratch and the rendered concept film (too large to commit)
+cache/
+.work/
+.manus/
+/docs/video/Polaris-240s-concept.mp4
