@@ -273,7 +273,7 @@ export default function DatasetPage() {
             <h3 className="font-head font-semibold">Cite this cleaned dataset</h3>
             <CopyButton text={datasetCitation} />
           </div>
-          <p className="mt-1 font-mono text-xs text-muted">{datasetCitation}</p>
+          <p className="mt-1 font-mono text-xs text-muted [overflow-wrap:anywhere]">{datasetCitation}</p>
         </div>
         <div className="hud-panel p-4">
           <h3 className="font-head font-semibold">Ask VESTA about the data</h3>
