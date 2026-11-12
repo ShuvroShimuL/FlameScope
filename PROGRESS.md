@@ -7,6 +7,11 @@
 
 ## Log
 
+### FreeLLMAPI plan (agreed 2026-11-12, not started)
+- The user runs the FreeLLMAPI app (github.com/tashfeenahmed/freellmapi, one OpenAI-compatible endpoint over 4–5 free providers, ~140M tokens) on ANOTHER PC. The PC used on 2026-11-12 has no FreeLLMAPI, Node, Docker or WSL.
+- Work it on that PC: (1) start FreeLLMAPI, find its local address, key in `.env.local` as `FREELLMAPI_API_KEY` (+ `FREELLMAPI_BASE_URL`, `FREELLMAPI_MODEL`), never shown; (2) user approved in principle adding a local-only `freellmapi` engine on `providers/openai-compat.ts`, not in Auto, shows "no key" on Vercel; (3) pick one pinned tool-calling model; (4) run the evals through it one question at a time, then the other engines spaced out; (5) fix q03/q12-type failures, reach ≥ 90%, then "Phase 6: launch" + v1.0.
+- Live-site use only if it is hosted publicly and its terms allow it: decide later.
+
 ### Blueprint link and pipeline watch (at the user's request)
 **Done**
 - Small "How HEARTH works" link in the site footer, on every page. It opens `/blueprint.html` in a new tab and is not in the side menu.
