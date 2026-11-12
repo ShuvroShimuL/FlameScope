@@ -29,7 +29,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 16px; padding: 9px 20px; background: rgba(7, 11, 20, .88); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 9px; color: var(--text); text-decoration: none; font: 700 16px var(--head); letter-spacing: .05em; white-space: nowrap; }
 .brand em { font-style: normal; color: var(--ember); font-weight: 500; }
-.brand-flame { transform-origin: 16px 22px; animation: flick 2.4s ease-in-out infinite; }
 @keyframes flick { 50% { transform: scale(.92, 1.06); } }
 #nav { flex: 1; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
 #nav::-webkit-scrollbar { display: none; }

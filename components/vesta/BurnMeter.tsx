@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { IconFlame } from "@/components/ui/Icons";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { averagePerAnswer, burnTotals, formatTokens } from "@/lib/vesta/burn";
 import { ENGINE_LABELS, ENGINE_ORDER } from "@/lib/vesta/engines";
 import { ENGINE_COLORS } from "./engineMeta";
@@ -38,10 +38,10 @@ export function EmberBurst({ pulse }: { pulse: number }) {
 }
 
 export function BurnMeter() {
-  const burn = useHearth((s) => s.burn);
-  const pulse = useHearth((s) => s.burnPulse);
-  const reset = useHearth((s) => s.resetBurn);
-  const busy = useHearth((s) => s.busy);
+  const burn = useAppStore((s) => s.burn);
+  const pulse = useAppStore((s) => s.burnPulse);
+  const reset = useAppStore((s) => s.resetBurn);
+  const busy = useAppStore((s) => s.busy);
   const totals = useMemo(() => burnTotals(burn), [burn]);
   const shown = useCountUp(totals.total);
   const avg = averagePerAnswer(burn.answers);

@@ -171,7 +171,7 @@ async function assess(c: Ctx, p: Parsed, level: Level, safetyMode: boolean): Pro
     const audit = (await call(c, "safety_audit", p.o2_pct != null && p.pressure_psi != null ? { o2_pct: o2, pressure_psi: pr, mission: m?.id } : { mission: m?.id })).data as {
       findings: { category: string; title: string; severity: number; confidence: string; guideline: string }[];
     };
-    out.push("Safety audit (evidence, not NASA rules; severity is a HEARTH heuristic 0–100):");
+    out.push("Safety audit (evidence, not NASA rules; severity is a FlameScope heuristic 0–100):");
     for (const f of audit.findings) {
       out.push(`• ${f.category[0].toUpperCase()}${f.category.slice(1)} — ${f.title} (severity ${f.severity}, ${f.confidence.replace("_", " ")}): ${f.guideline}`);
     }
@@ -300,7 +300,7 @@ async function explainTopic(c: Ctx, msg: string): Promise<string[]> {
   const r = (await call(c, "search_docs", { query: q || msg, limit: 2 })).data as { passages: { source_file: string; page: number; snippet: string }[] };
   if (!r.passages.length) {
     c.conf.push("no_data");
-    return [`The NASA documents in HEARTH don't mention "${q}". ${HELP}`];
+    return [`The NASA documents in FlameScope don't mention "${q}". ${HELP}`];
   }
   return [`From the NASA documents:`, ...r.passages.map((x) => `“${x.snippet}” ${cite({ file: x.source_file, page: x.page })}`)];
 }

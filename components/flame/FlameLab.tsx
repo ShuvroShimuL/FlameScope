@@ -25,7 +25,7 @@ import {
   type Verdict,
 } from "@/lib/flame";
 import { MISSIONS } from "@/lib/missions";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { rowRanges } from "@/lib/util";
 import { FlameCanvas, type FlameScene } from "./FlameCanvas";
 
@@ -159,8 +159,8 @@ function shortFile(file: string): string {
 
 export function FlameLab() {
   const reduce = useReducedMotion();
-  const openTest = useHearth((s) => s.openTest);
-  const busy = useHearth((s) => s.busy);
+  const openTest = useAppStore((s) => s.openTest);
+  const busy = useAppStore((s) => s.busy);
   const { send } = useVesta();
 
   const [data, setData] = useState<FlameDataset | null>(null);

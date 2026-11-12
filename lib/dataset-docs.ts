@@ -4,6 +4,7 @@
  * from each PDF's first page. Counts are never written here: lib/dataset.ts computes them from the data.
  */
 import type { Investigation } from "./types";
+import { BRAND } from "./brand";
 
 export interface FieldDoc {
   name: string;
@@ -16,7 +17,7 @@ export interface FieldDoc {
 const same = (text: string): Record<Investigation, string> => ({ ACME: text, CFI: text, SPICE: text });
 
 export const FIELD_DOCS: FieldDoc[] = [
-  { name: "test_id", type: "string", meaning: "Stable ID for one test row. Every other HEARTH page and VESTA use it.", origin: { ACME: "ACME-CFIG-001… in file order", CFI: "CFI-FLEX-<Flex Number>", SPICE: "SPICE-001… in file order" } },
+  { name: "test_id", type: "string", meaning: "Stable ID for one test row. Every other FlameScope page and VESTA use it.", origin: { ACME: "ACME-CFIG-001… in file order", CFI: "CFI-FLEX-<Flex Number>", SPICE: "SPICE-001… in file order" } },
   { name: "investigation", type: "ACME | CFI | SPICE", meaning: "Which NASA investigation the row belongs to.", origin: same("Set from the source folder") },
   { name: "campaign", type: "string | null", meaning: "Campaign inside the investigation.", origin: { ACME: "Constant: CFI-G (ACME_Report p1, p3)", CFI: "From the fuel: n-dodecane or n-dodecane/iso-dodecane", SPICE: "Constant: SPICE (MSG 2009)" } },
   { name: "hardware", type: "string | null", meaning: "The apparatus that ran the test.", origin: { ACME: "Constant: CIR / ACME chamber, porous spherical burner", CFI: "Constant: CIR / MDCA droplet apparatus", SPICE: "Constant: MSG / SPICE flow duct, round-jet nozzle" } },
@@ -175,4 +176,4 @@ export const NASA_LINKS: { label: string; href: string; note: string }[] = [
   { label: "Space Station's quest for the secrets of fire", href: "https://www.nasa.gov/humans-in-space/space-stations-quest-for-the-secrets-of-fire/", note: "NASA article on this combustion research" },
 ];
 
-export const REPO_BLOB = "https://github.com/mail6heatler/Project-HEARTH/blob/main/";
+export const REPO_BLOB = BRAND.urls.repoBlob;

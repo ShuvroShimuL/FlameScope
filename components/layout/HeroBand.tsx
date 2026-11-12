@@ -3,9 +3,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CountUp } from "@/components/ui/CountUp";
 import { PolarisMark } from "@/components/ui/Polaris";
+import { BRAND } from "@/lib/brand";
 import { Orb } from "@/components/vesta/Orb";
 import { useVesta } from "@/components/vesta/useVesta";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 const INVESTIGATIONS = [
   { name: "ACME", cls: "text-acme border-acme/40" },
@@ -15,7 +16,7 @@ const INVESTIGATIONS = [
 
 /** Overview opening: who built this, what it does, and the two most useful first actions. */
 export function HeroBand() {
-  const busy = useHearth((s) => s.busy);
+  const busy = useAppStore((s) => s.busy);
   const { send } = useVesta();
   const [tests, setTests] = useState<number | null>(null);
 
@@ -35,11 +36,11 @@ export function HeroBand() {
       <div className="min-w-0 flex-1 basis-[420px]">
         <p className="flex flex-wrap items-center gap-x-2 font-mono text-[11px] uppercase tracking-[0.2em] text-star">
           <PolarisMark size={13} className="animate-twinkle" />
-          Team Polaris <span className="text-muted"><span className="hidden sm:inline">· </span>NASA Space Apps Challenge 2026</span>
+          {BRAND.team} <span className="text-muted"><span className="hidden sm:inline">· </span>{BRAND.event}</span>
         </p>
-        <h1 className="fire-text mt-1 font-head text-3xl font-bold leading-[1.15] tracking-wide [text-wrap:balance] sm:text-[2.15rem]">Fire-safety intelligence for crewed habitats</h1>
+        <h1 className="fire-text mt-1 font-head text-3xl font-bold leading-[1.15] tracking-wide [text-wrap:balance] sm:text-[2.15rem]">{BRAND.tagline}</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          <b className="font-semibold text-text">HEARTH</b> (Habitat Environment Analysis &amp; Risk Tracking Hub) turns NASA microgravity combustion data into evidence you can use, with VESTA, your AI crewmate.
+          <b className="font-semibold text-text">{BRAND.name}</b> turns NASA microgravity combustion data into evidence you can use, with {BRAND.assistant.name}, your AI crewmate.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button type="button" disabled={busy} onClick={() => send("Run a safety audit for this mission")} className="btn-ember">

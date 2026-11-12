@@ -1,6 +1,6 @@
 import type { Mission } from "./types";
 
-/** HEARTH reference atmospheres (project assumptions, listed on the About page). No Mars habitat: no sourced values. */
+/** FlameScope reference atmospheres (project assumptions, listed on the About page). No Mars habitat: no sourced values. */
 export const MISSIONS: Mission[] = [
   {
     id: "iss",
@@ -10,7 +10,7 @@ export const MISSIONS: Mission[] = [
     pressure_psi: 14.7,
     gravity: "microgravity",
     description: "Space station cabin air, same as Earth at sea level.",
-    reference: "HEARTH reference atmospheres",
+    reference: "FlameScope reference atmospheres",
     demo: false,
   },
   {
@@ -21,7 +21,7 @@ export const MISSIONS: Mission[] = [
     pressure_psi: 10.2,
     gravity: "lunar (1/6 g)",
     description: "Lunar surface habitat: at least 30% O2 at up to 10.2 psi.",
-    reference: "HEARTH reference atmospheres: ≥30% O2, ≤10.2 psi",
+    reference: "FlameScope reference atmospheres: ≥30% O2, ≤10.2 psi",
     demo: false,
   },
   {
@@ -32,7 +32,7 @@ export const MISSIONS: Mission[] = [
     pressure_psi: 8.2,
     gravity: "lunar (1/6 g)",
     description: "Demo scenario: pressurized rover cabin at 34% O2 and 8.2 psi.",
-    reference: "HEARTH demo rover scenario",
+    reference: "FlameScope demo rover scenario",
     demo: true,
   },
   {
@@ -43,7 +43,7 @@ export const MISSIONS: Mission[] = [
     pressure_psi: 4.3,
     gravity: "any",
     description: "Pure oxygen at low pressure inside the suit.",
-    reference: "HEARTH reference atmospheres",
+    reference: "FlameScope reference atmospheres",
     demo: false,
   },
 ];

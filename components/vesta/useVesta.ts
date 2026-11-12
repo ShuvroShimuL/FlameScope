@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-import { newId, useHearth } from "@/lib/store";
+import { newId, useAppStore } from "@/lib/store";
 import { streamVesta } from "@/lib/vesta/client";
 import type { UiEvent } from "@/lib/vesta/tools/ui_action";
 
@@ -17,7 +17,7 @@ export function useVesta() {
 
   const applyUi = useCallback(
     (ui: UiEvent) => {
-      const s = useHearth.getState();
+      const s = useAppStore.getState();
       if (ui.action === "go_view" && ui.path) {
         const q = ui.view === "compare" && ui.compare?.length ? `?inv=${ui.compare.join(",")}` : "";
         router.push(`${ui.path}${q}`);
@@ -31,7 +31,7 @@ export function useVesta() {
   const send = useCallback(
     async (raw: string) => {
       const text = raw.trim().slice(0, MAX_INPUT);
-      const st = useHearth.getState();
+      const st = useAppStore.getState();
       if (!text || st.busy) return;
       st.setBusy(true);
       const history = st.messages
@@ -41,8 +41,8 @@ export function useVesta() {
       st.addMessage({ id: newId(), role: "user", text, steps: [], charts: [], sources: [] });
       const id = newId();
       st.addMessage({ id, role: "vesta", text: "", steps: [], charts: [], sources: [], pending: true });
-      const upd = useHearth.getState().updateMessage;
-      const { startLive, updateLive, recordUsage } = useHearth.getState();
+      const upd = useAppStore.getState().updateMessage;
+      const { startLive, updateLive, recordUsage } = useAppStore.getState();
       const controller = new AbortController();
       active = controller;
       startLive();
@@ -114,8 +114,8 @@ export function useVesta() {
       } finally {
         upd(id, (m) => ({ ...m, pending: false }));
         // only fully reported answers feed the "average per answer" figure
-        useHearth.getState().endLive(answerComplete && !controller.signal.aborted ? answerTokens : null);
-        useHearth.getState().setBusy(false);
+        useAppStore.getState().endLive(answerComplete && !controller.signal.aborted ? answerTokens : null);
+        useAppStore.getState().setBusy(false);
       }
     },
     [applyUi],
@@ -130,7 +130,7 @@ export async function postMissionAlert(missionId: string) {
     const res = await fetch("/api/vesta/alert", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mission: missionId }) });
     if (!res.ok) return;
     const a = await res.json();
-    const s = useHearth.getState();
+    const s = useAppStore.getState();
     s.addMessage({
       id: newId(),
       role: "vesta",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PolarisMark } from "@/components/ui/Polaris";
@@ -32,7 +33,7 @@ const INVESTIGATIONS = [
 ];
 
 const FILES = [
-  ["<INV>_Experimental_Table.csv", "One row per test point: the source of every number in HEARTH (cited as file + row)."],
+  ["<INV>_Experimental_Table.csv", "One row per test point: the source of every number in FlameScope (cited as file + row)."],
   ["<INV>_Engineering_Doc.pdf", "Hardware, operations and safety documentation (searchable by VESTA, cited as file + page)."],
   ["<INV>_Report.pdf", "Final science report: methods, findings and column meanings (searchable by VESTA)."],
 ];
@@ -48,8 +49,8 @@ const ENGINES = [
 export default function AboutPage() {
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="HEARTH · Team Polaris · NASA Space Apps 2026" title="About HEARTH">
-        HEARTH (Habitat Environment Analysis &amp; Risk Tracking Hub) summarises, ranks and interprets NASA microgravity combustion experiments to give fire-safety insights for crewed habitats: the ISS, a lunar base, pressurized rovers and spacesuits. It is guided by VESTA (Virtual Engineer for Space-fire Threat Assessment), an AI crewmate that computes, charts, compares and audits inside the dashboard.
+      <PageHeader eyebrow={`${BRAND.name} · ${BRAND.team} · NASA Space Apps 2026`} title={`About ${BRAND.name}`}>
+        {BRAND.name} {BRAND.summary}: the ISS, a lunar base, pressurized rovers and spacesuits. It is guided by {BRAND.assistant.name} ({BRAND.assistant.expansion}), an AI crewmate that computes, charts, compares and audits inside the dashboard.
       </PageHeader>
 
       <section aria-label="Team Polaris" className="hud-panel flex flex-wrap items-center gap-4 p-5">
@@ -58,7 +59,7 @@ export default function AboutPage() {
           <h2 className="font-head text-2xl font-bold tracking-wider text-star">Team Polaris</h2>
           <p className="text-xs uppercase tracking-[0.15em] text-muted">NASA Space Apps Challenge 2026</p>
           <p className="mt-2 text-sm text-muted">
-            Polaris is the star the night sky appears to turn around, the fixed point navigators steer by. That is what we want HEARTH to be for crews and engineers planning life beyond Earth: a steady reference, built only from evidence. Look for it in the sky behind this dashboard.
+            Polaris is the star the night sky appears to turn around, the fixed point navigators steer by. That is what we want FlameScope to be for crews and engineers planning life beyond Earth: a steady reference, built only from evidence. Look for it in the sky behind this dashboard.
           </p>
         </div>
       </section>
@@ -72,7 +73,7 @@ export default function AboutPage() {
               <b className="text-muted">Hardware:</b> {i.hardware}
             </p>
             <p className="mt-1">
-              <b className="text-muted">In HEARTH:</b> {i.data}
+              <b className="text-muted">In FlameScope:</b> {i.data}
             </p>
           </article>
         ))}
@@ -107,14 +108,14 @@ export default function AboutPage() {
             <a className="text-ember-soft underline" href="https://www1.grc.nasa.gov/space/iss-research/iss-fcf/cir/acme/" target="_blank" rel="noreferrer">
               NASA Glenn Research Center
             </a>
-            . HEARTH is an independent student project for the NASA Space Apps Challenge 2026 and is not endorsed by NASA.
+            . FlameScope is an independent student project for the NASA Space Apps Challenge 2026 and is not endorsed by NASA.
           </p>
           <h2 className="mb-2 mt-4 font-head text-sm font-semibold uppercase tracking-wider text-muted">Limits</h2>
           <ul className="list-disc space-y-1 pl-5 text-muted">
             <li>All tests ran in microgravity. Lunar and Martian gravity are untested; microgravity and 1g only bound them.</li>
             <li>No solid materials (fabrics, foams, wiring) are in the data, so cabin-material flammability is a gap.</li>
             <li>SPICE oxygen and pressure are documented conditions, not per-row measurements.</li>
-            <li>Ranking scores, severity and the hazard index are HEARTH heuristics with published formulas, not NASA ratings.</li>
+            <li>Ranking scores, severity and the hazard index are FlameScope heuristics with published formulas, not NASA ratings.</li>
             <li>Safety guidelines describe evidence (“evidence suggests…”), never official NASA rules.</li>
             <li>DEMO telemetry and the fire drill are simulated and always labelled DEMO.</li>
             <li>The Flame simulator&apos;s moving flame is artwork steered by NASA results, labelled DEMO. It is not a combustion model; its numbers come from the test rows it cites.</li>
@@ -123,7 +124,7 @@ export default function AboutPage() {
       </section>
 
       <section className="hud-panel p-4 text-sm">
-        <h2 className="mb-2 font-head text-sm font-semibold uppercase tracking-wider text-muted">Reference atmospheres used in HEARTH</h2>
+        <h2 className="mb-2 font-head text-sm font-semibold uppercase tracking-wider text-muted">Reference atmospheres used in FlameScope</h2>
         <p className="mb-2 text-xs text-muted">Project assumptions for comparing habitats; pO2 = (O2% / 100) × pressure.</p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[420px] text-sm">

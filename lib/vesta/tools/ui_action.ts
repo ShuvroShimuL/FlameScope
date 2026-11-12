@@ -63,7 +63,7 @@ export function validateUi(a: UiActionArgs): UiEvent | string {
 export const uiActionTool = defineTool({
   name: "ui_action",
   description:
-    "Move the HEARTH dashboard: go_view (overview, explorer, compare, safety, lab, dataset, simulator, about), set_mission, highlight_tests on the map, or open_test details. Use it whenever the answer is easier to see on a page.",
+    "Move the FlameScope dashboard: go_view (overview, explorer, compare, safety, lab, dataset, simulator, about), set_mission, highlight_tests on the map, or open_test details. Use it whenever the answer is easier to see on a page.",
   input: UiActionInput,
   run(a) {
     const ev = validateUi(a);

@@ -1,7 +1,10 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { BRAND } from "@/lib/brand";
 
-const KEY = "hearth.tour.v1";
+const KEY = BRAND.storage.tour;
+/** A visitor who finished the tour under the app's earlier name has still seen it. */
+const SEEN_KEYS = [KEY, BRAND.storage.legacy[KEY]].filter(Boolean);
 
 const STEPS = [
   { target: "tour-missions", title: "1 · Pick a mission", text: "Switch between the ISS, a Moon base, a pressurized lunar rover (demo scenario) and a spacesuit. Every page and VESTA follow the mission you pick." },
@@ -24,7 +27,7 @@ export function Tour() {
   useEffect(() => {
     let seen = false;
     try {
-      seen = window.localStorage.getItem(KEY) === "done";
+      seen = SEEN_KEYS.some((k) => window.localStorage.getItem(k) === "done");
     } catch {
       seen = true; // storage blocked: don't nag every visit
     }
@@ -74,7 +77,7 @@ export function Tour() {
   const left = Math.min(Math.max(16, box ? box.left : vw / 2 - cardW / 2), vw - cardW - 16);
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="HEARTH tour">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${BRAND.name} tour`}>
       <div className="absolute inset-0 bg-black/55" onClick={finish} aria-hidden />
       {box && (
         <div
@@ -83,7 +86,7 @@ export function Tour() {
         />
       )}
       <div className="absolute animate-fadeUp rounded-xl border border-line bg-panel p-4 shadow-2xl" style={{ top, left, width: cardW }}>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-ember-soft">Welcome to HEARTH</p>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-ember-soft">Welcome to {BRAND.name}</p>
         <h2 className="mt-1 font-head text-lg font-bold">{s.title}</h2>
         <p className="mt-1 text-sm text-muted">{s.text}</p>
         <div className="mt-3 flex items-center justify-between">

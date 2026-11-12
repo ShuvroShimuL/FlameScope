@@ -1,11 +1,11 @@
-/* HEARTH Blueprint: draws everything from the manifest. No framework, no network calls, so the file opens anywhere. */
+/* FlameScope Blueprint: draws everything from the manifest. No framework, no network calls, so the file opens anywhere. */
 (function () {
   "use strict";
   var M = JSON.parse(document.getElementById("blueprint-data").textContent);
   var S = M.stories;
   var F = M.facts;
-  var REPO = "https://github.com/mail6heatler/Project-HEARTH/blob/main/";
-  var LIVE = "https://project-hearth-five.vercel.app";
+  var REPO = "https://github.com/ShuvroShimuL/FlameScope/blob/main/";
+  var LIVE = "./"; // the Blueprint is served beside the app, so the app is the folder this file sits in
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var INV = { ACME: { c: "#4CC9F0", s: "●" }, CFI: { c: "#A78BFA", s: "■" }, SPICE: { c: "#5EE6A8", s: "◆" } };
   var INV_IDS = ["ACME", "CFI", "SPICE"];
@@ -188,7 +188,7 @@
       }).join("");
       var notes = (x.clean.flags || []).length ? '<p class="note">Flags on this record: ' + x.clean.flags.map(function (f) { return "<code>" + esc(f) + "</code>"; }).join(" ") + "</p>" : "";
       var all = x.columns.map(function (c, i) { return "<li><span>" + esc(c) + "</span><code>" + esc(x.values[i] === "" ? "empty" : x.values[i]) + "</code></li>"; }).join("");
-      $("#clean-table").innerHTML = '<table class="clean"><thead><tr><th scope="col">NASA row</th><th scope="col">Cleaner</th><th scope="col">HEARTH record</th></tr></thead><tbody>' + rows + "</tbody></table>" + notes +
+      $("#clean-table").innerHTML = '<table class="clean"><thead><tr><th scope="col">NASA row</th><th scope="col">Cleaner</th><th scope="col">FlameScope record</th></tr></thead><tbody>' + rows + "</tbody></table>" + notes +
         '<p class="cite">Record <code>' + esc(x.clean.test_id) + "</code> keeps its source: " + fileLink(x.file) + ", row " + x.row + '</p><details class="more"><summary>See the whole raw row</summary><ul class="kv">' + all + "</ul></details>";
       if (animate) {
         $$("#clean-table tbody tr").reduce(function (p, tr) {
@@ -618,7 +618,7 @@
   }
 
   $("#app").innerHTML = hero() + machine() + journey() + storage() + features() + vesta() + honesty() + ship() + growth() +
-    '<footer class="foot"><p>' + esc(S.footer) + '</p><p class="foot-links"><a class="file" href="' + LIVE + '" target="_blank" rel="noopener">Open HEARTH</a><a class="file" href="' + REPO.replace("/blob/main/", "") + '" target="_blank" rel="noopener">GitHub</a></p></footer>';
+    '<footer class="foot"><p>' + esc(S.footer) + '</p><p class="foot-links"><a class="file" href="' + LIVE + '" target="_blank" rel="noopener">Open FlameScope</a><a class="file" href="' + REPO.replace("/blob/main/", "") + '" target="_blank" rel="noopener">GitHub</a></p></footer>';
   initChrome();
   initMachine();
   initJourney();

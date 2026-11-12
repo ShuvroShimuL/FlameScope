@@ -1,8 +1,8 @@
 /**
- * HEARTH safety rules (Prevention / Detection / Suppression).
+ * FlameScope safety rules (Prevention / Detection / Suppression).
  * Each rule runs real queries on the NASA data, returns a severity 0–100 from a documented
  * heuristic, a confidence from the amount of evidence, sources and an "evidence suggests…" guideline.
- * Severity is a HEARTH heuristic for ordering findings, not a NASA rating.
+ * Severity is a FlameScope heuristic for ordering findings, not a NASA rating.
  */
 import { countable, sourcesFor, stats } from "./data";
 import { getMission } from "./missions";

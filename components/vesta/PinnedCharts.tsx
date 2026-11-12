@@ -1,11 +1,11 @@
 "use client";
 import { EChart } from "@/components/charts/EChart";
 import { IconClose } from "@/components/ui/Icons";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 export function PinnedCharts() {
-  const pinned = useHearth((s) => s.pinned);
-  const unpin = useHearth((s) => s.unpin);
+  const pinned = useAppStore((s) => s.pinned);
+  const unpin = useAppStore((s) => s.unpin);
   return (
     <section aria-label="Pinned VESTA charts">
       <h2 className="mb-2 font-head text-sm font-semibold uppercase tracking-wider text-muted">Pinned VESTA charts</h2>

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { INV_COLORS } from "@/components/charts/HabitatMap";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 type Inv = "ACME" | "CFI" | "SPICE";
 interface Row {
@@ -54,8 +54,8 @@ export function Explorer() {
   const [data, setData] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
-  const openTest = useHearth((s) => s.openTest);
-  const highlight = useHearth((s) => s.highlightIds);
+  const openTest = useAppStore((s) => s.openTest);
+  const highlight = useAppStore((s) => s.highlightIds);
 
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), 250);
@@ -227,7 +227,7 @@ export function Explorer() {
               {data && data.rows.length === 0 && (
                 <tr>
                   <td colSpan={COLS.length} className="px-3 py-6 text-center text-sm text-muted">
-                    No tests match these filters.{phase === "solid" ? " The NASA data in HEARTH has no solid-fuel tests: this is a known data gap." : ""}
+                    No tests match these filters.{phase === "solid" ? " The NASA data in FlameScope has no solid-fuel tests: this is a known data gap." : ""}
                   </td>
                 </tr>
               )}

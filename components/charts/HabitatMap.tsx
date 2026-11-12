@@ -1,15 +1,16 @@
 "use client";
 import dynamic from "next/dynamic";
+import { BRAND, readStored } from "@/lib/brand";
 import { useEffect, useMemo, useState } from "react";
 import { INV_COLORS, aggregate, type Agg, type MapData } from "@/lib/map3d";
 import { MISSIONS, getMission } from "@/lib/missions";
 import { ISS_PO2_PSI } from "@/lib/physics";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { EChart, useReducedMotion } from "./EChart";
 
 export { INV_COLORS };
 
-const VIEW_KEY = "hearth.map.view";
+const VIEW_KEY = BRAND.storage.mapView;
 type View = "3d" | "flat";
 
 function canUse3D(): boolean {
@@ -23,7 +24,7 @@ function canUse3D(): boolean {
 
 function savedView(): View | null {
   try {
-    const v = window.localStorage.getItem(VIEW_KEY);
+    const v = readStored(VIEW_KEY);
     return v === "3d" || v === "flat" ? v : null;
   } catch {
     return null;
@@ -38,10 +39,10 @@ const HabitatScene = dynamic(() => import("@/components/map3d/HabitatScene"), { 
 export function HabitatMap({ height = 420 }: { height?: number }) {
   const [data, setData] = useState<MapData | null>(null);
   const [err, setErr] = useState(false);
-  const missionId = useHearth((s) => s.missionId);
-  const highlight = useHearth((s) => s.highlightIds);
-  const openTest = useHearth((s) => s.openTest);
-  const labRows = useHearth((s) => s.labRows);
+  const missionId = useAppStore((s) => s.missionId);
+  const highlight = useAppStore((s) => s.highlightIds);
+  const openTest = useAppStore((s) => s.openTest);
+  const labRows = useAppStore((s) => s.labRows);
   const reduce = useReducedMotion();
   const [view, setView] = useState<View | null>(null);
   const [can3D, setCan3D] = useState(true);
@@ -266,7 +267,7 @@ export function HabitatMap({ height = 420 }: { height?: number }) {
         {show3D ? "Drag to turn, Ctrl + scroll or +/− to zoom, click a point for details. Earth, Moon and Sun are artwork and the mission models are symbols, not to scale: only the points, the sheet and each model's position are data. " : "Scroll to zoom, click a point for details. "}
         {data!.not_plotted.length ? `Not plotted (missing O2 or pressure): ${data!.not_plotted.map((n) => n.test_id).join(", ")}.` : "No test is missing O2 or pressure."}
         {highlight.length > 0 && (
-          <button type="button" className="ml-2 text-ember-soft underline" onClick={() => useHearth.getState().setHighlight([])}>
+          <button type="button" className="ml-2 text-ember-soft underline" onClick={() => useAppStore.getState().setHighlight([])}>
             Clear {highlight.length} highlighted
           </button>
         )}

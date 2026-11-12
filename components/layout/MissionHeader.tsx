@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getMission } from "@/lib/missions";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { CountUp } from "@/components/ui/CountUp";
 
 interface Calc {
@@ -46,7 +46,7 @@ function Meter({ value, max, tick, title }: MeterScale & { value: number }) {
 
 /** Active mission with its envelope status; numbers come from POST /api/calc. */
 export function MissionHeader() {
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const m = getMission(missionId);
   const [calc, setCalc] = useState<Calc | null>(null);
   const [err, setErr] = useState(false);

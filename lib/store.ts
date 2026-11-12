@@ -1,5 +1,6 @@
 "use client";
 import { create } from "zustand";
+import { BRAND, readStored } from "./brand";
 import type { Confidence, Source } from "./types";
 import { addAnswer, addUsage, emptyTally, type BurnTally, type UsageLike } from "./vesta/burn";
 import type { EngineChoice, EngineId } from "./vesta/engines";
@@ -57,7 +58,7 @@ export interface LiveRun {
   fallbacks: { id: EngineId; reason: string }[];
 }
 
-interface HearthState {
+interface AppState {
   missionId: string;
   engine: EngineChoice;
   level: Level;
@@ -95,7 +96,7 @@ interface HearthState {
   setDraft: (d: string) => void;
 }
 
-export const useHearth = create<HearthState>((set) => ({
+export const useAppStore = create<AppState>((set) => ({
   missionId: "lunar-rover",
   engine: "auto",
   level: "researcher",
@@ -132,18 +133,18 @@ export const useHearth = create<HearthState>((set) => ({
 }));
 
 // ---- small per-viewer preferences in localStorage (always wrapped: storage may be blocked)
-const PREFS_KEY = "hearth.prefs.v1";
+const PREFS_KEY = BRAND.storage.prefs;
 
-export function loadPrefs(): Partial<Pick<HearthState, "engine" | "level" | "missionId">> {
+export function loadPrefs(): Partial<Pick<AppState, "engine" | "level" | "missionId">> {
   try {
-    const raw = window.localStorage.getItem(PREFS_KEY);
+    const raw = readStored(PREFS_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-export function savePrefs(p: Pick<HearthState, "engine" | "level" | "missionId">) {
+export function savePrefs(p: Pick<AppState, "engine" | "level" | "missionId">) {
   try {
     window.localStorage.setItem(PREFS_KEY, JSON.stringify(p));
   } catch {

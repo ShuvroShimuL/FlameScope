@@ -1,4 +1,5 @@
 import { openAICompatProvider } from "./openai-compat";
+import { BRAND } from "../../brand";
 import type { Provider } from "./types";
 
 /**
@@ -13,7 +14,7 @@ export function freeLLMAPIProvider(apiKey: string, model: string, baseURL: strin
     apiKey,
     model,
     baseURL,
-    headers: { "X-Title": "HEARTH VESTA" },
+    headers: { "X-Title": `${BRAND.name} ${BRAND.assistant.name}` },
     reportServedModel: true,
   });
 }

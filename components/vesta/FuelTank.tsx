@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { IconGauge, IconRefresh } from "@/components/ui/Icons";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { answersLeft, averagePerAnswer, formatTokens, remainingPct } from "@/lib/vesta/burn";
 import type { FreeLLMAPIStatus } from "@/lib/vesta/freellmapi-status";
 import { platformColor } from "./engineMeta";
@@ -59,7 +59,7 @@ function time(iso: string | null): string | null {
 }
 
 export function FuelTank({ status, loaded, loading, onRefresh }: { status: FreeLLMAPIStatus | null; loaded: boolean; loading: boolean; onRefresh: () => void }) {
-  const answers = useHearth((s) => s.burn.answers);
+  const answers = useAppStore((s) => s.burn.answers);
   const [focus, setFocus] = useState<number | null>(null);
   const [all, setAll] = useState(false);
   const budget = status?.budget ?? null;
@@ -81,7 +81,7 @@ export function FuelTank({ status, loaded, loading, onRefresh }: { status: FreeL
   else if (!status)
     body = (
       <Explain>
-        Not connected. FreeLLMAPI runs on your own PC, so it works when HEARTH runs there too (<code className="font-mono">npm run dev</code>). Add <code className="font-mono">FREELLMAPI_API_KEY</code> to <code className="font-mono">.env.local</code> and restart.
+        Not connected. FreeLLMAPI runs on your own PC, so it works when FlameScope runs there too (<code className="font-mono">npm run dev</code>). Add <code className="font-mono">FREELLMAPI_API_KEY</code> to <code className="font-mono">.env.local</code> and restart.
       </Explain>
     );
   else if (!status.connected)

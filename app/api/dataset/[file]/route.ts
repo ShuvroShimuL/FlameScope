@@ -1,4 +1,5 @@
 import { EXPORT_FILES, exportBody, type ExportFile } from "@/lib/dataset-export";
+import { exportName } from "@/lib/brand";
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
@@ -13,7 +14,7 @@ export function GET(_req: Request, { params }: { params: { file: string } }) {
   return new Response(body, {
     headers: {
       "Content-Type": type,
-      "Content-Disposition": `attachment; filename="hearth-${params.file}"`,
+      "Content-Disposition": `attachment; filename="${exportName(params.file)}"`,
       "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
     },
   });

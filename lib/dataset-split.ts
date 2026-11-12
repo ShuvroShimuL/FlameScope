@@ -1,5 +1,5 @@
 /**
- * Train / test split helper for people modelling this data. HEARTH itself trains nothing and uses no split.
+ * Train / test split helper for people modelling this data. FlameScope itself trains nothing and uses no split.
  * Pure and deterministic, safe in the browser. Duplicate rows are always left out, so one row cannot
  * land on both sides.
  */

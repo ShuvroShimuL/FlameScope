@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BRAND } from "@/lib/brand";
 import type { DatasetProfile } from "@/lib/dataset";
 import { makeSplit, toCsv, type SplitStrategy } from "@/lib/dataset-split";
 import { INVESTIGATIONS, type Investigation, type TestRecord } from "@/lib/types";
@@ -47,7 +48,7 @@ export function SplitBuilder({ labelled, counted }: { labelled: DatasetProfile["
 
   const download = () => {
     if (!tests || !result) return;
-    saveFile(`hearth-split-${strategy}${strategy === "holdout" ? `-${holdout}` : `-${trainPct}`}-seed${seed}.csv`, toCsv(tests, result.assign), "text/csv;charset=utf-8");
+    saveFile(`${BRAND.exportPrefix}split-${strategy}${strategy === "holdout" ? `-${holdout}` : `-${trainPct}`}-seed${seed}.csv`, toCsv(tests, result.assign), "text/csv;charset=utf-8");
   };
 
   return (

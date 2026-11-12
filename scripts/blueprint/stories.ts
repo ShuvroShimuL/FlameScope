@@ -41,7 +41,7 @@ export const RAW_CLEAN: Record<string, { raw: string; clean: string; how: string
 export const STORIES = {
   hero: {
     eyebrow: "Team Polaris · The working blueprint",
-    title: "How HEARTH works",
+    title: "How FlameScope works",
     lead: {
       s: "Follow one idea all the way through: real NASA fire experiments go in one end, and a crewmate who can back up every number comes out the other. Click anything. Nothing here is a mock-up.",
       e: "An end-to-end map of the system, generated from the repository: data ingest, static data layer, API routes, the VESTA agent and deployment. Facts and recordings are produced by running the real modules at scan time.",
@@ -104,7 +104,7 @@ export const STORIES = {
       nav: "Honesty rules",
       eyebrow: "The promises",
       title: "Rules the code enforces",
-      intro: same("HEARTH makes promises about fire safety, so they can't just be good intentions. Each promise below points to the code that keeps it and the test that checks it."),
+      intro: same("FlameScope makes promises about fire safety, so they can't just be good intentions. Each promise below points to the code that keeps it and the test that checks it."),
     },
     ship: {
       nav: "Going live",
@@ -152,7 +152,7 @@ export const STORIES = {
       sub: "{{testsTotal}} rows · {{chunks}} passages",
       jump: "storage",
       story: {
-        s: "The tidy result, and HEARTH's “database”. Plain files that travel with the website, so there's no server that can go down.",
+        s: "The tidy result, and FlameScope's “database”. Plain files that travel with the website, so there's no server that can go down.",
         e: "`data/processed/`: tests, chunks, PDF tables, source checksums and the ingest report. Every test record carries `source_file` and `source_row`.",
       } as Story,
       files: ["data/processed/tests.json", "data/processed/chunks.json", "data/processed/pdf_tables.json", "data/processed/ingest_report.md"],
@@ -281,7 +281,7 @@ export const STORIES = {
 
   rawClean: {
     title: "Watch one real row get cleaned",
-    story: same("This is an actual row from the NASA table next to the record HEARTH keeps. Pick an experiment and press the button."),
+    story: same("This is an actual row from the NASA table next to the record FlameScope keeps. Pick an experiment and press the button."),
   },
 
   chunkDemo: {
@@ -312,12 +312,12 @@ export const STORIES = {
     "/": { story: { s: "Home base. Choose a mission and see how close NASA's tests come to it on the map, in 3D or flat, and which experiment matters most.", e: "`HabitatMap` plots `/api/map`, with a lazy three.js scene and flat ECharts fallback. `RankBars` reads `/api/rank`. `MissionHeader` posts to `/api/calc`." }, try: "Switch the mission and watch VESTA speak first." },
     "/explorer": { story: { s: "Every NASA test in one searchable table. Open any row to see its details and exactly where it came from.", e: "Server-side filter, sort and paging through `/api/tests`. `TestDrawer` loads `/api/tests/[id]` with derived values and related PDF passages." }, try: "Filter by fuel, then open a row." },
     "/compare": { story: { s: "Put experiments side by side: what they share, how they differ, and how much of the habitat range each one covers.", e: "`/api/compare` returns shared and unique attributes, condition stats and the coverage radar. `/api/map` supplies the overlay." }, try: "Pick two experiments and read the radar." },
-    "/safety": { story: { s: "What the evidence suggests for prevention, detection and suppression, plus the conditions nobody has tested yet.", e: "`lib/safety.ts` rules run real queries and return severity, confidence and sources. `findGaps` builds the O2 × pressure coverage grid. Severity is a HEARTH heuristic, not a NASA rating." }, try: "Find the empty cells in the gap grid." },
+    "/safety": { story: { s: "What the evidence suggests for prevention, detection and suppression, plus the conditions nobody has tested yet.", e: "`lib/safety.ts` rules run real queries and return severity, confidence and sources. `findGaps` builds the O2 × pressure coverage grid. Severity is a FlameScope heuristic, not a NASA rating." }, try: "Find the empty cells in the gap grid." },
     "/lab": { story: { s: "Enter your own conditions or upload your own data and compare it with NASA's. Your file stays in your browser, and the live telemetry is clearly marked as a demo.", e: "`lib/csv.ts` parses and maps uploads client-side into memory only, never mixed with NASA rows. `/api/calc` returns pO2, the envelope, a heuristic hazard index and nearest tests. `DemoTelemetry` is labelled DEMO." }, try: "Upload the sample CSV." },
     "/dataset": { story: { s: "The full story of the data: where it came from, how it's organised, its limits, and how to download it.", e: "A server component using `lib/dataset.ts` for computed statistics. `/api/dataset/[file]` serves force-static exports, and `lib/dataset-split.ts` builds leak-safe train/test splits for other people's modelling." }, try: "Compare a raw row with its clean record." },
     "/simulator": { story: { s: "Change the oxygen, pressure and fuel, then press Ignite. The result follows real NASA tests near your settings. The moving flame itself is artwork, and it's labelled DEMO.", e: "`/api/flame` serves compact rows so sliders respond instantly, and `lib/flame.ts` turns them into evidence and animation settings. Plain WebGL shader, not a combustion model." }, try: "Try Surprise me, then compare with Earth." },
     "every page": { story: { s: "These parts surround every page: the top bar, the navigation and VESTA's panel. That's why VESTA is one question away, wherever you are.", e: "`app/layout.tsx` wraps pages in `AppShell`. The trail shows what the shell reaches on its own, including all of VESTA through `useVesta`. Page trails stop at `useVesta` so an Ask VESTA button does not inflate them." }, try: "Change the mission and watch every page follow." },
-    "/about": { story: { s: "Who built HEARTH, why, and how far its data can be trusted.", e: "Static page with the challenge goals, team, reference atmospheres and the DEMO policy." }, try: "Check the reference atmospheres table." },
+    "/about": { story: { s: "Who built FlameScope, why, and how far its data can be trusted.", e: "Static page with the challenge goals, team, reference atmospheres and the DEMO policy." }, try: "Check the reference atmospheres table." },
   } as Record<string, { story: Story; try: string }>,
 
   shell: {
@@ -387,7 +387,7 @@ export const STORIES = {
     claude: same("Used first when a key is set."),
     openai: same("ChatGPT through a paid OpenAI key. Waits in line until a key is added."),
     freellmapi: {
-      s: "A free pool the team runs on its own PC. It picks a model from many free services, so it only works when HEARTH runs on that PC too.",
+      s: "A free pool the team runs on its own PC. It picks a model from many free services, so it only works when FlameScope runs on that PC too.",
       e: "The FreeLLMAPI desktop app's OpenAI-compatible endpoint with model `auto`; it routes to a tool-capable model and reports which one in `X-Routed-Via`. No key on Vercel, so it is skipped there.",
     },
     openrouter: same("Free tier, next in line."),

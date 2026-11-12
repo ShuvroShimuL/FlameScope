@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { IconBolt, IconChevron, IconFlame, IconGauge } from "@/components/ui/Icons";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { burnRate, burnTotals, clock, formatTokens, remainingPct } from "@/lib/vesta/burn";
 import { ENGINE_LABELS, ENGINE_ORDER, type EngineChoice, type EngineId, type EngineInfo } from "@/lib/vesta/engines";
 import { BurnMeter } from "./BurnMeter";
@@ -99,9 +99,9 @@ function Chain({ engines, meter, now, live, lastAnswered, fallbacks }: { engines
 }
 
 function LiveCard({ now }: { now: number }) {
-  const live = useHearth((s) => s.live);
-  const busy = useHearth((s) => s.busy);
-  const messages = useHearth((s) => s.messages);
+  const live = useAppStore((s) => s.live);
+  const busy = useAppStore((s) => s.busy);
+  const messages = useAppStore((s) => s.messages);
   const last = [...messages].reverse().find((m) => m.role === "vesta" && !m.alert && m.badge);
   const lastMsg = messages[messages.length - 1];
   const running = [...(lastMsg?.steps ?? [])].reverse().find((s) => s.status === "running" && s.tool !== "engine");
@@ -156,14 +156,14 @@ function LiveCard({ now }: { now: number }) {
 }
 
 export function EngineRoom() {
-  const open = useHearth((s) => s.roomOpen);
-  const setOpen = useHearth((s) => s.setRoomOpen);
-  const engine = useHearth((s) => s.engine);
-  const setEngine = useHearth((s) => s.setEngine);
-  const busy = useHearth((s) => s.busy);
-  const live = useHearth((s) => s.live);
-  const burn = useHearth((s) => s.burn);
-  const messages = useHearth((s) => s.messages);
+  const open = useAppStore((s) => s.roomOpen);
+  const setOpen = useAppStore((s) => s.setRoomOpen);
+  const engine = useAppStore((s) => s.engine);
+  const setEngine = useAppStore((s) => s.setEngine);
+  const busy = useAppStore((s) => s.busy);
+  const live = useAppStore((s) => s.live);
+  const burn = useAppStore((s) => s.burn);
+  const messages = useAppStore((s) => s.messages);
   const engines = useEngines();
   const { meter, refresh, loading } = useMeter(open);
   const now = useNow(open || busy || !!meter?.cooldowns.length);

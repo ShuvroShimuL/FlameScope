@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { ConfidenceTag, sourceLabel } from "@/components/vesta/Bits";
 import { getMission } from "@/lib/missions";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import type { Confidence, Source } from "@/lib/types";
 
 interface Finding {
@@ -81,9 +81,9 @@ const EARTH = [
 ];
 
 export function SafetyView() {
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const mission = getMission(missionId);
-  const openTest = useHearth((s) => s.openTest);
+  const openTest = useAppStore((s) => s.openTest);
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [gaps, setGaps] = useState<Gaps | null>(null);
   const [err, setErr] = useState(false);
@@ -149,7 +149,7 @@ export function SafetyView() {
   return (
     <div className="space-y-6">
       <p className="text-xs text-muted">
-        Audit for <b className="text-text">{mission?.name}</b> ({mission?.o2_pct}% O2, {mission?.pressure_psi} psi, gravity: {mission?.gravity}). Severity is a HEARTH heuristic (0–100) for ordering findings, not a NASA rating; guidelines describe evidence, not official rules.
+        Audit for <b className="text-text">{mission?.name}</b> ({mission?.o2_pct}% O2, {mission?.pressure_psi} psi, gravity: {mission?.gravity}). Severity is a FlameScope heuristic (0–100) for ordering findings, not a NASA rating; guidelines describe evidence, not official rules.
       </p>
       <div className="grid gap-4 lg:grid-cols-3">
         {CATS.map((cat) => (

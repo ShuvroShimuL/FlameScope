@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MISSIONS } from "@/lib/missions";
 import type { MapData } from "@/lib/map3d";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { HabitatEngine, type Hover, type LabPoint } from "./engine";
 
 /** Pause before the opening camera move, so the whole map is seen first. */
@@ -54,11 +54,11 @@ export default function HabitatScene({ data, reduce, onFail }: { data: MapData; 
   const overlayRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<HabitatEngine | null>(null);
   const [hover, setHover] = useState<Hover | null>(null);
-  const missionId = useHearth((s) => s.missionId);
-  const highlight = useHearth((s) => s.highlightIds);
-  const labRows = useHearth((s) => s.labRows);
-  const setMission = useHearth((s) => s.setMission);
-  const openTest = useHearth((s) => s.openTest);
+  const missionId = useAppStore((s) => s.missionId);
+  const highlight = useAppStore((s) => s.highlightIds);
+  const labRows = useAppStore((s) => s.labRows);
+  const setMission = useAppStore((s) => s.setMission);
+  const openTest = useAppStore((s) => s.openTest);
 
   const labPoints = useMemo<LabPoint[]>(
     () => labRows.filter((r) => r.o2_pct != null && r.pressure_psi != null && !r.problems.length).map((r) => ({ label: r.label, o2_pct: r.o2_pct as number, pressure_psi: r.pressure_psi as number })),
@@ -73,7 +73,7 @@ export default function HabitatScene({ data, reduce, onFail }: { data: MapData; 
     try {
       engine = new HabitatEngine(host, overlay, { onHover: setHover, onOpenTest: openTest, onSelectMission: setMission, onLost: onFail }, reduce);
       engine.setData(data, MISSIONS);
-      engine.setHighlight(useHearth.getState().highlightIds);
+      engine.setHighlight(useAppStore.getState().highlightIds);
     } catch {
       onFail();
       return;
@@ -105,7 +105,7 @@ export default function HabitatScene({ data, reduce, onFail }: { data: MapData; 
     // first arrival: show the full map, then glide to the active mission
     const timer = window.setTimeout(() => {
       opened.current = true;
-      engineRef.current?.setMission(useHearth.getState().missionId, MISSIONS, true);
+      engineRef.current?.setMission(useAppStore.getState().missionId, MISSIONS, true);
     }, OPENING_FLY_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [missionId, reduce, data]);

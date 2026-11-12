@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { EChart } from "./EChart";
 
 interface Rank {
@@ -12,7 +12,7 @@ const PART_COLORS = ["#FF7A2F", "#4CC9F0", "#A78BFA", "#5EE6A8"];
 
 /** Investigation relevance for the active mission: stacked score parts, reasons on hover. */
 export function RankBars() {
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const [data, setData] = useState<Rank | null>(null);
   const [err, setErr] = useState(false);
 

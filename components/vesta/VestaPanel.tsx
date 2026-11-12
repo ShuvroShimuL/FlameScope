@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IconAudit, IconCheck, IconGap, IconRank, IconSend, IconStop, IconTrash } from "@/components/ui/Icons";
 import { getMission } from "@/lib/missions";
-import { useHearth, type Level } from "@/lib/store";
+import { useAppStore, type Level } from "@/lib/store";
 import { EngineRoom } from "./EngineRoom";
 import { Orb } from "./Orb";
 import { followUps, starters, toolLabel, type StarterIcon } from "./suggest";
@@ -21,14 +21,14 @@ function smooth(): ScrollBehavior {
 }
 
 export function VestaPanel() {
-  const messages = useHearth((s) => s.messages);
-  const busy = useHearth((s) => s.busy);
-  const level = useHearth((s) => s.level);
-  const setLevel = useHearth((s) => s.setLevel);
-  const draft = useHearth((s) => s.draft);
-  const setDraft = useHearth((s) => s.setDraft);
-  const clearMessages = useHearth((s) => s.clearMessages);
-  const missionId = useHearth((s) => s.missionId);
+  const messages = useAppStore((s) => s.messages);
+  const busy = useAppStore((s) => s.busy);
+  const level = useAppStore((s) => s.level);
+  const setLevel = useAppStore((s) => s.setLevel);
+  const draft = useAppStore((s) => s.draft);
+  const setDraft = useAppStore((s) => s.setDraft);
+  const clearMessages = useAppStore((s) => s.clearMessages);
+  const missionId = useAppStore((s) => s.missionId);
   const mission = getMission(missionId);
   const { send, stop } = useVesta();
   const listRef = useRef<HTMLUListElement>(null);

@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { INV_COLORS } from "@/components/charts/HabitatMap";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 type Inv = "ACME" | "CFI" | "SPICE";
 const ALL: Inv[] = ["ACME", "CFI", "SPICE"];
@@ -47,7 +47,7 @@ const AXIS = { axisLabel: { color: "#97A3BC" }, splitLine: { lineStyle: { color:
 export function CompareView() {
   const params = useSearchParams();
   const router = useRouter();
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const fromUrl = (params.get("inv") ?? "ACME,CFI,SPICE").split(",").filter((x): x is Inv => ALL.includes(x as Inv));
   const [sel, setSel] = useState<Inv[]>(fromUrl.length >= 2 ? fromUrl : ALL);
   const [data, setData] = useState<CompareResp | null>(null);

@@ -1,5 +1,5 @@
 /**
- * HEARTH Blueprint scanner: reads the real project and returns every fact the page shows.
+ * FlameScope Blueprint scanner: reads the real project and returns every fact the page shows.
  * Nothing here reads API keys: fake engines run with an empty environment and the output is public.
  */
 import fs from "node:fs";
@@ -101,7 +101,7 @@ const VESTA_CLIENT = ["components/vesta/useVesta.ts"];
 
 // ------------------------------------------------------------------ project structure
 /** lib files that are plumbing, not a brain of their own. */
-const PLUMBING = new Set(["lib/types.ts", "lib/util.ts", "lib/api.ts"]);
+const PLUMBING = new Set(["lib/types.ts", "lib/util.ts", "lib/api.ts", "lib/brand.ts"]);
 
 function libNode(file: string): string | null {
   if (file.startsWith("lib/vesta/")) return "lib/vesta";
@@ -191,7 +191,7 @@ function scanPages(routes: RouteInfo[]): PageInfo[] {
 
 function scanTests() {
   return walk("tests")
-    .filter((f) => f.endsWith(".test.ts"))
+    .filter((f) => /.test.(ts|mjs)$/.test(f))
     .map((file) => ({ file, count: (read(file).match(/^\s*(?:it|test)(?:\.each\(.*\))?\(/gm) ?? []).length }));
 }
 

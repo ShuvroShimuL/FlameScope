@@ -68,7 +68,7 @@ function parseEnding(outcome: string | null): Ending | null {
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-/** Compact rows for the browser. Exact duplicates are left out, like everywhere else in HEARTH. */
+/** Compact rows for the browser. Exact duplicates are left out, like everywhere else in FlameScope. */
 export function buildFlameDataset(tests: TestRecord[]): FlameDataset {
   const out: FlameDataset = { acme: [], cfi: [], spice: [] };
   for (const t of tests) {

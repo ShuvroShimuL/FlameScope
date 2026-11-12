@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RawRows } from "@/lib/dataset-export";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import type { TestRecord } from "@/lib/types";
 import { Chip, fileName, loadRecords } from "./shared";
 
@@ -27,7 +27,7 @@ export function RecordInspector() {
   const [failed, setFailed] = useState(false);
   const [id, setId] = useState(PRESETS[0].id);
   const [draft, setDraft] = useState(PRESETS[0].id);
-  const openTest = useHearth((s) => s.openTest);
+  const openTest = useAppStore((s) => s.openTest);
 
   useEffect(() => {
     const el = box.current;

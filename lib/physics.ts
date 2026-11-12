@@ -1,5 +1,5 @@
 /**
- * HEARTH physics: small, tested formulas. Every function returns plain numbers that
+ * FlameScope physics: small, tested formulas. Every function returns plain numbers that
  * the UI and VESTA can show together with the formula string.
  */
 import type { Confidence, TestRecord } from "./types";
@@ -193,6 +193,6 @@ export function hazardIndex(o2Pct: number, pressurePsi: number, flowCmS: number 
     value: round(parts.reduce((s, p) => s + p.points, 0), 1),
     label: "heuristic",
     parts,
-    note: "Heuristic index for comparing conditions inside HEARTH. It is not a NASA rating or a flammability prediction.",
+    note: "Heuristic index for comparing conditions inside FlameScope. It is not a NASA rating or a flammability prediction.",
   };
 }

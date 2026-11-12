@@ -61,7 +61,7 @@ export function downloadList() {
   const items: { file: ExportFile; label: string; detail: string }[] = [
     { file: "tests-counted.csv", label: "Clean table, counted rows", detail: `${counted} rows, duplicates removed. Start here for spreadsheets and modelling.` },
     { file: "tests.csv", label: "Clean table, all rows", detail: `${rows} rows, including flagged duplicates.` },
-    { file: "tests.json", label: "Clean table, JSON", detail: `The ${rows} records exactly as HEARTH loads them.` },
+    { file: "tests.json", label: "Clean table, JSON", detail: `The ${rows} records exactly as FlameScope loads them.` },
     { file: "dictionary.json", label: "Data dictionary", detail: "Every field's type, unit, meaning, origin and fill rate." },
     { file: "chunks.json", label: "PDF passages", detail: "The text VESTA searches, with file and page." },
     { file: "pdf_tables.json", label: "PDF tables", detail: "Tables extracted from the NASA PDFs, with file and page." },

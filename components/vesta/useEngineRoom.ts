@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import { ENGINE_LABELS, ENGINE_ORDER, type EngineChoice, type EngineId, type EngineInfo } from "@/lib/vesta/engines";
 import type { FreeLLMAPIStatus } from "@/lib/vesta/freellmapi-status";
 
@@ -16,7 +16,7 @@ export interface Meter {
 
 /** Engine list from the server (id, label, available). Falls back to Auto if the saved choice has no key. */
 export function useEngines(): EngineInfo[] {
-  const setEngine = useHearth((s) => s.setEngine);
+  const setEngine = useAppStore((s) => s.setEngine);
   const [engines, setEngines] = useState<EngineInfo[]>(FALLBACK);
   useEffect(() => {
     let alive = true;
@@ -25,7 +25,7 @@ export function useEngines(): EngineInfo[] {
       .then((list: EngineInfo[]) => {
         if (!alive || !Array.isArray(list)) return;
         setEngines(list);
-        const cur = list.find((e) => e.id === useHearth.getState().engine);
+        const cur = list.find((e) => e.id === useAppStore.getState().engine);
         if (!cur || !cur.available) setEngine("auto");
       })
       .catch(() => {});
@@ -41,7 +41,7 @@ const POLL_CLOSED_MS = 60_000;
 
 /** Engine room readings: polled faster while the room is open, and refreshed right after each answer. */
 export function useMeter(open: boolean): { meter: Meter | null; refresh: () => void; loading: boolean } {
-  const busy = useHearth((s) => s.busy);
+  const busy = useAppStore((s) => s.busy);
   const [meter, setMeter] = useState<Meter | null>(null);
   const [loading, setLoading] = useState(false);
   const inflight = useRef(false);

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 import type { TestRecord } from "@/lib/types";
 import { IconClose } from "./Icons";
 
@@ -30,9 +30,9 @@ const METRIC_LABEL: Record<string, string> = { burn_time_s: "Burn time (s)", hc_
 
 /** Shared details drawer for one test (opened from the map, the table, sources or VESTA). */
 export function TestDrawer() {
-  const id = useHearth((s) => s.openTestId);
-  const openTest = useHearth((s) => s.openTest);
-  const setDraft = useHearth((s) => s.setDraft);
+  const id = useAppStore((s) => s.openTestId);
+  const openTest = useAppStore((s) => s.openTest);
+  const setDraft = useAppStore((s) => s.setDraft);
   const [data, setData] = useState<Detail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);

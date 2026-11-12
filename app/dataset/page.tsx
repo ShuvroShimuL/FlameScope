@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BRAND, exportName } from "@/lib/brand";
 import { AskVesta, CopyButton, OpenTestButton } from "@/components/dataset/DatasetActions";
 import { Distributions } from "@/components/dataset/Distributions";
 import { Dossiers } from "@/components/dataset/Dossiers";
@@ -13,9 +14,8 @@ import { NASA_LINKS, REPO_BLOB } from "@/lib/dataset-docs";
 import { downloadList } from "@/lib/dataset-export";
 import { INVESTIGATIONS, type Investigation } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Dataset", description: "Everything about the NASA data behind HEARTH: where it comes from, how it is structured and split, its limits, and how to download it." };
+export const metadata: Metadata = { title: "Dataset", description: "Everything about the NASA data behind FlameScope: where it comes from, how it is structured and split, its limits, and how to download it." };
 
-const SITE = "https://project-hearth-five.vercel.app/dataset";
 
 const NAV = [
   ["flow", "Data flow"],
@@ -40,7 +40,8 @@ export default function DatasetPage() {
   const p = datasetProfile();
   const t = p.totals;
   const downloads = downloadList();
-  const hearthCitation = `Team Polaris (2026). HEARTH processed microgravity combustion dataset: ACME/CFI-G, CFI and SPICE. NASA Space Apps Challenge 2026. Derived from NASA Physical Sciences Informatics files. ${SITE}`;
+  // The dataset was first released under the project's earlier name. The citation says so, so older references still resolve.
+  const datasetCitation = `${BRAND.team} (2026). ${BRAND.name} processed microgravity combustion dataset (first released as Project HEARTH): ACME/CFI-G, CFI and SPICE. ${BRAND.event}. Derived from NASA Physical Sciences Informatics files. ${BRAND.urls.repo}`;
 
   const tiles: [string, string, string][] = [
     [`${t.investigations}`, "NASA investigations", "ACME, CFI and SPICE"],
@@ -113,7 +114,7 @@ export default function DatasetPage() {
         id="flow"
         eyebrow="How it is stored"
         title="There is no database server, on purpose"
-        intro={<>HEARTH&apos;s &ldquo;database&rdquo; is a set of plain JSON files committed with the code. Every record keeps its source file and row, any change to the data shows up in the project&apos;s git history, and there is no database service that could go down. A Python script builds the files once; the app validates them with zod when it loads them and searches the PDF text with MiniSearch.</>}
+        intro={<>FlameScope&apos;s &ldquo;database&rdquo; is a set of plain JSON files committed with the code. Every record keeps its source file and row, any change to the data shows up in the project&apos;s git history, and there is no database service that could go down. A Python script builds the files once; the app validates them with zod when it loads them and searches the PDF text with MiniSearch.</>}
       >
         <ol className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch">
           <li className="hud-panel p-3">
@@ -160,12 +161,12 @@ export default function DatasetPage() {
         id="split"
         eyebrow="How it divides"
         title="The data split"
-        intro={<>HEARTH trains no model, so <b className="font-semibold text-text">this data has no train and test split</b>: VESTA looks rows up and computes from them. What the data does have is a natural division, and you can slice it every way below. Need a real split? The <a href="#modelling" className="text-ember-soft underline">split builder</a> further down makes one.</>}
+        intro={<>FlameScope trains no model, so <b className="font-semibold text-text">this data has no train and test split</b>: VESTA looks rows up and computes from them. What the data does have is a natural division, and you can slice it every way below. Need a real split? The <a href="#modelling" className="text-ember-soft underline">split builder</a> further down makes one.</>}
       >
         <SplitExplorer dimensions={p.dimensions} totals={t} />
       </Section>
 
-      <Section id="structure" eyebrow="How it is built" title="Every field, explained" intro="One object per test. The percentages show how often each investigation fills the field. A 0% is honest: that table simply does not record it, and HEARTH stores null rather than a guess.">
+      <Section id="structure" eyebrow="How it is built" title="Every field, explained" intro="One object per test. The percentages show how often each investigation fills the field. A 0% is honest: that table simply does not record it, and FlameScope stores null rather than a guess.">
         <StructureExplorer fields={p.fields} extras={p.extras} totals={t} />
       </Section>
 
@@ -239,7 +240,7 @@ export default function DatasetPage() {
         id="modelling"
         eyebrow="Challenge goal 2: flammability modelling"
         title="Split builder"
-        intro="Build a repeatable train and test split and download it. This is a helper for your own modelling. HEARTH itself does not use it."
+        intro="Build a repeatable train and test split and download it. This is a helper for your own modelling. FlameScope itself does not use it."
       >
         <SplitBuilder labelled={p.labelled} counted={t.counted} />
       </Section>
@@ -248,13 +249,13 @@ export default function DatasetPage() {
         <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {downloads.map((d) => (
             <li key={d.file}>
-              <a href={`/api/dataset/${d.file}`} download={`hearth-${d.file}`} className="hud-panel flex h-full flex-col p-3 transition hover:border-ember/50">
+              <a href={`/api/dataset/${d.file}`} download={exportName(d.file)} className="hud-panel flex h-full flex-col p-3 transition hover:border-ember/50">
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="font-semibold">{d.label}</span>
                   <span className="shrink-0 font-mono text-[11px] text-muted">{formatBytes(d.bytes)}</span>
                 </span>
                 <span className="mt-1 flex-1 text-xs text-muted">{d.detail}</span>
-                <span className="mt-2 font-mono text-[11px] text-ember-soft">↓ hearth-{d.file}</span>
+                <span className="mt-2 font-mono text-[11px] text-ember-soft">↓ {exportName(d.file)}</span>
               </a>
             </li>
           ))}
@@ -262,9 +263,9 @@ export default function DatasetPage() {
         <div className="hud-panel p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-head font-semibold">Cite this cleaned dataset</h3>
-            <CopyButton text={hearthCitation} />
+            <CopyButton text={datasetCitation} />
           </div>
-          <p className="mt-1 font-mono text-xs text-muted">{hearthCitation}</p>
+          <p className="mt-1 font-mono text-xs text-muted">{datasetCitation}</p>
         </div>
         <div className="hud-panel p-4">
           <h3 className="font-head font-semibold">Ask VESTA about the data</h3>
@@ -328,7 +329,7 @@ export default function DatasetPage() {
           </ul>
         </div>
         <p className="text-xs text-muted">
-          HEARTH is an independent student project for the NASA Space Apps Challenge 2026 and is not endorsed by NASA. The cleaning, flags and summaries are Team Polaris&apos;s work, so any mistakes in them are ours, not NASA&apos;s. The files were not re-checked against PSI&apos;s current copies, so the checksums above describe the copies used here. Use them to tell whether a copy you hold is the same file.
+          FlameScope is an independent student project for the NASA Space Apps Challenge 2026 and is not endorsed by NASA. The cleaning, flags and summaries are Team Polaris&apos;s work, so any mistakes in them are ours, not NASA&apos;s. The files were not re-checked against PSI&apos;s current copies, so the checksums above describe the copies used here. Use them to tell whether a copy you hold is the same file.
         </p>
       </Section>
     </div>

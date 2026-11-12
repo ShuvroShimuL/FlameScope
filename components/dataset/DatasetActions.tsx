@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useVesta } from "@/components/vesta/useVesta";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [state, setState] = useState<"idle" | "done" | "failed">("idle");
@@ -22,7 +22,7 @@ export function CopyButton({ text, label = "Copy" }: { text: string; label?: str
 }
 
 export function OpenTestButton({ id }: { id: string }) {
-  const openTest = useHearth((s) => s.openTest);
+  const openTest = useAppStore((s) => s.openTest);
   return (
     <button type="button" onClick={() => openTest(id)} className="rounded border border-line bg-bg/50 px-1.5 py-0.5 font-mono text-[11px] text-muted transition hover:text-text">
       {id}
@@ -34,7 +34,7 @@ const QUESTIONS = ["Compare ACME and SPICE", "What data gaps exist for the lunar
 
 export function AskVesta() {
   const { send } = useVesta();
-  const busy = useHearth((s) => s.busy);
+  const busy = useAppStore((s) => s.busy);
   return (
     <ul className="flex flex-wrap gap-1.5">
       {QUESTIONS.map((q) => (

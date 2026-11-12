@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { loadPrefs, savePrefs, useHearth } from "@/lib/store";
+import { loadPrefs, savePrefs, useAppStore } from "@/lib/store";
 import { SpaceBackdrop } from "@/components/fx/SpaceBackdrop";
 import { VestaPanel } from "@/components/vesta/VestaPanel";
 import { postMissionAlert } from "@/components/vesta/useVesta";
@@ -11,16 +11,16 @@ import { SiteFooter } from "./SiteFooter";
 import { TopBar } from "./TopBar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const missionId = useHearth((s) => s.missionId);
-  const engine = useHearth((s) => s.engine);
-  const level = useHearth((s) => s.level);
+  const missionId = useAppStore((s) => s.missionId);
+  const engine = useAppStore((s) => s.engine);
+  const level = useAppStore((s) => s.level);
   const loaded = useRef(false);
   const lastMission = useRef<string | null>(null);
 
   // restore preferences once
   useEffect(() => {
     const p = loadPrefs();
-    const s = useHearth.getState();
+    const s = useAppStore.getState();
     if (p.missionId) s.setMission(p.missionId);
     if (p.engine) s.setEngine(p.engine);
     if (p.level) s.setLevel(p.level);

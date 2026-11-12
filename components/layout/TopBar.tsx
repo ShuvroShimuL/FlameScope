@@ -3,12 +3,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { TeamBadge } from "@/components/ui/Polaris";
+import { BRAND } from "@/lib/brand";
 import { MISSIONS } from "@/lib/missions";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 export function TopBar() {
-  const missionId = useHearth((s) => s.missionId);
-  const setMission = useHearth((s) => s.setMission);
+  const missionId = useAppStore((s) => s.missionId);
+  const setMission = useAppStore((s) => s.setMission);
   const [status, setStatus] = useState<{ ok: boolean; tests?: number }>({ ok: true });
 
   useEffect(() => {
@@ -25,9 +26,9 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 bg-bg">
       <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:px-6">
-        <Link href="/" className="flex items-center gap-2" aria-label="HEARTH home">
-          <Logo size={30} />
-          <span className="font-head text-lg font-bold tracking-wider">HEARTH</span>
+        <Link href="/" className="flex items-center gap-2" aria-label={`${BRAND.name} home`}>
+          <Logo size={32} />
+          <span className="font-head text-lg font-bold tracking-wider">{BRAND.name}</span>
         </Link>
         <TeamBadge />
         <nav id="tour-missions" aria-label="Mission" className="order-3 flex w-full gap-1.5 overflow-x-auto pb-0.5 sm:order-none sm:w-auto">

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 const TAU = Math.PI * 2;
 /** One turn every 10 minutes: slow enough to feel calm, fast enough to notice the sky turning. */
@@ -180,7 +180,7 @@ export function SpaceBackdrop() {
     const draw = (now: number) => {
       const t = now / 1000;
       const dt = Math.min(0.1, frameMs / 1000);
-      const busy = useHearth.getState().busy;
+      const busy = useAppStore.getState().busy;
       energy += ((busy ? 1 : 0) - energy) * 0.06;
       const warpT = (now - warpAt) / WARP_MS;
       const warp = warpT >= 0 && warpT < 1 ? (1 - warpT) * (1 - warpT) : 0;
@@ -279,7 +279,7 @@ export function SpaceBackdrop() {
       }, 150);
     };
     window.addEventListener("resize", onResize);
-    const unsubscribe = useHearth.subscribe((state, prev) => {
+    const unsubscribe = useAppStore.subscribe((state, prev) => {
       // ignore the mission restored from saved preferences right after loading
       if (!reduce && state.missionId !== prev.missionId && performance.now() - mountedAt > 1500) warpAt = performance.now();
     });

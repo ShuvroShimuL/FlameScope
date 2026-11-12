@@ -6,7 +6,7 @@ import { useVesta } from "@/components/vesta/useVesta";
 import { applyMapping, detectMapping, parseCsv, type Mapping } from "@/lib/csv";
 import { getMission } from "@/lib/missions";
 import type { PressureUnit } from "@/lib/physics";
-import { useHearth } from "@/lib/store";
+import { useAppStore } from "@/lib/store";
 
 interface Calc {
   po2: { value: number; formula: string };
@@ -54,7 +54,7 @@ function Field({ label, unit, value, min, max, step, onChange }: { label: string
 }
 
 export function LabView() {
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const m = getMission(missionId);
   const [o2, setO2] = useState(m?.o2_pct ?? 21);
   const [p, setP] = useState(m?.pressure_psi ?? 14.7);
@@ -64,9 +64,9 @@ export function LabView() {
   const [points, setPoints] = useState<MapPoint[]>([]);
   const [err, setErr] = useState(false);
   const reduce = useReducedMotion();
-  const openTest = useHearth((s) => s.openTest);
-  const labRows = useHearth((s) => s.labRows);
-  const setLabRows = useHearth((s) => s.setLabRows);
+  const openTest = useAppStore((s) => s.openTest);
+  const labRows = useAppStore((s) => s.labRows);
+  const setLabRows = useAppStore((s) => s.setLabRows);
   const { send } = useVesta();
 
   useEffect(() => {
@@ -235,7 +235,7 @@ function CsvUpload({ rowsCount, onRows }: { rowsCount: number; onRows: (r: Retur
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [name, setName] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-  const labRows = useHearth((s) => s.labRows);
+  const labRows = useAppStore((s) => s.labRows);
 
   const load = (text: string, fileName: string) => {
     const all = parseCsv(text);

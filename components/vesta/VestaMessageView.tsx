@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { IconCheck, IconCopy, IconPin } from "@/components/ui/Icons";
-import { useHearth, type Step, type VestaMessage } from "@/lib/store";
+import { useAppStore, type Step, type VestaMessage } from "@/lib/store";
 import { formatTokens } from "@/lib/vesta/burn";
 import { ConfidenceTag, SourceChips } from "./Bits";
 import { RichText } from "./RichText";
@@ -110,8 +110,8 @@ function Sources({ m, onOpen }: { m: VestaMessage; onOpen: (id: string) => void 
 }
 
 export function VestaMessageView({ m }: { m: VestaMessage }) {
-  const pin = useHearth((s) => s.pin);
-  const openTest = useHearth((s) => s.openTest);
+  const pin = useAppStore((s) => s.pin);
+  const openTest = useAppStore((s) => s.openTest);
 
   if (m.role === "user") {
     return (

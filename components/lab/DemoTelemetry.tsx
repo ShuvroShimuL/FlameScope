@@ -4,7 +4,7 @@ import { EChart } from "@/components/charts/EChart";
 import { DemoBadge } from "@/components/vesta/Bits";
 import { getMission } from "@/lib/missions";
 import { flowRegime, hazardIndex, pO2 } from "@/lib/physics";
-import { newId, useHearth } from "@/lib/store";
+import { newId, useAppStore } from "@/lib/store";
 
 /**
  * DEMO MODE: simulated cabin telemetry. Every value here is generated in the browser.
@@ -41,7 +41,7 @@ function Spark({ data, color }: { data: number[]; color: string }) {
 }
 
 export function DemoTelemetry() {
-  const missionId = useHearth((s) => s.missionId);
+  const missionId = useAppStore((s) => s.missionId);
   const m = getMission(missionId) ?? getMission("lunar-rover")!;
   const [running, setRunning] = useState(true);
   const [samples, setSamples] = useState<Sample[]>([]);
@@ -60,7 +60,7 @@ export function DemoTelemetry() {
   }, [m, log]);
 
   const vestaSay = useCallback((text: string) => {
-    useHearth.getState().addMessage({ id: newId(), role: "vesta", text, badge: "DEMO · simulated drill · not NASA data", steps: [], charts: [], sources: [], alert: "bad" });
+    useAppStore.getState().addMessage({ id: newId(), role: "vesta", text, badge: "DEMO · simulated drill · not NASA data", steps: [], charts: [], sources: [], alert: "bad" });
   }, []);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function DemoTelemetry() {
           d.alerted = false;
           ph = "idle";
           log("DEMO drill complete: simulated readings back inside DEMO limits");
-          vestaSay("DEMO drill complete. Simulated smoke, temperature and airflow are back inside the DEMO limits. Reminder: this was a simulation; HEARTH's NASA data has no smoke-detector or suppression tests, so treat the drill as practice only.");
+          vestaSay("DEMO drill complete. Simulated smoke, temperature and airflow are back inside the DEMO limits. Reminder: this was a simulation; FlameScope's NASA data has no smoke-detector or suppression tests, so treat the drill as practice only.");
         }
         if (d.step > 0) d.step++;
       }
