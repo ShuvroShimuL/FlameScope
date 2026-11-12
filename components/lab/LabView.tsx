@@ -172,7 +172,7 @@ export function LabView() {
               </dl>
               <p className="font-mono text-[10px] text-muted">{calc.po2.formula} · flow {calc.flow_regime.rule} · lib/physics.ts</p>
               <p className="text-sm">
-                Envelope: <b className={ENV_CLS[calc.envelope.status]}>{calc.envelope.status.replace("_", " ")}</b> — {calc.envelope.count} NASA tests{material ? ` (${material} only)` : ""} within ±5 pp O2 and ±2.5 psi.
+                Envelope: <b className={ENV_CLS[calc.envelope.status]}>{calc.envelope.status.replace("_", " ")}</b> — {calc.envelope.count} NASA gas and droplet tests{material ? ` (${material} only)` : ""} within ±5 pp O2 and ±2.5 psi.
               </p>
               <div>
                 <p className="text-sm">
@@ -208,7 +208,7 @@ export function LabView() {
         </figure>
         <section aria-label="Nearest tests" className="hud-panel p-4">
           <h2 className="mb-2 font-head text-sm font-semibold uppercase tracking-wider text-muted">Nearest 5 NASA tests</h2>
-          {calc?.nearest.length === 0 && <p className="text-sm text-muted">No NASA tests of this material — a data gap.</p>}
+          {calc?.nearest.length === 0 && <p className="text-sm text-muted">No test of this material in the ACME, CFI and SPICE table. For solid materials, see Will it burn?</p>}
           <ol className="space-y-1.5">
             {calc?.nearest.map((n) => (
               <li key={n.test_id}>

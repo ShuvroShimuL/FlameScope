@@ -70,7 +70,7 @@ test('missing pressure is never a measured match, and a different pressure is a 
   const base = ask({ q: 'Will acrylic burn on the ISS?' });
   assert.equal(base.verdict.state, 'burned'); assert.equal(base.evidence.ids.length, 20);
   assert.deepEqual([check(base, 'pressure').status, check(base, 'pressure').ok, check(base, 'pressure').statusLabel], ['unrecorded', true, 'Not recorded']);
-  assert.deepEqual([check(base, 'oxygen').status, check(base, 'oxygen').statusLabel], ['context', 'Station air']);
+  assert.deepEqual([check(base, 'oxygen').status, check(base, 'oxygen').statusLabel], ['context', 'Glovebox air']);
   assert.ok(base.checks.every(c => !(c.key === 'pressure' && c.status === 'match')));
   assert.equal(ask({ q: 'acrylic at 1 atm' }).verdict.state, 'burned', '1 atm is the station’s nominal pressure');
   const other = ask({ q: 'Will acrylic burn at 14.5 psi?' });

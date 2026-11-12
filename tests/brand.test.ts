@@ -46,6 +46,8 @@ describe("one product identity", () => {
     const offenders = files.filter((f) => /mail6heatler|project-hearth-five\.vercel\.app/i.test(read(f)));
     expect(offenders).toEqual([]);
     expect(BRAND.urls.repoBlob.startsWith(BRAND.urls.repo)).toBe(true);
+    // Files a visitor downloads carry the name too.
+    expect(read("public/sample_lab_data.csv")).not.toMatch(/hearth/i);
   });
 
   it("the browser title and download names come from the brand module", () => {

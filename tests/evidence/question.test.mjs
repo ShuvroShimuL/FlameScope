@@ -188,3 +188,29 @@ test('the pressure hint’s own example is read as station pressure', () => {
   }
   assert.equal(ask({ q: 'Will acrylic burn at 101 kPa?' }).scenario.air.psi, 14.6, 'a stated value is never rounded up to the station’s pressure');
 });
+
+test('a suit or a vehicle the tests never flew in is never read as the ISS', () => {
+  for (const q of ['Will acrylic burn in a spacesuit?', 'Will acrylic burn in the rover?', 'Will Nomex burn aboard Orion?', 'Will acrylic burn in a pressurized rover?', 'Does kapton burn during an EVA?']) {
+    const r = ask({ q });
+    assert.equal(r.verdict.state, 'unresolved', q); assert.equal(r.evidence, null, q);
+    assert.match(r.unresolved[0].reason, /doesn’t know the cabin air or gravity/, q);
+    assert.ok(!r.understood.some(u => u.field === 'Mission'), 'no mission is shown as if it had been read: ' + q);
+  }
+  // A place the app does know still decides, and a tapped mission replaces the unknown one.
+  assert.equal(ask({ q: 'Will acrylic burn in a rover on the Moon?' }).verdict.state, 'no-data');
+  assert.equal(ask({ q: 'Will acrylic burn in a spacesuit?', mission: 'iss' }).verdict.state, 'burned');
+  // Words that only look like a vehicle are left alone.
+  assert.equal(ask({ q: 'Is Nomex suitable on the ISS?' }).scenario.mission.id, 'iss');
+});
+
+test('“pure oxygen” is read as 100% oxygen, never left to the default air', () => {
+  const r = ask({ q: 'Will acrylic burn on the ISS in pure oxygen?' });
+  assert.equal(r.scenario.air.o2, 100); assert.equal(r.scenario.air.explicitO2, true);
+  assert.equal(r.verdict.state, 'no-data');
+  assert.match(r.verdict.headline, /stopped at 22\.2% oxygen/);
+  assert.ok(r.notices.some(n => /pure oxygen/.test(n)));
+});
+
+test('a name every object has is not a cabin air', () => {
+  for (const air of ['constructor', '__proto__', 'toString']) assert.throws(() => ask({ air }), InputError, air);
+});

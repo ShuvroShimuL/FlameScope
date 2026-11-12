@@ -106,16 +106,16 @@ export function ruleUntestedSolids(t: SafetyTarget, tests = countable()): Findin
     category: "prevention",
     title: "Cabin materials are barely tested",
     severity: t.o2_pct > 21 ? 80 : 50,
-    severity_rule: "80 when O2 > 21% (no solid-material test at enriched oxygen), else 50 (solid tests exist for three materials only, in station air)",
+    severity_rule: "80 when O2 > 21% (no solid-material test at enriched oxygen), else 50 (solid tests exist for three materials only, in the station's glovebox)",
     confidence: confidenceFromCount(solids.length),
     evidence: [
       { text: `${solids.length} solid-fuel tests among ${tests.length} in the ACME, CFI and SPICE table (phases tested: ${phases.join(", ")})`, source: { file: "data/processed/tests.json" } },
-      { text: `Separate evidence set: ${solid.text}. Nothing covers a solid material at enriched oxygen or reduced pressure.`, source: { file: "data/evidence/bass-table.csv", note: "BASS-II report NASA/TM-20210011385; open the Will it burn? page for the rows" } },
+      { text: `Separate evidence set: ${solid.text}. No solid-material row here is above ${solid.o2Max}% O2, and none records pressure. NASA's Saffire experiments burned solids at reduced pressure and raised oxygen; they are cited on the Will it burn? page and are not in this data.`, source: { file: "data/evidence/bass-table.csv", note: "BASS-II report NASA/TM-20210011385; open the Will it burn? page for the rows" } },
     ],
     sources: sourcesFor(tests, 0),
     guideline: beyond
-      ? `Evidence is missing: no solid material has a test at ${t.o2_pct}% O2 and ${t.pressure_psi} psi. The only solid-material tests (acrylic, SIBAL fabric, Nomex) ran in station air. BASS / Saffire-type material flammability tests at these conditions would fill this gap.`
-      : `Evidence is missing for most cabin materials: only acrylic, SIBAL fabric and Nomex have tests, all in microgravity in station air, and foams and wiring insulation have none. The Will it burn? page shows what those tests recorded. BASS / Saffire-type tests of more materials would fill this gap.`,
+      ? `Evidence is missing: no solid material has a test at ${t.o2_pct}% O2 and ${t.pressure_psi} psi. The only solid-material tests here (acrylic, SIBAL fabric, Nomex) ran in the station's glovebox at up to ${solid.o2Max}% O2. BASS / Saffire-type material flammability tests at these conditions would fill this gap.`
+      : `Evidence is missing for most cabin materials: only acrylic, SIBAL fabric and Nomex have tests, all in microgravity in the station's glovebox, and foams and wiring insulation have none. The Will it burn? page shows what those tests recorded. BASS / Saffire-type tests of more materials would fill this gap.`,
   };
 }
 

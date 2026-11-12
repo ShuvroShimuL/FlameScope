@@ -72,7 +72,7 @@ export function MissionHeader() {
         { label: "pO2", value: calc.po2.value, unit: "psi", meter: { max: PO2_SCALE_PSI, tick: ISS_PO2_PSI, title: `Scale: 0 to ${PO2_SCALE_PSI} psi. Tick: ISS reference, ${ISS_PO2_PSI} psi` } },
         { label: "vs ISS pO2", value: calc.ratio_to_iss.value, unit: "×" },
         { label: "O2 vs Earth", value: calc.o2_vs_earth.value, unit: "×" },
-        { label: "Tests in envelope", value: calc.envelope.count, unit: "" },
+        { label: "Gas & droplet tests nearby", value: calc.envelope.count, unit: "" },
       ]
     : [];
   return (

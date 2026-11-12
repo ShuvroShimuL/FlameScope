@@ -141,7 +141,7 @@ export function KeyNumbers({ evidence }: { evidence: SpreadEvidence | OutcomeEvi
   return (
     <div className="grid grid-cols-2 gap-3 2xl:grid-cols-4">
       <Kpi label="Tests" value={st.tests} sub={st.notTracked ? `${st.notTracked} with spread not tracked` : "All with spread tracked"} />
-      <Kpi label="Burned for" value={`${Math.round(st.burnMin)}–${Math.round(st.burnMax)}`} unit="min" sub="per test" />
+      <Kpi label="Burned for" value={st.burnMin === st.burnMax ? st.burnMin : `${st.burnMin}–${st.burnMax}`} unit="min" sub="per test" />
       {spread("Fastest spread", st.fastest)}
       {spread("Slowest spread", st.slowest)}
     </div>
@@ -199,6 +199,7 @@ function SpreadChart({ evidence, records }: { evidence: SpreadEvidence; records:
   }, [evidence, records]);
 
   const thicknesses = [...new Set(records.map((r) => r.thicknessMm))].sort((a, b) => a - b);
+  const untracked = records.filter((r) => !r.spread).map((r) => r.id);
   return (
     <figure className="min-w-0">
       <EChart
@@ -221,7 +222,10 @@ function SpreadChart({ evidence, records }: { evidence: SpreadEvidence; records:
           </span>
           tests that don&apos;t match
         </span>
-        <span>Lines join readings from one test.</span>
+        <span>
+          Lines join readings from one test, in airflow order, not time order; oxygen fell during each test.
+          {untracked.length > 0 && ` ${untracked.join(" and ")} had no tracked spread and ${untracked.length === 1 ? "is" : "are"} not drawn.`}
+        </span>
       </figcaption>
     </figure>
   );

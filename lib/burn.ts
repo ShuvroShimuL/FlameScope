@@ -14,6 +14,8 @@ import { provenance, records } from "./evidence/evidence.mjs";
 import { FINDINGS } from "./evidence/findings.mjs";
 import { FIRE_RESPONSE } from "./evidence/response.mjs";
 import { ask, InputError, MATERIALS, MISSIONS, POLICY, SETS } from "./evidence/scenario.mjs";
+import { flexProvenance } from "./evidence/flex.mjs";
+import { saffireProvenance } from "./evidence/saffire.mjs";
 import { tablesProvenance } from "./evidence/sets.mjs";
 import { BURN_PARAM_KEYS, type BurnAnswer, type BurnData, type BurnParams, type BurnRecord, type FireResponse, type Findings } from "./evidence/types";
 
@@ -35,20 +37,21 @@ export const BURN_TESTED_MATERIALS: readonly string[] = MATERIALS.filter((m) => 
  * to say how much is known about solids, so that sentence can never drift from the data.
  */
 export function burnCoverage() {
-  const sets = [SETS.pmma, SETS.sibal, SETS.nomex];
+  const span = (set: { envelope: { o2Min: number; o2Max: number } }) => `${set.envelope.o2Min}–${set.envelope.o2Max}% O2`;
   const acrylic = SETS.pmma.rows.length;
   const fabric = SETS.sibal.rows.length;
   const nomex = SETS.nomex.rows.length;
-  const o2Min = Math.min(...sets.map((s) => s.envelope.o2Min));
-  const o2Max = Math.max(...sets.map((s) => s.envelope.o2Max));
+  const fabricFromBass = SETS.sibal.rows.filter((t: { study?: string }) => t.study === "BASS").length;
+  const o2Max = Math.max(SETS.pmma.envelope.o2Max, SETS.sibal.envelope.o2Max, SETS.nomex.envelope.o2Max);
   return {
     acrylic,
     fabric,
+    fabricFromBass,
     nomex,
-    o2Min,
     o2Max,
-    // "records", not "burned": the Nomex samples never ignited, and some fabric samples did not either.
-    text: `The BASS-II report records ${acrylic} acrylic sheet tests, ${fabric} SIBAL fabric tests and ${nomex} Nomex tests, all in microgravity in the station's own air at ${o2Min}–${o2Max}% O2`,
+    // "lists", not "burned": the Nomex samples never ignited, and some fabric samples did not either. Each set keeps
+    // its own oxygen range, and nothing here calls the glovebox atmosphere cabin air: many tests began well below it.
+    text: `The BASS-II report lists ${acrylic} acrylic sheet tests (${span(SETS.pmma)}), ${fabric} SIBAL fabric tests (${span(SETS.sibal)}, ${fabricFromBass} of them from the earlier BASS investigation) and ${nomex} Nomex tests (${span(SETS.nomex)}), all in microgravity in the station's glovebox, where the recorded oxygen differed from test to test`,
   };
 }
 
@@ -75,6 +78,10 @@ export function burnData(): BurnData {
     findings: FINDINGS as unknown as Findings,
     fireResponse: FIRE_RESPONSE as unknown as FireResponse,
     policy: BURN_POLICY,
-    provenance: { acrylic: provenance as Record<string, unknown>, tables: tablesProvenance as Record<string, unknown> },
+    provenance: {
+      acrylic: provenance as Record<string, unknown>,
+      tables: tablesProvenance as Record<string, unknown>,
+      related: [saffireProvenance, flexProvenance] as Record<string, unknown>[],
+    },
   };
 }

@@ -40,6 +40,8 @@ export interface MissionTile {
   sub: string;
   gText: string;
   home: string;
+  /** Where the tile's cabin air comes from: the station's own, a NASA concept, or an assumption. */
+  note: string;
   /** The cabin air this tile stands for when tapped. */
   air: { name: string; psi: number; o2: number };
   matches: number;
@@ -239,5 +241,5 @@ export interface BurnData {
   findings: Findings;
   fireResponse: FireResponse;
   policy: string;
-  provenance: { acrylic: Record<string, unknown>; tables: Record<string, unknown> };
+  provenance: { acrylic: Record<string, unknown>; tables: Record<string, unknown>; related: Record<string, unknown>[] };
 }

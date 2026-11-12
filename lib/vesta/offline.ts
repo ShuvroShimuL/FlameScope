@@ -18,7 +18,12 @@ export type Intent = "help" | "explain_test" | "compare" | "burn" | "gaps" | "ra
 
 /** A named solid material, or the plain question "will it burn": these go to the solid-material evidence engine. */
 const SOLID_MATERIAL = /\b(acrylic|pmma|plexi(?:glass)?|perspex|sibal|nomex|cotton|fabrics?|cloth|textiles?|kapton|polyimide|teflon|ptfe|ultem|mylar|paper|cardboard|foams?|polyurethane|velcro|nylon|silicone|wire insulation)\b/;
-const BURN_QUESTION = /\b(?:will|would|does|did|can|could) (?:it|this|that|they) (?:burn|ignite|catch fire)\b|\bcatch(?:es)? (?:on )?fire\b/;
+/** A material word alone is not enough ("what does the paper say"): the question must also be about burning. */
+const ABOUT_BURNING = /\bburn|ignit|flammab|catch(?:es)? (?:on )?fire|\bsafe\b|fire ?proof|flame spread|spread rate/;
+const BURN_QUESTION = /\b(?:will|would|does|did|can|could) (?:\S+ ){1,6}?(?:burn|ignite|catch fire)\b|\bcatch(?:es)? (?:on )?fire\b/;
+/** Gas and liquid fuels belong to the ACME, CFI and SPICE tools, even when the question says "burn". */
+const GAS_OR_LIQUID = /methane|ethylene|ethane|propane|propylene|butane|hydrogen|dodecane|heptane|methanol|ethanol|droplets?|\bgas(?:eous)?\b|\bfuels?\b|cool flames?/;
+export const BURN_QUESTION_MAX_CHARS = 500;
 
 export interface Parsed {
   o2_pct?: number;
@@ -68,10 +73,11 @@ export function detectIntent(msg: string, p: Parsed = parseMessage(msg)): Intent
   if (p.test_ids.length) return "explain_test";
   const comparing = /\bcompar|\bversus\b|\bvs\.?\b|differen/.test(t);
   if ((comparing && (p.investigations.length >= 1 || /investigation|experiment/.test(t))) || p.investigations.length >= 2) return "compare";
-  if (SOLID_MATERIAL.test(t) || BURN_QUESTION.test(t)) return "burn";
   if (/\bgaps?\b|missing|untested|(not|never) (been )?tested|no data|lack/.test(t)) return "gaps";
   if (/\brank|most relevant|relevan|which investigation|best (investigation|data)/.test(t)) return "rank";
   if (/safety|audit|hazard|fire risk|danger|\brisk/.test(t)) return "safety";
+  // After gaps, ranking and the audit, which are asked for by name; before the gas and droplet coverage check.
+  if (!GAS_OR_LIQUID.test(t) && !p.investigations.length && ((SOLID_MATERIAL.test(t) && ABOUT_BURNING.test(t)) || BURN_QUESTION.test(t))) return "burn";
   // a pure calculation (pO2, ratio, conversion) that does not ask about test coverage
   if (/po2|partial pressure|\bratio\b|calculat|comput|convert/.test(t) && !/tested|envelope|assess|inside|covered|\bdata\b|safe/.test(t)) return "calc";
   if (p.o2_pct != null || p.pressure_psi != null || /assess|condition|envelope|tested|safe|cabin/.test(t) || p.mission) return "assess";
@@ -318,23 +324,34 @@ async function explainTopic(c: Ctx, msg: string): Promise<string[]> {
  * swaps a condition the user did not give for one they did not ask about.
  */
 async function burn(c: Ctx, msg: string): Promise<string[]> {
-  const r = await call(c, "will_it_burn", { question: msg.trim().slice(0, 500) });
+  const question = msg.trim();
+  // Never cut a question: a condition in the part cut off would be replaced by a default without a word.
+  if (question.length > BURN_QUESTION_MAX_CHARS) {
+    c.conf.push("no_data");
+    return [`That question is ${question.length} characters long, and the solid-material check reads at most ${BURN_QUESTION_MAX_CHARS}. Please ask it in a shorter form, so no condition is lost.`];
+  }
+  const r = await call(c, "will_it_burn", { question });
   if (!r.ok) {
     c.conf.push("no_data");
     return [`I couldn't check that against the solid-material tests: ${r.summary}.`];
   }
   const d = r.data as WillItBurnData;
   const table = cite(r.sources[0]);
-  const out = [`${d.verdict.stamp} (${d.verdict.count}). ${d.verdict.headline}`, d.verdict.detail, `Read as: ${d.read_as.join("; ")}.`];
+  const out = [`${d.verdict.stamp} (${d.verdict.count}). ${d.verdict.headline}`];
+  if (d.read_as.some((x) => x.startsWith("Mission: ISS (default"))) out.push("You named no place, so this is checked for the ISS in Earth-normal air, not for the mission selected in the top bar.");
+  out.push(d.verdict.detail, `Read as: ${d.read_as.join("; ")}.`, ...d.notices);
+  const open = d.checks.filter((k) => k.result !== "Match");
+  if (open.length) out.push(`Checks: ${open.map((k) => `${k.condition}: ${k.result}`).join("; ")}.`);
   if (d.evidence) {
     out.push(d.evidence.finding);
     out.push(`Matching tests: ${d.matched_tests.join(", ")} ${table}.`);
     if (d.caveat) out.push(d.caveat);
   } else if (d.verdict.state === "no-data") {
     for (const g of d.gaps) out.push(`• ${g.topic}: ${g.text} (${g.source})`);
+    if (d.gaps_not_shown) out.push("The Will it burn? page lists the other gaps.");
     if (d.closest_tests.length) out.push(`Closest tests, none of which matches: ${d.closest_tests.map((t) => t.id).join(", ")} ${table}.`);
   }
-  out.push("This is what NASA's BASS-II solid-material tests recorded: not a prediction, and not a safety rating. The Will it burn? page shows the source rows.");
+  out.push("This is what the tests listed in NASA's BASS-II report recorded: not a prediction, and not a safety rating. The Will it burn? page shows the source rows.");
   c.ui.push({ action: "go_view", view: "burn", path: "/burn", question: d.canonical_question });
   return out.filter(Boolean);
 }

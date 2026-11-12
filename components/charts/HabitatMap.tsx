@@ -224,10 +224,10 @@ export function HabitatMap({ height = 420 }: { height?: number }) {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 flex-1 basis-64 text-[11px] text-muted">
           {show3D ? (
-            <>Every NASA test by pressure, O2 and height = pO2 (lib/physics.ts). The glowing sheet is every possible pO2; stems drop to the floor to read the axes. Pressure is on a log scale.</>
+            <>Every ACME, CFI and SPICE test by pressure, O2 and height = pO2 (lib/physics.ts). The glowing sheet is every possible pO2; stems drop to the floor to read the axes. Pressure is on a log scale.</>
           ) : (
             <>
-              Every NASA test by pressure and O2. Dashed line: same O2 partial pressure as the ISS ({ISS_PO2_PSI} psi). Shaded box: Moon base / rover zone ({zoneO2[0]}–{zoneO2[1]}% O2, {zoneP[0]}–{zoneP[1]} psi).
+              Every ACME, CFI and SPICE test by pressure and O2. Dashed line: same O2 partial pressure as the ISS ({ISS_PO2_PSI} psi). Shaded box: Moon base / rover zone ({zoneO2[0]}–{zoneO2[1]}% O2, {zoneP[0]}–{zoneP[1]} psi).
             </>
           )}
         </p>

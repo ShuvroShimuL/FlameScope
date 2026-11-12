@@ -25,8 +25,10 @@ export function crossSite(req: Request): boolean {
   const origin = req.headers.get("origin");
   if (origin === null) return false;
   try {
-    const host = req.headers.get("host") ?? new URL(req.url).host;
-    return new URL(origin).host.toLowerCase() !== host.toLowerCase();
+    // Behind a proxy that rewrites Host, the name the visitor used arrives as X-Forwarded-Host. A page on another
+    // site cannot set that header without a preflight this server never grants.
+    const own = [req.headers.get("host") ?? new URL(req.url).host, req.headers.get("x-forwarded-host")].filter((h): h is string => !!h).map((h) => h.toLowerCase());
+    return !own.includes(new URL(origin).host.toLowerCase());
   } catch {
     // "null" (a sandboxed frame or a local file) and anything unparseable is not this site.
     return true;

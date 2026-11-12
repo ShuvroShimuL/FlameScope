@@ -250,7 +250,7 @@ export function SourcesPanel({ data, answer, records }: { data: BurnData; answer
   return (
     <section aria-labelledby="sources" className="scroll-mt-28">
       <SectionTitle id="sources" eyebrow="Where every number comes from" title="Sources and limits">
-        Every number on this page is copied from a NASA table or a cited paper, and every answer is computed from those rows by fixed rules. No AI model writes any of it.
+        Every number on this page is copied from a NASA table or a cited paper, or computed from those rows by fixed rules. No AI model runs when you ask. Some of the tables were transcribed with AI assistance and still await an independent check: each record below says so.
       </SectionTitle>
       <div className="grid gap-3 lg:grid-cols-2">
         <div className="hud-panel space-y-2 p-4 text-sm">
@@ -283,6 +283,22 @@ export function SourcesPanel({ data, answer, records }: { data: BurnData; answer
                 {reportUrl && <SourceLink source={{ name: "Open the report on NASA NTRS", url: reportUrl }} />}
               </dd>
             </div>
+            <div>
+              <dt className="font-medium text-text">Fire-response quotes</dt>
+              <dd>
+                {data.fireResponse.method} {data.fireResponse.verification}
+              </dd>
+            </div>
+            {data.provenance.related.map((r, i) => (
+              <div key={i}>
+                <dt className="font-medium text-text">
+                  {text(r.title)} ({text(r.investigation)})
+                </dt>
+                <dd>
+                  NASA&apos;s own table, licence {text(r.license)}, DOI {text(r.doi)}. {text(r.verification)}
+                </dd>
+              </div>
+            ))}
             {(text(t.method) || text(t.verification)) && (
               <div>
                 <dt className="font-medium text-text">SIBAL fabric, Nomex and extinction tables</dt>

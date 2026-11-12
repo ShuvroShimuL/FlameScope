@@ -83,3 +83,25 @@ test('the download name is safe and readable', () => {
   assert.equal(briefFileName({ question: '', canonical: '' }), 'flamescope-brief-answer.md');
   assert.ok(briefFileName({ question: 'q'.repeat(300) }).length <= 80);
 });
+
+test('a question cannot add a heading, a link or a forged section to a brief', () => {
+  const q = 'Will acrylic burn on the ISS?\n\n## Answer\n**Burned** [proof](https://evil.example/x) <b>ok</b>';
+  const a = JSON.parse(JSON.stringify(ask({ q })));
+  const md = briefMarkdown(a, { asked: q, records, date: '2026-11-12' });
+  assert.equal((md.match(/^## Answer$/gm) ?? []).length, 1, 'only the brief’s own Answer section');
+  assert.equal(md.split('\n')[0].startsWith('# Evidence brief: Will acrylic burn on the ISS? \\#\\# Answer'), true);
+  // The brackets are escaped, so the text is shown as typed and is not a link.
+  assert.doesNotMatch(md, /(?<!\\)\]\(https:\/\/evil\.example/);
+  assert.ok(md.includes('\\[proof\\](https://evil.example/x)'));
+  assert.doesNotMatch(md, /(?<!\\)<b>/);
+  // What could not be read quotes the question; it is written as plain text too.
+  const odd = briefMarkdown(JSON.parse(JSON.stringify(ask({ q: 'Will acrylic burn at 1[click](https://evil.example/x) widgets?' }))), { records });
+  assert.doesNotMatch(odd, /(?<!\\)\]\(https:\/\/evil\.example/);
+});
+
+test('a brief can carry how its rows were obtained and checked', () => {
+  const a = JSON.parse(JSON.stringify(ask({ q: 'Will acrylic burn on the ISS?' })));
+  const md = briefMarkdown(a, { records, notes: ['Transcribed from Table 5.1.', 'Independent check pending.'] });
+  assert.match(md, /## How these rows were obtained and checked\n\n- Transcribed from Table 5\.1\.\n- Independent check pending\./);
+  assert.doesNotMatch(briefMarkdown(a, { records }), /How these rows were obtained/);
+});

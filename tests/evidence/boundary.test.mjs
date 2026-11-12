@@ -68,3 +68,13 @@ test('the MCP server makes no network or model call: its citation is the committ
   assert.equal(r.structuredContent.citation.source, 'fixture');
   assert.match(r.structuredContent.citation.title, /BASS-II/);
 });
+
+test('the engine finds its data when started from another folder, as an MCP client or a script may do', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { tmpdir } = await import('node:os');
+  const { fileURLToPath, pathToFileURL } = await import('node:url');
+  const entry = pathToFileURL(fileURLToPath(new URL('../../lib/evidence/scenario.mjs', import.meta.url))).href;
+  const run = spawnSync(process.execPath, ['-e', `import(${JSON.stringify(entry)}).then(m => console.log(m.ask({ q: 'Will acrylic burn on the ISS?' }).verdict.state))`], { cwd: tmpdir(), encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout.trim(), 'burned');
+});

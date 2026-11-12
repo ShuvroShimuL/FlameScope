@@ -71,6 +71,11 @@ export const AUTO_VIEW: Record<string, UiEvent> = {
 };
 
 export function withAutoView(ui: UiEvent[], toolsUsed: string[], compareArgs?: string[], burnQuestion?: string): UiEvent[] {
+  // A model that opens Will it burn? itself cannot pass the question along, so it is added here. Without it the page
+  // would open on its own first question and could show a different verdict from the one just given.
+  if (burnQuestion && ui.some((u) => u.action === "go_view" && u.view === "burn" && !u.question)) {
+    return ui.map((u) => (u.action === "go_view" && u.view === "burn" && !u.question ? { ...u, question: burnQuestion } : u));
+  }
   if (ui.some((u) => u.action === "go_view")) return ui;
   const tool = [...toolsUsed].reverse().find((t) => AUTO_VIEW[t]);
   if (!tool) return ui;

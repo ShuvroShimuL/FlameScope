@@ -115,7 +115,7 @@ docs/                API, data notes, planning and ADRs, the integration record,
 ## Limits
 
 - All tests ran in microgravity. Lunar and Martian gravity are untested, and nothing here bounds them.
-- Solid evidence is three materials in station air. Foams, wiring and every material at enriched oxygen are a gap.
+- Solid evidence is three materials in the station's glovebox, at ordinary or lowered oxygen. Foams, wiring and every material at enriched oxygen are a gap.
 - SPICE oxygen and pressure are documented conditions, not per-row measurements.
 - Ranking, severity and the hazard index are FlameScope heuristics with published formulas, not NASA ratings.
 - VESTA's AI engines write prose; their numbers are checked, their wording is not. Offline mode and the

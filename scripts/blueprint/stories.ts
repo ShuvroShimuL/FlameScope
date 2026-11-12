@@ -484,7 +484,7 @@ export const STORIES = {
   confidence: {
     title: "Every finding wears a tag",
     items: [
-      { id: "supported", story: same("At least {{envMin}} NASA tests are near this, the fact is quoted from a document, or, for a solid material, the matching rows of the report record that outcome.") },
+      { id: "supported", story: same("At least {{envMin}} NASA tests are near this, the fact is quoted from a document, or, for a solid material, at least {{envMin}} matching rows of the report record that outcome.") },
       { id: "extrapolated", story: same("Only sparse or indirect evidence, such as microgravity results used to reason about the Moon.") },
       { id: "no_data", story: same("Nothing covers it. VESTA won't predict. It names the gap and the experiment that would fill it.") },
     ],

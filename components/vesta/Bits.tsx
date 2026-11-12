@@ -2,7 +2,7 @@
 import type { Confidence, Source } from "@/lib/types";
 
 const CONF: Record<Confidence, { label: string; cls: string; tip: string }> = {
-  supported: { label: "supported", cls: "border-ok/50 bg-ok/10 text-ok", tip: "At least 5 NASA tests near this condition, quoted from a NASA document, or recorded in the matching rows of a solid-material table" },
+  supported: { label: "supported", cls: "border-ok/50 bg-ok/10 text-ok", tip: "At least 5 NASA tests near this condition, at least 5 matching rows for a solid material, or quoted from a NASA document" },
   extrapolated: { label: "extrapolated", cls: "border-warn/50 bg-warn/10 text-warn", tip: "Only sparse or indirect evidence" },
   no_data: { label: "no data", cls: "border-bad/50 bg-bad/10 text-bad", tip: "Nothing in the NASA data covers this" },
 };

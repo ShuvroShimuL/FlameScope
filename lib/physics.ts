@@ -113,7 +113,7 @@ export function envelopeCheck(o2Pct: number, pressurePsi: number, tests: TestRec
       o2_pct: [round(o2Pct - ENVELOPE_O2_WINDOW_PCT, 3), round(o2Pct + ENVELOPE_O2_WINDOW_PCT, 3)],
       pressure_psi: [round(pressurePsi - ENVELOPE_P_WINDOW_PSI, 3), round(pressurePsi + ENVELOPE_P_WINDOW_PSI, 3)],
     },
-    rule: `supported: ≥${ENVELOPE_SUPPORTED_MIN} tests within ±${ENVELOPE_O2_WINDOW_PCT} pp O2 and ±${ENVELOPE_P_WINDOW_PSI} psi; sparse: 1–${ENVELOPE_SUPPORTED_MIN - 1}; no_data: 0`,
+    rule: `supported: ≥${ENVELOPE_SUPPORTED_MIN} gas or droplet tests within ±${ENVELOPE_O2_WINDOW_PCT} pp O2 and ±${ENVELOPE_P_WINDOW_PSI} psi; sparse: 1–${ENVELOPE_SUPPORTED_MIN - 1}; no_data: 0`,
   };
 }
 

@@ -13,8 +13,8 @@ export default function BurnPage() {
   return (
     <>
       <PageHeader eyebrow="Solid materials · NASA BASS-II" title="Will it burn?">
-        Ask about a material in a cabin. The answer comes from NASA&apos;s BASS-II tests of acrylic sheets, SIBAL fabric and Nomex in microgravity, and a test counts only if its own row recorded every condition you gave.
-        You get what NASA observed, with the source rows, or a named gap. Never a prediction, and never a safety rating.
+        Ask about a material in a cabin. The answer comes from NASA&apos;s BASS-II tests of acrylic sheets, SIBAL fabric and Nomex in microgravity, and a test counts only if its own row recorded every per-test condition you gave: oxygen, airflow, thickness and width. No table records
+        pressure, and acrylic oxygen is matched against each test&apos;s start-to-end span. You get what NASA observed, with the source rows, or a named gap. Never a prediction, and never a safety rating.
       </PageHeader>
       {/* BurnView reads ?q= from the address, so it renders in the browser. */}
       <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-panel" />}>

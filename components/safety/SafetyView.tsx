@@ -206,7 +206,7 @@ export function SafetyView() {
           {gaps && (
             <>
               <p className="text-sm">
-                Missing fuel types: <b>{gaps.missing_fuel_phases.join(", ") || "none"}</b>. Gravity levels tested: <b>{gaps.gravity_levels_tested.map((g) => (g === "ug" ? "microgravity" : g)).join(", ")}</b>.
+                Fuel types missing from the ACME, CFI and SPICE table: <b>{gaps.missing_fuel_phases.join(", ") || "none"}</b>. Gravity levels tested: <b>{gaps.gravity_levels_tested.map((g) => (g === "ug" ? "microgravity" : g)).join(", ")}</b>.
               </p>
               {gaps.focus_cell && (
                 <p className="text-sm text-muted">

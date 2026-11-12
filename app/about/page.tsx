@@ -114,7 +114,7 @@ export default function AboutPage() {
           <ul className="list-disc space-y-1 pl-5 text-muted">
             <li>All tests ran in microgravity. Lunar and Martian gravity are untested, and nothing here bounds them: there are no tests at Earth gravity either.</li>
             <li>
-              ACME, CFI and SPICE contain no solid materials. The only solid-material evidence is NASA&apos;s BASS-II tests of acrylic sheets, SIBAL fabric and Nomex in station air, kept as a separate set on the{" "}
+              ACME, CFI and SPICE contain no solid materials. The only solid-material evidence is NASA&apos;s BASS-II tests of acrylic sheets, SIBAL fabric and Nomex in the station&apos;s glovebox, kept as a separate set on the{" "}
               <Link href="/burn" className="text-ember-soft underline underline-offset-2 hover:text-ember">
                 Will it burn?
               </Link>{" "}

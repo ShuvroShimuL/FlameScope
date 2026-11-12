@@ -147,7 +147,7 @@ questions:
     question: "Is Nomex safe on the ISS?"
     expected_tools: [will_it_burn]
     facts: ["No flame held", "isn’t a safety rating|not a safety rating"]
-    confidence: supported
+    confidence: extrapolated
     expected_view: burn
     offline: true
 

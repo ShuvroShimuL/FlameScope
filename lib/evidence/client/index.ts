@@ -53,6 +53,8 @@ export interface BriefOptions {
   records?: BurnRecord[];
   product?: string;
   date?: string;
+  /** How the cited rows were obtained and checked, from their provenance records. */
+  notes?: string[];
 }
 
 export const LIBRARY_KEY: string = KEY;

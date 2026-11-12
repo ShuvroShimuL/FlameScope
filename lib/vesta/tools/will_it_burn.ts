@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { askBurn, BURN_MATERIALS, BurnInputError, type BurnAnswer, type BurnParams, type VerdictState } from "@/lib/burn";
+import { askBurn, BURN_MATERIALS, BurnInputError, type BurnAnswer, type BurnParams } from "@/lib/burn";
+import { ENVELOPE_SUPPORTED_MIN } from "@/lib/physics";
 import type { Confidence, Source } from "@/lib/types";
 import { defineTool, fail } from "./types";
 
@@ -12,11 +13,18 @@ import { defineTool, fail } from "./types";
 const SOLIDS = BURN_MATERIALS.filter((m) => m !== "fuel" && m !== "wax") as [string, ...string[]];
 const MISSIONS = ["iss", "moon", "transit", "mars", "earth"] as const;
 
+/** What a model is given back must fit the agent's limit whole, or its last fields (the confidence) are cut off. */
+const PAYLOAD_BUDGET = 3200;
+
 /**
- * An observation in matching rows is "supported": it is what NASA's table records. It says nothing beyond those
- * rows. No matching row, or a question that could not be read, is "no_data".
+ * The same threshold as the rest of the app: at least five matching rows is "supported", one to four is
+ * "extrapolated" (sparse), none is "no_data". A tag never says more than the rows do: three Nomex tests that held
+ * no flame are sparse evidence, not a finding that Nomex does not burn.
  */
-const CONFIDENCE: Record<VerdictState, Confidence> = { burned: "supported", mixed: "supported", "no-burn": "supported", "no-data": "no_data", unresolved: "no_data" };
+function confidenceFor(a: BurnAnswer): Confidence {
+  const rows = a.evidence?.ids.length ?? 0;
+  return rows >= ENVELOPE_SUPPORTED_MIN ? "supported" : rows > 0 ? "extrapolated" : "no_data";
+}
 
 /** Where each evidence set is printed in the BASS-II report. */
 const TABLE: Record<string, { file: string; page: number }> = {
@@ -43,10 +51,13 @@ function sourcesFor(a: BurnAnswer): Source[] {
 }
 
 /** A compact copy of the answer: everything VESTA may say, in the engine's own words. */
-function dataFor(a: BurnAnswer) {
+function dataFor(a: BurnAnswer, keep = { gaps: 3, closest: 3 }) {
   const ev = a.evidence;
   const table = tableFor(a);
   return {
+    // First, so it is never the part that is cut off.
+    not_a_safety_rating: true,
+    matching_rows: ev?.ids.length ?? 0,
     asked: a.question || a.canonical,
     source: `${table.file}, p. ${table.page}`,
     read_as: a.understood.map((u) => `${u.field}: ${u.value} (${u.from === "default" ? "default, not stated" : u.from === "unresolved" ? "could not be read" : u.from})`),
@@ -59,13 +70,22 @@ function dataFor(a: BurnAnswer) {
         ? { tests: ev.stats.tests, spread_not_tracked_in: ev.stats.notTracked, burned_minutes: [ev.stats.burnMin, ev.stats.burnMax], fastest_spread: ev.stats.fastest, slowest_spread: ev.stats.slowest, units: "spread mm/s, airflow cm/s", finding: `${ev.finding.lead} ${ev.finding.text}` }
         : { counts: ev.counts, studies: ev.studies, finding: `${ev.finding.lead} ${ev.finding.text}` },
     caveat: ev?.caveat ?? null,
-    closest_tests: a.closest?.tests.slice(0, 3).map((t) => ({ id: t.id, recorded: t.conditions.map((c) => `${c.label} ${c.ok ? "yes" : "no"}: ${c.recorded}`) })) ?? [],
-    gaps: a.gaps.slice(0, 3).map((g) => ({ topic: g.topic, text: g.text, source: g.source.name })),
+    closest_tests: a.closest?.tests.slice(0, keep.closest).map((t) => ({ id: t.id, recorded: t.conditions.map((c) => `${c.label} ${c.ok ? "yes" : "no"}: ${c.recorded}`) })) ?? [],
+    gaps: a.gaps.slice(0, keep.gaps).map((g) => ({ topic: g.topic, text: g.text, source: g.source.name })),
+    gaps_not_shown: Math.max(0, a.gaps.length - keep.gaps),
     could_not_read: a.unresolved.map((u) => u.reason),
     notices: a.notices,
     canonical_question: a.canonical,
-    not_a_safety_rating: true,
   };
+}
+
+/** Shows fewer gaps and closest tests, never a shortened sentence, until the whole result fits. */
+function fitted(a: BurnAnswer, sources: Source[], confidence: Confidence) {
+  for (const keep of [{ gaps: 3, closest: 3 }, { gaps: 2, closest: 2 }, { gaps: 1, closest: 1 }, { gaps: 1, closest: 0 }, { gaps: 0, closest: 0 }]) {
+    const data = dataFor(a, keep);
+    if (JSON.stringify({ ok: true, data, sources, confidence }).length <= PAYLOAD_BUDGET) return data;
+  }
+  return dataFor(a, { gaps: 0, closest: 0 });
 }
 
 export type WillItBurnData = ReturnType<typeof dataFor>;
@@ -73,7 +93,7 @@ export type WillItBurnData = ReturnType<typeof dataFor>;
 export const willItBurnTool = defineTool({
   name: "will_it_burn",
   description:
-    "Check a SOLID material in a cabin against NASA's BASS-II microgravity tests: acrylic (PMMA) sheets, SIBAL cotton-fibreglass fabric and Nomex, burned in the ISS glovebox. A test counts only if its own row records every condition given, together; nothing is interpolated or extrapolated. Returns the verdict (burned, mixed, no-burn = no flame held, no-data, unresolved = unclear), the matching test ids, each condition check, the closest tests and sourced gaps. It reports what NASA observed in those rows. It is never a prediction and never a safety rating. Use it for any question about a solid material or fabric, or 'will it burn'. Pass the user's own question, and add explicit conditions only when the user gave them.",
+    "Check a SOLID material in a cabin against NASA's BASS-II microgravity tests: acrylic (PMMA) sheets, SIBAL cotton-fibreglass fabric and Nomex, tested in the ISS glovebox. A test counts only if its own row records every condition given, together; nothing is interpolated or extrapolated. Returns the verdict (burned, mixed, no-burn = no flame held, no-data, unresolved = unclear), the matching test ids, each condition check, the closest tests and sourced gaps. It reports what NASA observed in those rows. It is never a prediction and never a safety rating. Use it for any question about a solid material or fabric, or 'will it burn'. Pass the user's own question, and add explicit conditions only when the user gave them.",
   input: z.object({
     question: z.string().max(500).optional().describe("The user's question in their own words, e.g. 'Will a 1 mm acrylic sheet burn on the ISS with 10 cm/s airflow?'"),
     mission: z.enum(MISSIONS).optional().describe("Where: iss, moon (surface base), transit (cruise to Mars), mars (surface base) or earth"),
@@ -103,11 +123,13 @@ export const willItBurnTool = defineTool({
       if (e instanceof BurnInputError) return fail(e.message);
       throw e;
     }
+    const sources = sourcesFor(answer);
+    const confidence = confidenceFor(answer);
     return {
       ok: true,
-      data: dataFor(answer),
-      sources: sourcesFor(answer),
-      confidence: CONFIDENCE[answer.verdict.state],
+      data: fitted(answer, sources, confidence),
+      sources,
+      confidence,
       summary: `${answer.verdict.stamp}: ${answer.verdict.count}`,
     };
   },

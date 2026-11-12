@@ -1,4 +1,4 @@
-# EXAMPLE DATA - made up for trying the HEARTH lab upload. These are NOT NASA measurements.
+# EXAMPLE DATA - made up for trying the FlameScope lab upload. These are NOT NASA measurements.
 sample,oxygen_pct,pressure_psi,airflow_cm_s
 cabin-A,21,14.7,15
 cabin-B,26.5,10.2,8

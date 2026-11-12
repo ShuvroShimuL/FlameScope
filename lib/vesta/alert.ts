@@ -36,7 +36,7 @@ export function missionAlert(missionId: string): MissionAlert | null {
   return {
     mission: m.id,
     severity,
-    title: severity === "ok" ? `${m.short}: inside the tested envelope` : severity === "warn" ? `${m.short}: enriched oxygen` : `${m.short}: no test data`,
+    title: severity === "ok" ? `${m.short}: inside the gas and droplet test envelope` : severity === "warn" ? `${m.short}: enriched oxygen` : `${m.short}: no test data`,
     text: parts.join(" "),
     confidence: env.confidence === "supported" && m.gravity.startsWith("lunar") ? "extrapolated" : env.confidence,
     sources: [{ file: "lib/physics.ts", note: "tested formula" }, ...sourcesFor(near.map((h) => h.test), 3)],

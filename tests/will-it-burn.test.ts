@@ -105,10 +105,19 @@ describe("will_it_burn tool", () => {
       "Will SIBAL fabric burn at 21% oxygen?",
       "Is Nomex safe on a Mars base?",
       "Will kapton burn in still air on Mars at 40% oxygen and 5 psi?",
+      "Will a 1 mm acrylic sheet burn on a Moon base in still air?",
+      // Every mix of place, material and conditions, which is where the longest no-data answers come from.
+      ...["on the ISS", "on a Moon base", "on the way to Mars", "on a Mars base", "on Earth"].flatMap((where) =>
+        ["acrylic", "SIBAL fabric", "Nomex", "cotton fabric", "Kapton", "steel"].flatMap((what) =>
+          ["", " in still air", " at 19% oxygen with 10 cm/s airflow", " at 40% oxygen and 5 psi", " 2.2 cm wide at 17% oxygen"].map((how) => `Will a 1 mm sheet of ${what} burn ${where}${how}?`),
+        ),
+      ),
     ]) {
       const r = await runTool("will_it_burn", { question });
       const payload = JSON.stringify({ ok: r.ok, data: r.data, sources: r.sources, confidence: r.confidence, error: r.error });
       expect(payload.length, question).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS);
+      expect(payload.endsWith(`"confidence":"${r.confidence}"}`), question).toBe(true);
+      expect((r.data as WillItBurnData).not_a_safety_rating).toBe(true);
     }
   });
 
@@ -119,7 +128,12 @@ describe("will_it_burn tool", () => {
       { action: "go_view", view: "burn", path: "/burn", question: "Will acrylic burn on the ISS in Earth-normal air?" },
     ]);
     // A view the model chose itself is never overridden.
-    expect(withAutoView([{ action: "go_view", view: "overview", path: "/" }], ["will_it_burn"], undefined, "x")).toHaveLength(1);
+    expect(withAutoView([{ action: "go_view", view: "overview", path: "/" }], ["will_it_burn"], undefined, "x")).toEqual([{ action: "go_view", view: "overview", path: "/" }]);
+    // A model that opens the page itself has no way to pass the question, so it is added: otherwise the page would
+    // open on its own first question and could show a different verdict.
+    expect(withAutoView([{ action: "go_view", view: "burn", path: "/burn" }], ["will_it_burn"], undefined, "Will Nomex burn on a Mars base?")).toEqual([
+      { action: "go_view", view: "burn", path: "/burn", question: "Will Nomex burn on a Mars base?" },
+    ]);
   });
 });
 
@@ -132,6 +146,8 @@ describe("Offline mode and solid materials", () => {
       "Will it burn on a Moon base at 34% oxygen?",
       "Predict the flame spread rate of cotton fabric at 40% O2 and 5 psi.",
       "Does kapton catch fire in still air?",
+      "Will steel burn on the Moon?",
+      "Is cotton fabric flammable at 30% oxygen?",
       ...followUps(["will_it_burn"]).slice(0, 2),
     ])
       expect(detectIntent(q), q).toBe("burn");
@@ -147,12 +163,22 @@ describe("Offline mode and solid materials", () => {
     expect(detectIntent("What is pO2 at 30% and 10.2 psi?")).toBe("calc");
     expect(detectIntent("Explain ACME-CFIG-128")).toBe("explain_test");
     expect(detectIntent("Are methane flames tested at 21% O2?")).toBe("assess");
+    // A gas or liquid fuel stays with the ACME, CFI and SPICE tools even when the question says "burn".
+    expect(detectIntent("Will methane burn at 21% O2 and 14.7 psi?")).not.toBe("burn");
+    expect(detectIntent("Does a dodecane droplet burn at 5 atm?")).not.toBe("burn");
+    // A material word alone is not a question about burning, and a request made by name keeps its own answer.
+    expect(detectIntent("What does the paper say about cool flames?")).not.toBe("burn");
+    expect(detectIntent("Does foam suppress flames in microgravity?")).not.toBe("burn");
+    expect(detectIntent("What data is missing for foams and fabrics?")).toBe("gaps");
+    expect(detectIntent("Which investigation is most relevant for a fabric fire?")).toBe("rank");
+    expect(detectIntent("Run a safety audit for the lunar rover with cotton seats")).toBe("safety");
+    expect(detectIntent("Does ACME include any acrylic tests?")).not.toBe("burn");
   });
 
   for (const [question, state, confidence] of [
     ["Will acrylic burn on the ISS?", "Burned", "supported"],
-    ["Will SIBAL fabric burn at 21% oxygen?", "Burned", "supported"],
-    ["Is Nomex safe on the ISS?", "No flame held", "supported"],
+    ["Will SIBAL fabric burn at 21% oxygen?", "Burned", "extrapolated"],
+    ["Is Nomex safe on the ISS?", "No flame held", "extrapolated"],
     ["Will it burn on a Moon base at 34% oxygen?", "No data", "no_data"],
     ["Will a 1 mm acrylic sheet burn at 19% oxygen with 10 cm/s airflow?", "No data", "no_data"],
     ["Will acrylic burn at 150% oxygen?", "Unclear", "no_data"],
@@ -234,7 +260,7 @@ describe("an AI engine and solid materials", () => {
       [call("will_it_burn", { question: "Will it burn on a Moon base at 34% oxygen?" }), reply("It will burn 73% faster on the Moon.\nConfidence: supported"), reply("It will burn 73% faster on the Moon.\nConfidence: supported")],
       "Will it burn on a Moon base at 34% oxygen?",
     );
-    expect(r.of("confidence")[0].confidence).not.toBe("supported");
+    expect(r.of("confidence")[0].confidence).toBe("no_data");
     expect(r.answer).toMatch(/could not be verified/i);
   });
 });
@@ -242,10 +268,57 @@ describe("an AI engine and solid materials", () => {
 describe("what the rest of the app may say about solid evidence", () => {
   it("is counted from the rows, and does not say untested or unignited samples burned", () => {
     const c = burnCoverage();
-    expect([c.acrylic, c.fabric, c.nomex]).toEqual([20, 23, 3]);
-    expect(c.o2Min).toBeLessThan(c.o2Max);
-    expect(c.text).toContain(`${c.acrylic} acrylic sheet tests, ${c.fabric} SIBAL fabric tests and ${c.nomex} Nomex tests`);
-    expect(c.text).toContain(`${c.o2Min}–${c.o2Max}% O2`);
-    expect(c.text).not.toMatch(/burned/i);
+    expect([c.acrylic, c.fabric, c.fabricFromBass, c.nomex]).toEqual([20, 23, 4, 3]);
+    // Each set keeps its own oxygen range, and the fabric count says how many rows are from BASS.
+    expect(c.text).toContain("20 acrylic sheet tests (16.8–22.2% O2)");
+    expect(c.text).toMatch(/23 SIBAL fabric tests \([\d.]+–[\d.]+% O2, 4 of them from the earlier BASS investigation\)/);
+    expect(c.text).toMatch(/3 Nomex tests \([\d.]+–[\d.]+% O2\)/);
+    expect(c.text).toContain("in the station's glovebox");
+    // Nothing ignited is called burned, and a glovebox that ran below cabin oxygen is not called cabin air.
+    expect(c.text).not.toMatch(/burned|own air|cabin air|station air/i);
+  });
+});
+
+describe("how sure a solid-material answer may sound", () => {
+  it("is supported only with five or more matching rows, the app's one threshold; fewer is sparse", async () => {
+    expect((await burn({ question: "Will acrylic burn on the ISS?" })).r.confidence).toBe("supported");
+    // Three Nomex tests held no flame. That is sparse evidence, not a finding that Nomex does not burn.
+    const nomex = await burn({ material: "nomex" });
+    expect([nomex.d.matching_rows, nomex.r.confidence]).toEqual([3, "extrapolated"]);
+    // Four fabric rows, all from the earlier BASS investigation.
+    const fabric = await burn({ material: "sibal", o2_pct: 21 });
+    expect([fabric.d.matching_rows, fabric.r.confidence]).toEqual([4, "extrapolated"]);
+    const none = await burn({ question: "Will it burn on a Moon base at 34% oxygen?" });
+    expect([none.d.matching_rows, none.r.confidence]).toEqual([0, "no_data"]);
+  });
+});
+
+describe("Offline mode never answers for a place or a length it cannot read", () => {
+  it("does not read a spacesuit, a rover or Orion as the ISS", async () => {
+    for (const q of ["Will acrylic burn in a spacesuit?", "Will acrylic burn in the rover?", "Will Nomex burn aboard Orion?"]) {
+      const out = await runOffline({ message: q, missionId: "lunar-rover", level: "researcher", emit: () => {} });
+      expect(out.text.startsWith("Unclear ("), q).toBe(true);
+      expect(out.text, q).toMatch(/doesn’t know the cabin air or gravity/);
+      expect(out.confidence, q).toBe("no_data");
+      expect(out.text, q).not.toMatch(/NASA watched it burn/);
+    }
+  });
+
+  it("says so when no place was named, before anything else about the answer", async () => {
+    const out = await runOffline({ message: "Will acrylic burn?", missionId: "lunar-rover", level: "researcher", emit: () => {} });
+    const lines = out.text.split("\n");
+    expect(lines[0].startsWith("Burned (")).toBe(true);
+    expect(lines[1]).toMatch(/^You named no place, so this is checked for the ISS in Earth-normal air, not for the mission selected/);
+    expect(out.text).toMatch(/Checks: .*Pressure: Not recorded/);
+  });
+
+  it("refuses a question longer than the engine reads, instead of cutting a condition off the end", async () => {
+    const long = `Will acrylic burn on the ISS? ${"Please consider the crew and the cabin carefully. ".repeat(10)}Assume 30% oxygen.`;
+    expect(long.length).toBeGreaterThan(500);
+    const out = await runOffline({ message: long, level: "researcher", emit: () => {} });
+    expect(out.text).toMatch(/Please ask it in a shorter form, so no condition is lost/);
+    expect(out.toolsUsed).toEqual([]);
+    expect(out.confidence).toBe("no_data");
+    expect(out.text).not.toMatch(/Burned/);
   });
 });

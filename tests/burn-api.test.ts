@@ -67,6 +67,8 @@ describe("GET /api/burn/ask", () => {
     expect((await ask("?mission=pluto")).status).toBe(400);
     expect((await ask("?o2=101")).status).toBe(400);
     expect((await ask("?material=other")).status).toBe(400);
+    // Names every object has must not pass as a cabin air.
+    for (const air of ["constructor", "__proto__", "toString"]) expect((await ask(`?air=${air}`)).status, air).toBe(400);
     const unknown = await ask("?colour=red");
     expect(unknown.status).toBe(400);
     expect(((await unknown.json()) as { error: string }).error).toMatch(/unknown parameter: colour/);
@@ -76,7 +78,7 @@ describe("GET /api/burn/ask", () => {
     for (const res of [await ask("?mission=pluto"), unknown]) expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
-  it("accepts every documented parameter and nothing that looks like markup comes back unescaped as code", async () => {
+  it("accepts every documented parameter and answers in JSON, whatever the question contains", async () => {
     const query = new URLSearchParams({ q: "<script>alert(1)</script> acrylic", mission: "iss", air: "earth", material: "pmma", thickness: "1", width: "22", airflow: "10" });
     const res = await ask(`?${query}`);
     expect(res.status).toBe(200);

@@ -14,6 +14,9 @@ describe("cross-site requests", () => {
     expect(crossSite(request({ host: "flamescope.example", origin: "https://flamescope.example" }))).toBe(false);
     expect(crossSite(request({ host: "127.0.0.1:3000", origin: "http://127.0.0.1:3000" }, "http://127.0.0.1:3000/api/vesta"))).toBe(false);
     expect(crossSite(request({ host: "FlameScope.Example", origin: "https://flamescope.example" }))).toBe(false);
+    // Behind a proxy that rewrites Host, the visitor's own host name arrives as X-Forwarded-Host.
+    expect(crossSite(request({ host: "internal:3000", "x-forwarded-host": "flamescope.example", origin: "https://flamescope.example" }))).toBe(false);
+    expect(crossSite(request({ host: "internal:3000", "x-forwarded-host": "flamescope.example", origin: "https://evil.example" }))).toBe(true);
     // No Origin: curl, the eval runner, another server. Not a browser being tricked.
     expect(crossSite(request({ host: "flamescope.example" }))).toBe(false);
   });

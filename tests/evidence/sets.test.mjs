@@ -82,3 +82,21 @@ test('a fabric answer says which of its rows come from the earlier BASS investig
   // Acrylic and Nomex rows are all BASS-II, so they carry no study split.
   assert.equal(ask({ material: 'nomex' }).evidence.studies, null);
 });
+
+test('the “reading might be inaccurate” footnote appears only with a flagged row, and says what it does to a match', () => {
+  // The four rows at 21% are not flagged, so their answer carries no dangling asterisk.
+  assert.doesNotMatch(ask({ q: 'Will SIBAL fabric burn at 21% oxygen?' }).evidence.caveat, /\*/);
+  // The two rows at 18.5% are the flagged ones. Matching on that oxygen value is only as good as the reading.
+  const flagged = ask({ q: 'Will SIBAL fabric burn at 18.5% oxygen?' });
+  assert.ok(flagged.evidence.ids.every(id => fabricTests.find(t => t.id === id).oxygenNote));
+  assert.match(flagged.evidence.caveat, /O₂ reading of all 2 of these tests might be inaccurate, so the match on oxygen is only as good as that reading/);
+  // With every fabric test listed, the footnote explains the starred cells as before.
+  assert.match(ask({ material: 'sibal' }).evidence.caveat, /\* The report says this O₂ reading might be inaccurate\./);
+});
+
+test('each mission tile says where its cabin air comes from', () => {
+  const tiles = ask({}).missions;
+  assert.deepEqual(tiles.map(t => [t.id, t.air.psi, t.air.o2]), [['iss', 14.7, 21], ['moon', 8.2, 34], ['transit', 14.7, 21], ['mars', 8.2, 34]]);
+  assert.match(tiles.find(t => t.id === 'mars').note, /Assumes/);
+  assert.match(tiles.find(t => t.id === 'transit').note, /isn’t chosen yet/);
+});

@@ -61,12 +61,23 @@ const READ: Record<Understood["from"], { cls: string; tag: string }> = {
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1 text-xs transition ${on ? "border-ember bg-ember/15 text-ember-soft" : "border-line bg-panel text-muted hover:border-muted hover:text-text"}`;
 
+/** How the rows behind an answer were obtained and checked, in the provenance records' own words. */
+function provenanceNotes(data: BurnData, answer: BurnAnswer): string[] {
+  const record = answer.evidence?.kind === "outcomes" || ["sibal", "nomex"].includes(answer.scenario.material.id) ? data.provenance.tables : data.provenance.acrylic;
+  return [record.method, record.verification].filter((x): x is string => typeof x === "string" && x.trim() !== "");
+}
+
 async function requestAnswer(params: BurnParams): Promise<BurnAnswer> {
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== "") query.set(k, String(v));
   const res = await fetch(`/api/burn/ask?${query}`);
-  const body = (await res.json()) as BurnAnswer & { error?: string };
-  if (!res.ok) throw new Error(body.error || "The request failed.");
+  let body: (BurnAnswer & { error?: string }) | null = null;
+  try {
+    body = (await res.json()) as BurnAnswer & { error?: string };
+  } catch {
+    /* not JSON: a gateway error page, for example */
+  }
+  if (!res.ok || !body) throw new Error(body?.error || "The server sent a reply this page couldn’t read. Try again in a moment.");
   return body;
 }
 
@@ -205,7 +216,7 @@ export function BurnView() {
 
   const exportBrief = () => {
     if (!answer) return;
-    const markdown = briefMarkdown(answer, { asked, records: data?.records ?? [], product: BRAND.name, date: new Date().toISOString().slice(0, 10) });
+    const markdown = briefMarkdown(answer, { asked, records: data?.records ?? [], product: BRAND.name, date: new Date().toISOString().slice(0, 10), notes: data ? provenanceNotes(data, answer) : [] });
     saveFile(briefFileName(answer, BRAND.exportPrefix), markdown, "text/markdown;charset=utf-8");
   };
 
@@ -289,6 +300,7 @@ export function BurnView() {
                   <span className="mt-1 block font-mono text-[11px] text-muted">
                     {m.air.name} air · {m.air.psi} psi · {m.air.o2}% O₂
                   </span>
+                  <span className="mt-1 block text-[11px] leading-snug text-muted">{m.note}</span>
                   <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${m.matches ? "border-ok/50 bg-ok/10 text-ok" : "border-warn/50 bg-warn/10 text-warn"}`}>
                     <span aria-hidden>{m.matches ? "●" : "○"}</span>
                     {m.matches ? `${m.matches} tests match` : "No tests match"}
