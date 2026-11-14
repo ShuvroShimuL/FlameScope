@@ -7,12 +7,12 @@ combustion experiments for the ISS, a lunar base, pressurized rovers and spacesu
 about solid cabin materials against NASA's own test rows. It is guided by **VESTA** (Virtual Engineer for
 Space-fire Threat Assessment), an AI crewmate built as a tool-using agent.
 
-Every number shown comes from NASA data or a tested formula, every claim cites a file and row or page, and
+Every number shown comes from NASA data (ACME, CFI and SPICE) or a tested formula, every claim cites a file and row or page, and
 nothing is presented as a safety rating. FlameScope is an independent student project and is not endorsed by NASA.
-
+<!--
 This is the unified application: the app formerly developed as **Project HEARTH** now carries the FlameScope
 name, with the original FlameScope's "Will it burn?" evidence engine inside it. How the two were joined is in
-[docs/integration/](docs/integration/).
+[docs/integration/](docs/integration/).  -->
 
 _**Live Web Application:**_ _https://flame-scope.vercel.app/_
 
