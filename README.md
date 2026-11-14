@@ -16,6 +16,8 @@ name, with the original FlameScope's "Will it burn?" evidence engine inside it. 
 
 _**Live Web Application:**_ _https://flame-scope.vercel.app/_
 
+_**240 Seconds of Glory (Detailed Demonstration of the Project):**_ https://youtu.be/4XBXBrh3wBE?si=v0118j-Tw6yiDEtH
+
 ## What it does
 
 | Page | What it does |
